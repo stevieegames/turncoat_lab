@@ -268,6 +268,7 @@
     .bot-algorithm { color: var(--accent); font-size: .65rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
     .bot-difficulty { font-size: .86rem; letter-spacing: .08em; }
     .bot-description { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+    .bot-short-description { margin: -4px 0 0; color: var(--ink); font-size: .76rem; line-height: 1.45; }
     .bot-trophy-status { font-size: .72rem; font-weight: 800; }
     .bot-trophy-status.earned { color: #866020; }
     .bot-available { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #245f9d; background: rgba(45,118,188,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
@@ -278,6 +279,9 @@
     .bot-how { width: 100%; margin: 0; padding-top: 9px; }
     .bot-how summary { color: #245f9d; letter-spacing: .08em; }
     .bot-how p { margin: 8px 0 0; }
+    .bot-weight-list { display: grid; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .bot-weight-list li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 9px; border-radius: 5px; background: rgba(45,118,188,.08); color: var(--ink); font-size: .72rem; }
+    .bot-weight-list strong { color: #245f9d; white-space: nowrap; }
     .bot-storage-note { margin: 16px 0 0; color: var(--muted); font-size: .68rem; line-height: 1.45; }
     .trophy-earned-overlay { z-index: 80; }
     .trophy-earned-card { width: min(430px, 100%); text-align: center; }
@@ -457,10 +461,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="true"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -659,10 +663,25 @@
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
     const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    // Sally combines every applicable preference multiplicatively. Keeping the
+    // values together makes her personality easy to explain and tune.
+    const SALLY_WEIGHTS = Object.freeze({
+      base: 1,
+      useWedge: 8,
+      turncoatWedge: 20,
+      saveWedge: 10
+    });
+    const TREVOR_WEIGHTS = Object.freeze({
+      base: 1,
+      useCube: 8,
+      turncoatCube: 20,
+      saveCube: 10
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
         name: "Barry — Random",
+        shortName: "Barry",
         algorithm: "Random",
         difficulty: 1,
         available: true,
@@ -676,6 +695,58 @@
           "This makes Barry the simplest possible Turncoat bot — and a useful baseline for comparing future bots."
         ],
         trophyMessage: "You beat Turncoat's random bot."
+      },
+      {
+        id: "sally_wedge_lover",
+        name: "Sally — Wedge Lover 🔺",
+        shortName: "Sally",
+        algorithm: "Weighted Probability",
+        difficulty: 2,
+        available: true,
+        playerValue: "sally",
+        trophyCondition: "human_win",
+        description: "Sally bloody loves Wedges.",
+        shortDescription: "She heavily prefers using and protecting her Wedges—and always Turncoats yours when she can.",
+        educationTitle: "How Sally thinks",
+        education: [
+          "Barry gives every legal action an equal chance. Sally gives every action a weight of 1, then heavily increases it when Wedges are involved.",
+          "For example, two Block moves weighted 1 and two Wedge moves weighted 8 total 18. Each Block move has about a 6% chance; each Wedge move has about a 44% chance.",
+          "Sally normally uses weighted random selection. However, if she can Turncoat one of your Wedges, she always tries to do it. An immediate win still comes first.",
+          "When an action matches more than one preference, its multipliers combine. A Wedge move that also saves a threatened Wedge has weight 1 × 8 × 10 = 80."
+        ],
+        educationWeights: [
+          ["Uses her Wedge", "×8"],
+          ["Turncoats your Wedge", "Always"],
+          ["Saves her threatened Wedge", "×10"],
+          ["Can win immediately", "Takes the win"]
+        ],
+        trophyMessage: "You beat Turncoat's Wedge-loving weighted bot."
+      },
+      {
+        id: "trevor_blockhead",
+        name: "Trevor — Blockhead ◻️",
+        shortName: "Trevor",
+        algorithm: "Weighted Probability",
+        difficulty: 2,
+        available: true,
+        playerValue: "trevor",
+        trophyCondition: "human_win",
+        description: "Trevor bloody loves Cubes.",
+        shortDescription: "He heavily prefers using and protecting his Cubes—and always Turncoats yours when he can.",
+        educationTitle: "How Trevor thinks",
+        education: [
+          "Trevor uses the same weighted-random idea as Sally, but his obsession is Cubes instead of Wedges.",
+          "Every legal action begins with weight 1. Cube actions receive much larger weights, so Trevor is strongly—but not absolutely—drawn to them.",
+          "Each individual action keeps its own weight. Lots of ordinary actions can still collectively outweigh a smaller number of Cube actions.",
+          "If Trevor can Turncoat one of your Cubes, he always tries to do it. An immediate win still comes first. A Cube move that also saves a threatened Cube has weight 1 × 8 × 10 = 80."
+        ],
+        educationWeights: [
+          ["Uses his Cube", "×8"],
+          ["Turncoats your Cube", "Always"],
+          ["Saves his threatened Cube", "×10"],
+          ["Can win immediately", "Takes the win"]
+        ],
+        trophyMessage: "You beat Turncoat's Cube-loving weighted bot."
       },
       {
         id: "greedy_heuristic",
@@ -976,6 +1047,202 @@
       }
     }
 
+    function getLegalBotActions(game) {
+      const actions = game.allLegalMoves().map(move => ({ type: "move", move }));
+      for (const target of game.turncoatablePieces()) actions.push({ type: "turncoat", target });
+      if (game.canPlaceNoGo()) {
+        for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+          if (game.isPlayable(r,c) && !game.board[r][c]) actions.push({ type: "nogo", to: {r,c} });
+        }
+      }
+      if (game.canEndTurn()) actions.push({ type: "pass" });
+      return actions;
+    }
+
+    function executeBotAction(game, action) {
+      if (action.type === "move") return game.makeMove(action.move);
+      if (action.type === "turncoat") return game.turncoat(action.target.r, action.target.c);
+      if (action.type === "nogo") return game.placeNoGo(action.to.r, action.to.c);
+      if (action.type === "pass") return { ok: game.endTurn() };
+      return { ok: false, message: "Unknown bot action." };
+    }
+
+    function simulateBotAction(game, action) {
+      const result = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
+      result.restore(game.snapshot());
+      executeBotAction(result, action);
+      return result;
+    }
+
+    function chooseWeighted(items, getWeight = item => item.weight, random = Math.random) {
+      const total = items.reduce((sum, item) => sum + Math.max(0, getWeight(item)), 0);
+      if (!items.length || total <= 0) return null;
+      let roll = random() * total;
+      for (const item of items) {
+        roll -= Math.max(0, getWeight(item));
+        if (roll < 0) return item;
+      }
+      return items[items.length - 1];
+    }
+
+    function findPieceById(game, pieceId) {
+      for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+        if (game.board[r][c]?.id === pieceId) return { r, c, piece: game.board[r][c] };
+      }
+      return null;
+    }
+
+    function threatenedFriendlyWedges(game, owner) {
+      const threatened = [];
+      for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+        const piece = game.board[r][c];
+        if (piece?.owner === owner && piece.type === "wedge" && game.isTurncoatableAt(r,c,other(owner))) threatened.push(piece.id);
+      }
+      return threatened;
+    }
+
+    function describeBotAction(game, action) {
+      if (action.type === "move") return `${cap(game.board[action.move.from.r][action.move.from.c].type)} ${game.square(action.move.from)}–${game.square(action.move.to)}`;
+      if (action.type === "turncoat") return `Turncoat ${cap(game.board[action.target.r][action.target.c].type)} at ${game.square(action.target)}`;
+      if (action.type === "nogo") return `No Go → ${game.square(action.to)}`;
+      return "PASS";
+    }
+
+    function calculateSallyWeight(game, action, threatenedIds = threatenedFriendlyWedges(game, game.turn)) {
+      const owner = game.turn;
+      const result = simulateBotAction(game, action);
+      const movingPiece = action.type === "move" ? game.board[action.move.from.r][action.move.from.c] : null;
+      const usesWedge = movingPiece?.owner === owner && movingPiece.type === "wedge";
+
+      let turncoatedWedges = 0;
+      for (const piece of game.board.flat()) {
+        if (piece?.type !== "wedge" || piece.owner !== other(owner)) continue;
+        const after = findPieceById(result, piece.id);
+        if (after?.piece.owner === owner) turncoatedWedges++;
+      }
+
+      const savedWedges = threatenedIds.filter(pieceId => {
+        const after = findPieceById(result, pieceId);
+        return after?.piece.owner === owner && !result.isTurncoatableAt(after.r, after.c, other(owner));
+      }).length;
+
+      // Each preference category applies once. Categories multiply when an
+      // action satisfies several of Sally's desires.
+      let weight = SALLY_WEIGHTS.base;
+      const reasons = [`Base ${SALLY_WEIGHTS.base}`];
+      if (usesWedge) { weight *= SALLY_WEIGHTS.useWedge; reasons.push(`uses Wedge ×${SALLY_WEIGHTS.useWedge}`); }
+      if (turncoatedWedges) { weight *= SALLY_WEIGHTS.turncoatWedge; reasons.push(`turncoats Wedge ×${SALLY_WEIGHTS.turncoatWedge}`); }
+      if (savedWedges) { weight *= SALLY_WEIGHTS.saveWedge; reasons.push(`saves Wedge ×${SALLY_WEIGHTS.saveWedge}`); }
+
+      return {
+        action,
+        weight,
+        usesWedge,
+        turncoatedWedges,
+        savedWedges,
+        winsImmediately: result.winner === owner,
+        reasons,
+        label: describeBotAction(game, action)
+      };
+    }
+
+    function chooseSallyAction(game, random = Math.random) {
+      const threatenedIds = threatenedFriendlyWedges(game, game.turn);
+      const choices = getLegalBotActions(game).map(action => calculateSallyWeight(game, action, threatenedIds));
+      const winning = choices.filter(choice => choice.winsImmediately);
+      const favouriteTurncoats = choices.filter(choice => choice.turncoatedWedges > 0);
+      const pool = winning.length ? winning : favouriteTurncoats.length ? favouriteTurncoats : choices;
+      const selected = winning.length
+        ? pool[Math.floor(random() * pool.length)]
+        : chooseWeighted(pool, choice => choice.weight, random);
+      const total = pool.reduce((sum, choice) => sum + choice.weight, 0);
+      window.turncoatBotDebug = {
+        bot: "Sally — Wedge Lover",
+        winningOverride: winning.length > 0,
+        favouriteTurncoatOverride: !winning.length && favouriteTurncoats.length > 0,
+        threatenedWedgeIds: threatenedIds,
+        choices: pool.map(choice => ({
+          action: choice.label,
+          weight: choice.weight,
+          probability: winning.length ? 1 / pool.length : choice.weight / total,
+          reasons: choice.reasons
+        })),
+        selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
+    function threatenedFriendlyCubes(game, owner) {
+      const threatened = [];
+      for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+        const piece = game.board[r][c];
+        if (piece?.owner === owner && piece.type === "cube" && game.isTurncoatableAt(r,c,other(owner))) threatened.push(piece.id);
+      }
+      return threatened;
+    }
+
+    function calculateTrevorWeight(game, action, threatenedIds = threatenedFriendlyCubes(game, game.turn)) {
+      const owner = game.turn;
+      const result = simulateBotAction(game, action);
+      const movingPiece = action.type === "move" ? game.board[action.move.from.r][action.move.from.c] : null;
+      const usesCube = movingPiece?.owner === owner && movingPiece.type === "cube";
+
+      let turncoatedCubes = 0;
+      for (const piece of game.board.flat()) {
+        if (piece?.type !== "cube" || piece.owner !== other(owner)) continue;
+        const after = findPieceById(result, piece.id);
+        if (after?.piece.owner === owner) turncoatedCubes++;
+      }
+
+      const savedCubes = threatenedIds.filter(pieceId => {
+        const after = findPieceById(result, pieceId);
+        return after?.piece.owner === owner && !result.isTurncoatableAt(after.r, after.c, other(owner));
+      }).length;
+
+      let weight = TREVOR_WEIGHTS.base;
+      const reasons = [`Base ${TREVOR_WEIGHTS.base}`];
+      if (usesCube) { weight *= TREVOR_WEIGHTS.useCube; reasons.push(`uses Cube ×${TREVOR_WEIGHTS.useCube}`); }
+      if (turncoatedCubes) { weight *= TREVOR_WEIGHTS.turncoatCube; reasons.push(`turncoats Cube ×${TREVOR_WEIGHTS.turncoatCube}`); }
+      if (savedCubes) { weight *= TREVOR_WEIGHTS.saveCube; reasons.push(`saves Cube ×${TREVOR_WEIGHTS.saveCube}`); }
+
+      return {
+        action,
+        weight,
+        usesCube,
+        turncoatedCubes,
+        savedCubes,
+        winsImmediately: result.winner === owner,
+        reasons,
+        label: describeBotAction(game, action)
+      };
+    }
+
+    function chooseTrevorAction(game, random = Math.random) {
+      const threatenedIds = threatenedFriendlyCubes(game, game.turn);
+      const choices = getLegalBotActions(game).map(action => calculateTrevorWeight(game, action, threatenedIds));
+      const winning = choices.filter(choice => choice.winsImmediately);
+      const favouriteTurncoats = choices.filter(choice => choice.turncoatedCubes > 0);
+      const pool = winning.length ? winning : favouriteTurncoats.length ? favouriteTurncoats : choices;
+      const selected = winning.length
+        ? pool[Math.floor(random() * pool.length)]
+        : chooseWeighted(pool, choice => choice.weight, random);
+      const total = pool.reduce((sum, choice) => sum + choice.weight, 0);
+      window.turncoatBotDebug = {
+        bot: "Trevor — Blockhead",
+        winningOverride: winning.length > 0,
+        favouriteTurncoatOverride: !winning.length && favouriteTurncoats.length > 0,
+        threatenedCubeIds: threatenedIds,
+        choices: pool.map(choice => ({
+          action: choice.label,
+          weight: choice.weight,
+          probability: winning.length ? 1 / pool.length : choice.weight / total,
+          reasons: choice.reasons
+        })),
+        selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
     class TurncoatUI {
       constructor() {
         this.game = new TurncoatEngine();
@@ -1052,9 +1319,10 @@
 
       beginMatchContext(requestedBotId = null) {
         const players = { light: this.lightPlayer.value, dark: this.darkPlayer.value };
-        const botSides = Object.keys(players).filter(side => players[side] === "barry");
+        const botSides = Object.keys(players).filter(side => BOT_CATALOG.some(bot => bot.available && bot.playerValue === players[side]));
         const humanSides = Object.keys(players).filter(side => players[side] === "human");
-        const detectedBotId = botSides.length === 1 ? "barry_random" : null;
+        const detectedBot = botSides.length === 1 ? BOT_CATALOG.find(bot => bot.available && bot.playerValue === players[botSides[0]]) : null;
+        const detectedBotId = detectedBot?.id || null;
         this.matchContext = {
           botId: requestedBotId || detectedBotId,
           botSide: botSides[0] || null,
@@ -1339,36 +1607,31 @@
         clearTimeout(this.aiTimer);
         if (this.tutorialOpen || this.botTrophiesOpen || this.game.winner || this.isHumanTurn()) return;
         this.render();
-        this.aiTimer = setTimeout(() => this.runBarry(), 1500);
+        this.aiTimer = setTimeout(() => this.runBotAction(), 1500);
       }
 
-      runBarry() {
-        if (this.game.winner || this.playerType() !== "barry") return;
-        const moves = this.game.allLegalMoves();
-        const turncoatTargets = this.game.turncoatablePieces();
-        const emptyTiles = [];
-        if (this.game.canPlaceNoGo()) for (let r=0;r<RULES.rows;r++) for (let c=0;c<RULES.cols;c++) if (this.game.isPlayable(r,c) && !this.game.board[r][c]) emptyTiles.push({r,c});
-        if (!moves.length && !emptyTiles.length && !turncoatTargets.length) {
+      runBotAction() {
+        const botType = this.playerType();
+        if (this.game.winner || !["barry", "sally", "trevor"].includes(botType)) return;
+        const actions = getLegalBotActions(this.game);
+        if (!actions.length) {
           if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
-          this.setStatus("Barry found no legal move.");
+          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : "Barry";
+          this.setStatus(`${name} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
-        // Barry chooses both actions and when to stop at random.
-        if (this.game.canEndTurn() && Math.random() < .3) {
-          this.game.endTurn();
-          this.setStatus("Barry decided that was enough.");
-          this.render(); this.maybeRunAI(); return;
-        }
-        const useTurncoat = turncoatTargets.length && (!moves.length && !emptyTiles.length || Math.random() < .22);
-        const useNoGo = !useTurncoat && emptyTiles.length && (!moves.length || Math.random() < .16);
-        const noGoTile = useNoGo ? emptyTiles[Math.floor(Math.random()*emptyTiles.length)] : null;
-        const target = useTurncoat ? turncoatTargets[Math.floor(Math.random()*turncoatTargets.length)] : null;
-        const result = useTurncoat
-          ? this.game.turncoat(target.r,target.c)
-          : useNoGo
-            ? this.game.placeNoGo(noGoTile.r, noGoTile.c)
-            : this.game.makeMove(moves[Math.floor(Math.random() * moves.length)]);
-        this.setStatus(useTurncoat ? "Barry turncoated and shielded a piece." : useNoGo ? "Barry placed a random No Go area." : "Barry made a random move.");
+        // Barry samples uniformly. Sally uses the same legal actions, but each
+        // individual action receives her Wedge-loving probability weight.
+        const action = botType === "sally" ? chooseSallyAction(this.game)
+          : botType === "trevor" ? chooseTrevorAction(this.game)
+            : actions[Math.floor(Math.random() * actions.length)];
+        executeBotAction(this.game, action);
+        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : "Barry";
+        const message = action.type === "turncoat" ? `${name} turncoated and shielded a piece.`
+          : action.type === "nogo" ? `${name} placed a No Go area.`
+            : action.type === "pass" ? `${name} passed.`
+              : `${name} moved a ${this.game.log[0]?.match(/Cube|Wedge|Main/)?.[0] || "piece"}.`;
+        this.setStatus(message);
         this.render();
         this.maybeRunAI();
       }
@@ -1493,12 +1756,13 @@
           const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(5 - bot.difficulty)}` : "?????";
           card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
           card.append(this.element("p", "bot-description", bot.description));
+          if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
 
           if (bot.available) {
             card.append(this.element("div", "bot-available", "AVAILABLE"));
             card.append(this.element("div", `bot-trophy-status${earned ? " earned" : ""}`, earned ? "🏆 Trophy earned" : "○ Trophy not earned"));
             const actions = this.element("div", "bot-card-actions");
-            const play = this.element("button", "bot-play", earned ? "PLAY AGAIN" : "PLAY BARRY");
+            const play = this.element("button", "bot-play", earned ? "PLAY AGAIN" : `PLAY ${bot.shortName.toUpperCase()}`);
             play.type = "button";
             play.dataset.playBot = bot.id;
             actions.append(play);
@@ -1515,6 +1779,15 @@
             title.append(strong);
             details.append(title);
             bot.education.forEach(paragraph => details.append(this.element("p", "", paragraph)));
+            if (bot.educationWeights?.length) {
+              const weights = this.element("ul", "bot-weight-list");
+              for (const [label, value] of bot.educationWeights) {
+                const item = this.element("li");
+                item.append(this.element("span", "", label), this.element("strong", "", value));
+                weights.append(item);
+              }
+              details.append(weights);
+            }
             card.append(details);
           }
           this.gallery.append(card);
@@ -1754,6 +2027,16 @@
     }
 
     window.TurncoatEngine = TurncoatEngine;
+    window.TurncoatBots = Object.freeze({
+      SALLY_WEIGHTS,
+      TREVOR_WEIGHTS,
+      getLegalActions: getLegalBotActions,
+      calculateSallyWeight,
+      calculateTrevorWeight,
+      chooseWeighted,
+      chooseSallyAction,
+      chooseTrevorAction
+    });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
       new BotTrophySystem(gameUI);
