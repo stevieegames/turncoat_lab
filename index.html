@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Turncoat - Laboratory</title>
+  <style>
+    :root {
+      --paper: #f3ead8;
+      --paper-deep: #dfcfb2;
+      --ink: #28231d;
+      --muted: #746c61;
+      --line: rgba(53, 43, 31, .23);
+      --light: #f1dfb8;
+      --light-edge: #a98554;
+      --dark: #6b432b;
+      --dark-edge: #321d12;
+      --accent: #ad3028;
+      --board: min(82vw, 590px);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #dfc59f;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0%, #f8ecd7 0, #dfc39b 50%, #caa375 100%); }
+    button, select, textarea { font: inherit; }
+
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 34px 0 48px; }
+    header { display: flex; align-items: end; justify-content: space-between; margin-bottom: 22px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+    h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.35rem, 6vw, 4.5rem); font-weight: 500; letter-spacing: -.055em; line-height: .85; }
+    .h1-subtitle { display: inline-block; margin-left: .18em; color: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .28em; font-weight: 700; letter-spacing: .12em; text-transform: lowercase; vertical-align: baseline; }
+    .prototype { color: var(--accent); font-weight: 800; font-size: .67rem; letter-spacing: .13em; text-transform: uppercase; }
+
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; align-items: start; }
+    .game-area { min-width: 0; }
+    .turn-strip { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .turn-name { font-family: Georgia, serif; font-size: clamp(1.35rem, 3vw, 2rem); }
+    .turn-help { color: var(--muted); font-size: .84rem; text-align: right; max-width: 360px; }
+
+    .board-stage { display: grid; grid-template-columns: minmax(0, 550px) 118px; align-items: stretch; justify-content: center; gap: 10px; }
+    .board-wrap { position: relative; width: 100%; padding: 17px; border: 1px solid rgba(58,44,28,.34); border-radius: 10px; background: linear-gradient(135deg,#c39a67,#e0bd88 48%,#b88959); box-shadow: 0 25px 50px rgba(49,35,21,.22), inset 0 0 0 4px rgba(255,255,255,.16); }
+    .perimeter { position: relative; width: 100%; aspect-ratio: 7 / 8; background: rgba(184,45,37,.24); border: 2px solid rgba(126,42,31,.42); }
+    .inner-board { position: relative; width: 100%; height: 100%; }
+    #board { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); overflow: hidden; border: 2px solid rgba(42,27,17,.72); background: #dfbd8b; user-select: none; touch-action: manipulation; }
+    .cell { position: relative; display: grid; place-items: center; border-right: 1px solid rgba(61,39,23,.34); border-bottom: 1px solid rgba(61,39,23,.34); background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(63,36,16,.025)); cursor: default; }
+    .cell:nth-child(7n) { border-right: 0; }
+    .cell:nth-last-child(-n+7) { border-bottom: 0; }
+    .cell.boundary { background: radial-gradient(circle at center, rgba(255,218,190,.5), rgba(180,37,32,.2)); }
+    .cell.gully { background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(63,36,16,.025)), #dfbd8b; box-shadow: inset 0 0 0 2px rgba(80,55,31,.14); }
+    .cell.legal { cursor: pointer; }
+    .cell.legal::after { content: ""; width: 18%; aspect-ratio: 1; border-radius: 50%; background: rgba(42,32,22,.25); box-shadow: 0 0 0 6px rgba(245,231,207,.12); }
+    .cell.turncoat-option { cursor: pointer; background: radial-gradient(circle, rgba(62,145,227,.28), rgba(42,112,186,.08)); box-shadow: inset 0 0 0 4px rgba(45,131,221,.72); animation: targetPulse 1.15s ease-in-out infinite alternate; }
+    @keyframes targetPulse { from { box-shadow: inset 0 0 0 3px rgba(45,131,221,.55); } to { box-shadow: inset 0 0 0 6px rgba(45,131,221,.9); } }
+    .cell.last::before { content: ""; position: absolute; inset: 7%; border: 2px solid rgba(166,66,46,.5); border-radius: 7px; }
+    .traces { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    .trace { fill: none; stroke-width: .075; stroke-linecap: round; opacity: .88; }
+    .trace.light { stroke: #f5e5c3; filter: drop-shadow(0 1px 1px rgba(65,43,25,.8)); }
+    .trace.dark { stroke: #6b432b; filter: drop-shadow(0 1px 1px rgba(255,239,208,.7)); }
+
+    .piece { position: relative; z-index: 2; width: 62%; aspect-ratio: 1; display: grid; place-items: center; transition: transform .14s ease, filter .14s ease; filter: drop-shadow(0 5px 3px rgba(32,20,12,.28)); cursor: pointer; }
+    .piece:hover { transform: translateY(-2px); }
+    .piece.selected { transform: translateY(-4px) scale(1.06); filter: drop-shadow(0 7px 4px rgba(32,20,12,.32)) drop-shadow(0 0 5px #f8deb4); }
+    .piece.light { --fill: var(--light); --edge: var(--light-edge); }
+    .piece.dark { --fill: var(--dark); --edge: var(--dark-edge); }
+    .piece.cube { border-radius: 15%; background: linear-gradient(145deg, color-mix(in srgb, var(--fill), white 16%), var(--fill)); border: 2px solid var(--edge); box-shadow: inset -6px -6px 7px rgba(0,0,0,.13), inset 5px 4px 6px rgba(255,255,255,.14); }
+    .piece.wedge { width: 72%; background: var(--edge); clip-path: polygon(50% 2%, 97% 93%, 3% 93%); filter: drop-shadow(0 5px 3px rgba(32,20,12,.34)); }
+    .piece.wedge::after { content: ""; position: absolute; inset: 4px; background: linear-gradient(155deg, color-mix(in srgb, var(--fill), white 16%), var(--fill)); clip-path: polygon(50% 1%, 97% 94%, 3% 94%); }
+    .piece.main { width: 68%; clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--edge); border: 0; }
+    .piece.main::before { content: ""; position: absolute; inset: 3px; z-index: -1; clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: linear-gradient(145deg, color-mix(in srgb, var(--fill), white 18%), var(--fill)); box-shadow: inset -7px -7px 9px rgba(0,0,0,.14), inset 5px 5px 7px rgba(255,255,255,.14); }
+    .piece.main:hover { transform: translateY(-2px); }
+    .piece.main.selected { transform: translateY(-4px) scale(1.06); }
+    .piece.main::after { content: ""; width: 23%; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--edge); }
+    .nogo-piece, .nogo-token { display: grid; place-items: center; color: #b42121; font-family: Arial, sans-serif; font-weight: 900; line-height: 1; }
+    .nogo-piece { z-index: 2; width: 62%; aspect-ratio: 1; font-size: clamp(1.7rem, 5vw, 3.6rem); text-shadow: 0 2px 0 rgba(255,255,255,.35); }
+    .side-column { height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+    .side-board { min-height: 150px; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 12px 7px; border: 1px solid rgba(73,51,29,.24); border-radius: 8px; background: rgba(244,226,196,.55); }
+    .side-board.active { box-shadow: 0 0 0 2px rgba(173,48,40,.3); }
+    .side-title { font-size: .59rem; font-weight: 850; text-transform: uppercase; letter-spacing: .1em; text-align: center; }
+    .token-rack { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+    .nogo-token { width: 27px; aspect-ratio: 1; font-size: 1.55rem; }
+    .side-count { margin-top: auto; color: var(--muted); font-size: .67rem; }
+    .side-use { width: 100%; padding: 7px 4px; font-size: .65rem; }
+    .piece.turncoatable { filter: drop-shadow(0 0 7px #2d83dd) drop-shadow(0 5px 3px rgba(32,20,12,.28)); }
+    .shield-icon { position: absolute; z-index: 5; top: 5%; right: 5%; width: 24%; aspect-ratio: .82; display: grid; place-items: center; clip-path: polygon(50% 0,94% 18%,86% 70%,50% 100%,14% 70%,6% 18%); background: #287bd0; box-shadow: 0 2px 3px rgba(10,37,73,.42); pointer-events: none; }
+    .shield-icon::before { content: ""; width: 55%; height: 65%; clip-path: inherit; background: rgba(180,225,255,.54); }
+    .shield-icon.cracking::after { content: "ϟ"; position: absolute; color: #102c56; font-size: clamp(.65rem, 2vw, 1.25rem); font-weight: 900; transform: rotate(8deg); }
+    .shield-icon.cracking { animation: crackFade 2s ease-out forwards; }
+    @keyframes crackFade { 0% { opacity: 1; transform: scale(1); } 30% { transform: scale(1.18) rotate(-7deg); } 100% { opacity: 0; transform: scale(.75) rotate(14deg); } }
+
+    .tempo-card { margin-top: 14px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; padding: 14px 17px; background: rgba(244,238,226,.61); border: 1px solid var(--line); border-radius: 8px; }
+    .tempo-label { text-transform: uppercase; letter-spacing: .14em; font-size: .68rem; font-weight: 800; }
+    .tempo { display: flex; align-items: center; gap: 9px; }
+    .tempo-side { display: flex; gap: 5px; padding: 5px 8px; border-radius: 20px; transition: background .2s; }
+    .tempo-side.active { background: rgba(166,66,46,.12); }
+    .token { width: 19px; aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(42,32,22,.4); box-shadow: inset 0 1px 2px rgba(255,255,255,.45), 0 2px 3px rgba(42,32,22,.18); }
+    .token.light { background: var(--light); }
+    .token.dark { background: var(--dark); }
+    .tempo-count { min-width: 16px; text-align: center; font-weight: 750; font-size: .8rem; }
+    button.pass-button { min-width: 125px; padding: 14px 23px; color: #fff9ed; border-color: #752c1e; background: var(--accent); font-size: .92rem; letter-spacing: .14em; }
+    button.pass-button:hover:not(:disabled) { background: #8e3524; }
+    button.turncoat-button { min-width: 145px; padding: 14px 17px; color: #f3f8ff; border-color: #245f9d; background: #2d76bc; font-size: .82rem; letter-spacing: .08em; }
+    button.turncoat-button:hover:not(:disabled) { background: #245f9d; }
+
+    aside { display: grid; gap: 14px; }
+    .panel { background: rgba(244,238,226,.78); border: 1px solid var(--line); border-radius: 9px; padding: 18px; box-shadow: 0 8px 22px rgba(50,35,20,.07); backdrop-filter: blur(8px); }
+    .accordion-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: .69rem; letter-spacing: .16em; text-transform: uppercase; }
+    .accordion-trigger:hover:not(:disabled) { background: transparent; color: var(--accent); }
+    .accordion-arrow { font-size: 1rem; line-height: 1; transform: rotate(0deg); transition: transform 1s ease; }
+    .accordion.collapsed .accordion-arrow { transform: rotate(-90deg); }
+    .accordion-shell { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 1s ease, opacity 1s ease, margin-top 1s ease; opacity: 1; margin-top: 14px; }
+    .accordion.collapsed .accordion-shell { grid-template-rows: 0fr; opacity: 0; margin-top: 0; }
+    .accordion-content { min-height: 0; overflow: hidden; }
+    label { display: grid; gap: 6px; margin-bottom: 12px; color: var(--muted); font-size: .75rem; }
+    label.check-label { display: flex; align-items: center; gap: 9px; color: var(--ink); }
+    .check-label input { width: 18px; height: 18px; accent-color: var(--accent); }
+    select, input[type="number"] { appearance: none; width: 100%; padding: 10px 34px 10px 11px; color: var(--ink); background: rgba(255,255,255,.45); border: 1px solid var(--line); border-radius: 5px; }
+    select { background: rgba(255,255,255,.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='m3 5 4 4 4-4' fill='none' stroke='%23746c61' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    button { border: 1px solid var(--line); border-radius: 5px; padding: 10px 12px; color: var(--ink); background: rgba(255,255,255,.42); cursor: pointer; font-weight: 700; font-size: .76rem; }
+    button:hover:not(:disabled) { background: #fff8ec; }
+    button:disabled { opacity: .38; cursor: not-allowed; }
+    button.primary { grid-column: 1 / -1; color: #fff9ed; border-color: #752c1e; background: var(--accent); }
+    button.primary:hover:not(:disabled) { background: #8e3524; }
+    #status { min-height: 44px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; line-height: 1.45; }
+    .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+    .rules li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+    .glyph { color: var(--ink); text-align: center; font-size: 1.2rem; line-height: 1; }
+    details { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+    summary { cursor: pointer; font-size: .75rem; font-weight: 800; }
+    details p { color: var(--muted); font-size: .77rem; line-height: 1.5; margin-bottom: 0; }
+    .log { max-height: 145px; overflow: auto; color: var(--muted); font: .72rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .log div:first-child { color: var(--ink); }
+
+    .winner { position: absolute; z-index: 6; inset: 17px; display: none; place-items: center; text-align: center; color: #fff8ed; background: rgba(36,25,17,.88); backdrop-filter: blur(4px); }
+    .winner.show { display: grid; }
+    .winner-card { display: grid; justify-items: center; gap: 10px; width: min(430px, 88%); max-height: 92%; overflow: auto; }
+    .winner-summary, .feedback-panel, .feedback-thanks { width: 100%; display: grid; justify-items: center; gap: 10px; }
+    .feedback-panel h2 { margin: 0; font: 500 clamp(1.45rem, 4vw, 2.1rem)/1.1 Georgia,serif; }
+    .feedback-panel p, .feedback-thanks p { margin: 0; font-size: .78rem; line-height: 1.5; text-transform: none; letter-spacing: 0; }
+    .feedback-panel label { width: 100%; margin: 2px 0; color: #fff8ed; text-align: left; }
+    .feedback-panel textarea { width: 100%; min-height: 115px; resize: vertical; padding: 10px; color: var(--ink); border: 1px solid rgba(255,255,255,.35); border-radius: 5px; background: #fffaf0; }
+    .feedback-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .feedback-status { min-height: 1.3em; color: #ffe2a8; }
+    [hidden] { display: none !important; }
+    .winner strong { display: block; font: 500 clamp(2.2rem, 7vw, 4.6rem)/1 Georgia,serif; }
+    .winner span { display: block; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; line-height: 1.5; }
+    .winner button { width: min(220px, 100%); color: #fff8ed; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.12); }
+    .winner button:last-child { background: var(--accent); }
+    .winner.inspecting { align-items: end; padding-bottom: 24px; color: var(--ink); background: transparent; backdrop-filter: none; pointer-events: none; }
+    .winner.inspecting .winner-card { pointer-events: auto; padding: 10px; border-radius: 7px; background: rgba(244,238,226,.9); box-shadow: 0 5px 18px rgba(42,27,17,.3); }
+    .winner.inspecting #winnerSummary > strong, .winner.inspecting #winnerSummary > span, .winner.inspecting #showBoard { display: none; }
+    .winner.inspecting #openFeedback { color: #f3f8ff; border-color: #245f9d; background: #2d76bc; }
+    .winner.inspecting #openFeedback:hover { background: #245f9d; }
+    .win-surround { fill: rgba(255,214,61,.16); stroke: #ffd33d; stroke-width: .09; stroke-dasharray: .18 .1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgba(255,211,61,.85)); }
+
+    @media (max-width: 850px) {
+      main { grid-template-columns: 1fr; }
+      aside { grid-template-columns: 1fr 1fr; }
+      .panel:first-child { grid-row: span 2; }
+      .board-stage { grid-template-columns: minmax(0, 520px) 105px; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 18px, 500px); padding-top: 22px; }
+      header { align-items: start; }
+      .turn-strip { min-height: 52px; }
+      .turn-help { max-width: 190px; font-size: .73rem; }
+      .board-wrap { padding: 9px; }
+      .winner { inset: 9px; }
+      .board-stage { grid-template-columns: minmax(0, 1fr) 76px; gap: 4px; }
+      .side-board { min-height: 112px; padding: 7px 3px; }
+      .side-title { font-size: .53rem; }
+      .nogo-token { width: 20px; font-size: 1.2rem; }
+      .side-count { font-size: .58rem; }
+      aside { grid-template-columns: 1fr; }
+      .tempo-card { grid-template-columns: 1fr 1fr; padding: 12px; }
+      .tempo { justify-self: end; }
+      button.pass-button, button.turncoat-button { width: 100%; min-width: 0; padding: 12px 8px; }
+      button.turncoat-button { font-size: .7rem; }
+      .piece { width: 66%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>Turncoat <span class="h1-subtitle">laboratory</span></h1>
+      </div>
+      <div class="prototype">Prototype 0.9</div>
+    </header>
+
+    <main>
+      <section class="game-area" aria-label="Turncoat game">
+        <div class="turn-strip">
+          <div class="turn-name" id="turnName">Ivory's turn</div>
+          <div class="turn-help" id="turnHelp">Select a piece to spend Tempo.</div>
+        </div>
+        <div class="board-stage">
+          <div class="board-wrap">
+            <div class="perimeter" aria-label="Permanent No Go perimeter">
+              <div class="inner-board">
+                <div id="board" role="grid" aria-label="Turncoat board and boundary"></div>
+                <svg class="traces" id="traces" viewBox="0 0 7 8" preserveAspectRatio="none" aria-hidden="true"></svg>
+              </div>
+            </div>
+            <div class="winner" id="winner">
+              <div class="winner-card">
+                <div class="winner-summary" id="winnerSummary">
+                  <strong id="winnerName"></strong>
+                  <span id="winnerReason">Main Piece surrounded</span>
+                  <button id="showBoard">Show board</button>
+                  <button id="openFeedback">Send this playtest to the developer?</button>
+                  <button id="winnerRestart">Restart</button>
+                </div>
+                <div class="feedback-panel" id="feedbackPanel" hidden>
+                  <h2>Send this playtest to the developer?</h2>
+                  <p>Your game log and the feedback below will be sent. No name or email is required.</p>
+                  <label for="feedbackText">Feedback (optional)
+                    <textarea id="feedbackText" placeholder="What worked? What felt confusing or unbalanced?"></textarea>
+                  </label>
+                  <div class="feedback-actions">
+                    <button id="cancelFeedback">Back</button>
+                    <button id="sendPlaytest">Send playtest</button>
+                  </div>
+                  <p class="feedback-status" id="feedbackStatus" role="status" aria-live="polite"></p>
+                </div>
+                <div class="feedback-thanks" id="feedbackThanks" hidden>
+                  <strong>Thank you for testing Turncoat!</strong>
+                  <button id="winnerRestartAfterFeedback">Restart</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="side-column">
+            <div class="side-board" id="darkSideBoard">
+              <span class="side-title">Chestnut No Go</span>
+              <div class="token-rack" id="darkNoGo"></div>
+              <span class="side-count" id="darkNoGoCount">4 left</span>
+              <button class="side-use" id="darkNoGoButton">USE · 2</button>
+            </div>
+            <div class="side-board" id="lightSideBoard">
+              <span class="side-title">Ivory No Go</span>
+              <div class="token-rack" id="lightNoGo"></div>
+              <span class="side-count" id="lightNoGoCount">4 left</span>
+              <button class="side-use" id="lightNoGoButton">USE · 2</button>
+            </div>
+          </div>
+        </div>
+        <div class="tempo-card">
+          <span class="tempo-label">Tempo</span>
+          <div class="tempo" aria-label="Tempo distribution">
+            <div class="tempo-side" id="lightTempo"><span class="token light"></span><span class="tempo-count" id="lightCount">2</span></div>
+            <span>⇄</span>
+            <div class="tempo-side" id="darkTempo"><span class="token dark"></span><span class="tempo-count" id="darkCount">1</span></div>
+          </div>
+          <button class="turncoat-button" id="turncoat">TURNCOAT</button>
+          <button class="pass-button" id="endTurn">PASS</button>
+        </div>
+      </section>
+
+      <aside>
+        <section class="panel accordion">
+          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
+          <div class="accordion-shell"><div class="accordion-content">
+            <label>Ivory player
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option></select>
+            </label>
+            <label>Chestnut player
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option></select>
+            </label>
+            <label>No Go areas per player
+              <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
+            </label>
+            <label class="check-label"><input id="gulliesSetting" type="checkbox"> Gullies</label>
+            <div class="buttons">
+              <button id="undo">Undo</button>
+              <button id="restart">Restart</button>
+              <button id="saveLog">Save log</button>
+            </div>
+            <p id="status">Ivory begins with 2 Tempo. Move a piece, place a No Go area, or turncoat an eligible enemy.</p>
+          </div>
+          </div>
+        </section>
+
+        <section class="panel accordion">
+          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Rules in this build</span><span class="accordion-arrow">⌄</span></button>
+          <div class="accordion-shell"><div class="accordion-content">
+            <ul class="rules">
+              <li><span class="glyph">■</span><span><b>Cube</b><br>Moves 1 tile. Turncoated by four occupied orthogonal or diagonal tiles forming a square, including at least one attacking piece.</span></li>
+              <li><span class="glyph">▲</span><span><b>Wedge</b><br>Moves through up to 3 connected tiles in any directions, may change direction and may jump pieces. Turncoating requires one of its four three-tile triangle formations.</span></li>
+              <li><span class="glyph">⬢</span><span><b>Main Piece</b><br>Completely surround the enemy Main Piece—including with occupied tiles and the red perimeter—to win.</span></li>
+              <li><span class="glyph">●</span><span><b>Tempo</b><br>Each action passes its Tempo cost to the opponent. If you begin with 3, spend at least 2 Tempo before passing; otherwise spend at least 1.</span></li>
+              <li><span class="glyph" style="color:#b42121">×</span><span><b>No Go</b><br>Spend 2 Tempo to place one on any empty tile. It never moves, blocks movement and counts as a surrounding area.</span></li>
+              <li><span class="glyph" style="color:#287bd0">⬟</span><span><b>Turncoat</b><br>Spend 1 Tempo to convert an eligible surrounded enemy. Its blue shield prevents the opponent immediately converting it back.</span></li>
+              <li><span class="glyph" style="color:#a3312b">▦</span><span><b>Gullies</b><br>Optionally open ten spaces in the red boundary. They behave exactly like ordinary playable tiles.</span></li>
+            </ul>
+            <details>
+              <summary>Prototype assumptions</summary>
+              <p>Pieces move horizontally, vertically or diagonally without jumping. The red perimeter and No Go areas are neutral blockers. To win, a complete surround must include one of your pieces and you must have 1 Tempo left to spend. Completing the surround around your own Main Piece forfeits the game.</p>
+            </details>
+          </div></div>
+        </section>
+
+        <section class="panel accordion">
+          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Move log</span><span class="accordion-arrow">⌄</span></button>
+          <div class="accordion-shell"><div class="accordion-content">
+            <div class="log" id="log"><div>No moves yet.</div></div>
+          </div></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    "use strict";
+
+    // All unsettled design decisions live here so the prototype is easy to revise.
+    const RULES = Object.freeze({
+      rows: 8,
+      cols: 7,
+      innerRows: 6,
+      innerCols: 5,
+      totalTempo: 3,
+      movement: { cube: 1, wedge: 3, main: 1 },
+      surroundNeeded: { cube: 4, wedge: 3, main: 8 },
+      defaultNoGoTokens: 4,
+      gullyCells: new Set(["0,0","0,3","0,6","7,0","7,3","7,6","2,0","5,0","2,6","5,6"]),
+      // Version 0.2's arrangement rotated anticlockwise: Ivory at bottom, Chestnut at top.
+      startingPieces: {
+        light: [
+          ["wedge",6,2], ["wedge",6,4],
+          ["cube",5,2], ["cube",6,3], ["cube",5,4],
+          ["main",5,3]
+        ],
+        dark: [
+          ["wedge",1,2], ["wedge",1,4],
+          ["cube",2,2], ["cube",1,3], ["cube",2,4],
+          ["main",2,3]
+        ]
+      }
+    });
+
+    const DIRECTIONS = [
+      [-1,-1], [-1,0], [-1,1], [0,-1],
+      [0,1], [1,-1], [1,0], [1,1]
+    ];
+    const ORTHOGONAL = [[-1,0], [0,-1], [0,1], [1,0]];
+    const DIAGONAL = [[-1,-1], [-1,1], [1,-1], [1,1]];
+    const WEDGE_TRIANGLES = [
+      [[-1,1], [1,1], [0,-1]],
+      [[-1,0], [1,-1], [1,1]],
+      [[-1,-1], [1,-1], [0,1]],
+      [[1,0], [-1,-1], [-1,1]]
+    ];
+    // Replace this placeholder with the endpoint shown by your Formspree form.
+    const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    const other = owner => owner === "light" ? "dark" : "light";
+    const cap = text => text[0].toUpperCase() + text.slice(1);
+    const ownerName = owner => owner === "light" ? "Ivory" : "Chestnut";
+    const key = (r, c) => `${r},${c}`;
+
+    class TurncoatEngine {
+      constructor(noGoPerPlayer = RULES.defaultNoGoTokens, gulliesEnabled = false) {
+        this.noGoPerPlayer = noGoPerPlayer;
+        this.gulliesEnabled = gulliesEnabled;
+        this.reset();
+      }
+
+      reset() {
+        this.turn = "light";
+        this.tempo = { light: 2, dark: 1 };
+        this.board = Array.from({length: RULES.rows}, () => Array(RULES.cols).fill(null));
+        this.history = [];
+        this.log = [];
+        this.actionsThisTurn = 0;
+        this.tempoSpentThisTurn = 0;
+        this.turnStartingTempo = 2;
+        this.turnTraces = [];
+        this.completedTurnTraces = [];
+        this.breakingShieldIds = [];
+        this.winner = null;
+        this.winReason = "";
+        this.winTarget = null;
+        this.lastMove = null;
+        this.noGoRemaining = { light: this.noGoPerPlayer, dark: this.noGoPerPlayer };
+        let id = 0;
+        for (const owner of ["light", "dark"]) {
+          for (const [type, r, c] of RULES.startingPieces[owner]) {
+            this.board[r][c] = { id: ++id, type, owner, shielded: false };
+          }
+        }
+      }
+
+      inBounds(r, c) { return r >= 0 && r < RULES.rows && c >= 0 && c < RULES.cols; }
+
+      isInterior(r, c) { return r >= 1 && r <= RULES.innerRows && c >= 1 && c <= RULES.innerCols; }
+      isGully(r, c) { return this.gulliesEnabled && RULES.gullyCells.has(key(r,c)); }
+      isPlayable(r, c) { return this.inBounds(r,c) && (this.isInterior(r,c) || this.isGully(r,c)); }
+
+      legalMoves(r, c) {
+        const piece = this.board[r]?.[c];
+        if (!piece || piece.owner !== this.turn || this.winner || this.tempo[this.turn] < 1) return [];
+        if (piece.type === "wedge") {
+          const moves = [], visited = new Map([[key(r,c),0]]), queue = [{r,c,depth:0}];
+          while (queue.length) {
+            const current = queue.shift();
+            if (current.depth === RULES.movement.wedge) continue;
+            for (const [dr,dc] of DIRECTIONS) {
+              const nr=current.r+dr, nc=current.c+dc, depth=current.depth+1, positionKey=key(nr,nc);
+              if (!this.isPlayable(nr,nc) || visited.has(positionKey)) continue;
+              visited.set(positionKey,depth);
+              queue.push({r:nr,c:nc,depth});
+              if (!this.board[nr][nc]) moves.push({from:{r,c},to:{r:nr,c:nc},pieceId:piece.id});
+            }
+          }
+          return moves;
+        }
+        const moves = [];
+        for (const [dr, dc] of DIRECTIONS) {
+          const nr = r + dr, nc = c + dc;
+          if (this.isPlayable(nr,nc) && !this.board[nr][nc]) moves.push({from:{r,c},to:{r:nr,c:nc},pieceId:piece.id});
+        }
+        return moves;
+      }
+
+      allLegalMoves(owner = this.turn) {
+        if (owner !== this.turn) return [];
+        const moves = [];
+        for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+          if (this.board[r][c]?.owner === owner && this.board[r][c].type !== "nogo") moves.push(...this.legalMoves(r,c));
+        }
+        return moves;
+      }
+
+      snapshot() {
+        return JSON.stringify({
+          turn: this.turn, tempo: this.tempo, board: this.board, log: this.log,
+          actionsThisTurn: this.actionsThisTurn, tempoSpentThisTurn: this.tempoSpentThisTurn,
+          turnStartingTempo: this.turnStartingTempo, breakingShieldIds: this.breakingShieldIds,
+          turnTraces: this.turnTraces, completedTurnTraces: this.completedTurnTraces,
+          winner: this.winner, winReason: this.winReason, winTarget: this.winTarget, lastMove: this.lastMove,
+          noGoRemaining: this.noGoRemaining, noGoPerPlayer: this.noGoPerPlayer,
+          gulliesEnabled: this.gulliesEnabled
+        });
+      }
+
+      restore(serialized) {
+        const data = JSON.parse(serialized);
+        Object.assign(this, data);
+      }
+
+      makeMove(move) {
+        const legal = this.legalMoves(move.from.r, move.from.c).find(candidate =>
+          candidate.to.r === move.to.r && candidate.to.c === move.to.c && candidate.pieceId === move.pieceId
+        );
+        if (!legal) return { ok: false, message: "That move is not legal." };
+        this.history.push(this.snapshot());
+        const acting = this.turn;
+        const piece = this.board[move.from.r][move.from.c];
+        this.board[move.to.r][move.to.c] = piece;
+        this.board[move.from.r][move.from.c] = null;
+        this.tempo[acting]--;
+        this.tempo[other(acting)]++;
+        this.actionsThisTurn++;
+        this.tempoSpentThisTurn++;
+        this.lastMove = { from: move.from, to: move.to };
+        this.turnTraces.push({ from: move.from, to: move.to, owner: acting });
+        const notation = `${ownerName(acting)} ${cap(piece.type)} ${this.square(move.from)}–${this.square(move.to)}`;
+        this.log.unshift(notation);
+        this.checkMainVictory(acting);
+        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        return { ok: true, conversions: [] };
+      }
+
+      canPlaceNoGo() {
+        return !this.winner && this.tempo[this.turn] >= 2 && this.noGoRemaining[this.turn] > 0;
+      }
+
+      placeNoGo(r, c) {
+        if (!this.canPlaceNoGo() || !this.isPlayable(r,c) || this.board[r][c]) return { ok: false, message: "A No Go token cannot be placed there." };
+        this.history.push(this.snapshot());
+        const acting = this.turn;
+        this.board[r][c] = { type: "nogo", owner: acting };
+        this.noGoRemaining[acting]--;
+        this.tempo[acting] -= 2;
+        this.tempo[other(acting)] += 2;
+        this.actionsThisTurn++;
+        this.tempoSpentThisTurn += 2;
+        this.lastMove = { from: null, to: {r,c} };
+        this.log.unshift(`${ownerName(acting)} No Go → ${this.square({r,c})}`);
+        this.checkMainVictory(acting);
+        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        return { ok: true, conversions: [] };
+      }
+
+      square(pos) { return `${String.fromCharCode(65 + pos.c)}${RULES.rows - pos.r}`; }
+
+      isTurncoatableAt(r, c, byOwner = this.turn) {
+        const piece = this.board[r]?.[c];
+        if (!piece || piece.type === "nogo" || piece.type === "main" || piece.owner === byOwner || piece.shielded) return false;
+        if (piece.type === "cube") {
+          const occupiedAt = ([dr,dc]) => !this.isPlayable(r+dr,c+dc) || Boolean(this.board[r+dr][c+dc]);
+          const includesOwnPiece = pattern => pattern.some(([dr,dc]) => {
+            if (!this.isPlayable(r+dr,c+dc)) return false;
+            const item=this.board[r+dr][c+dc];
+            return item && item.type !== "nogo" && item.owner === byOwner;
+          });
+          return [ORTHOGONAL,DIAGONAL].some(pattern => pattern.every(occupiedAt) && includesOwnPiece(pattern));
+        }
+        if (piece.type === "wedge") {
+          const occupiedAt = ([dr,dc]) => !this.isPlayable(r+dr,c+dc) || Boolean(this.board[r+dr][c+dc]);
+          const includesOwnPiece = pattern => pattern.some(([dr,dc]) => {
+            if (!this.isPlayable(r+dr,c+dc)) return false;
+            const item=this.board[r+dr][c+dc];
+            return item && item.type !== "nogo" && item.owner === byOwner;
+          });
+          return WEDGE_TRIANGLES.some(pattern => pattern.every(occupiedAt) && includesOwnPiece(pattern));
+        }
+        return false;
+      }
+
+      turncoatablePieces(owner = this.turn) {
+        const targets = [];
+        if (this.winner || this.tempo[owner] < 1) return targets;
+        for (let r=0;r<RULES.rows;r++) for (let c=0;c<RULES.cols;c++) {
+          if (this.isTurncoatableAt(r,c,owner)) targets.push({r,c,pieceId:this.board[r][c].id});
+        }
+        return targets;
+      }
+
+      turncoat(r, c) {
+        if (!this.isTurncoatableAt(r,c,this.turn) || this.tempo[this.turn] < 1) return {ok:false,message:"That piece cannot be turncoated."};
+        this.history.push(this.snapshot());
+        const acting=this.turn, piece=this.board[r][c], former=piece.owner;
+        piece.owner=acting;
+        piece.shielded=true;
+        this.tempo[acting]--;
+        this.tempo[other(acting)]++;
+        this.actionsThisTurn++;
+        this.tempoSpentThisTurn++;
+        this.lastMove={from:null,to:{r,c}};
+        this.log.unshift(`${ownerName(acting)} turncoats ${ownerName(former)} ${cap(piece.type)} at ${this.square({r,c})}`);
+        this.checkMainVictory(acting);
+        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        return {ok:true,piece};
+      }
+
+      findMain(owner) {
+        for (let r=0;r<RULES.rows;r++) for (let c=0;c<RULES.cols;c++) {
+          if (this.board[r][c]?.type === "main" && this.board[r][c].owner === owner) return {r,c};
+        }
+        return null;
+      }
+
+      mainIsFullySurrounded(owner) {
+        const main = this.findMain(owner);
+        if (!main) return false;
+        return DIRECTIONS.every(([dr,dc]) => !this.isPlayable(main.r+dr,main.c+dc) || Boolean(this.board[main.r+dr][main.c+dc]));
+      }
+
+      surroundIncludesPiece(mainOwner, surroundingOwner) {
+        const main = this.findMain(mainOwner);
+        if (!main) return false;
+        return DIRECTIONS.some(([dr,dc]) => {
+          if (!this.isPlayable(main.r+dr,main.c+dc)) return false;
+          const item = this.board[main.r+dr][main.c+dc];
+          return item && item.type !== "nogo" && item.owner === surroundingOwner;
+        });
+      }
+
+      checkMainVictory(acting) {
+        if (this.mainIsFullySurrounded(acting) && this.surroundIncludesPiece(acting, acting)) {
+          this.winner = other(acting);
+          this.winTarget = this.findMain(acting);
+          this.winReason = `${ownerName(acting)} surrounded their own Main Piece and forfeited.`;
+          this.log.unshift(`${ownerName(acting)} forfeits — own Main Piece surrounded`);
+          return true;
+        }
+        const target = other(acting);
+        if (this.mainIsFullySurrounded(target) && this.surroundIncludesPiece(target, acting) && this.tempo[acting] >= 1) {
+          this.tempo[acting]--;
+          this.tempo[target]++;
+          this.winner = acting;
+          this.winTarget = this.findMain(target);
+          this.winReason = `${ownerName(acting)} spent 1 Tempo to complete the surround.`;
+          this.log.unshift(`${ownerName(acting)} spends 1 Tempo and wins — enemy Main Piece surrounded`);
+          return true;
+        }
+        return false;
+      }
+
+      requiredTempoSpend() { return this.turnStartingTempo === 3 ? 2 : 1; }
+
+      canEndTurn() { return !this.winner && this.tempoSpentThisTurn >= this.requiredTempoSpend(); }
+
+      endTurn(automatic = false) {
+        if (!this.canEndTurn()) return false;
+        if (this.winner) return false;
+        this.completedTurnTraces = this.turnTraces;
+        this.turnTraces = [];
+        this.turn = other(this.turn);
+        this.actionsThisTurn = 0;
+        this.tempoSpentThisTurn = 0;
+        this.turnStartingTempo = this.tempo[this.turn];
+        this.breakingShieldIds = [];
+        for (const piece of this.board.flat()) {
+          if (piece?.type !== "nogo" && piece?.owner === this.turn && piece.shielded) {
+            piece.shielded = false;
+            this.breakingShieldIds.push(piece.id);
+          }
+        }
+        this.log.unshift(`${ownerName(this.turn)} turn · ${this.tempo[this.turn]} Tempo`);
+        return true;
+      }
+
+      undo() {
+        if (!this.history.length) return false;
+        this.restore(this.history.pop());
+        return true;
+      }
+    }
+
+    class TurncoatUI {
+      constructor() {
+        this.game = new TurncoatEngine();
+        this.selected = null;
+        this.noGoMode = false;
+        this.turncoatMode = false;
+        this.aiTimer = null;
+        this.shieldTimer = null;
+        this.breakingSignature = "";
+        this.showBoardAfterWin = false;
+        this.feedbackMode = "summary";
+        this.cacheElements();
+        this.bind();
+        this.render();
+        this.maybeRunAI();
+      }
+
+      cacheElements() {
+        const ids = ["board","traces","turnName","turnHelp","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","openFeedback","winnerRestart","feedbackPanel","feedbackText","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
+        for (const id of ids) this[id] = document.getElementById(id);
+      }
+
+      bind() {
+        document.querySelectorAll(".accordion-trigger").forEach(trigger => {
+          trigger.addEventListener("click", () => {
+            const accordion = trigger.closest(".accordion");
+            const collapsed = accordion.classList.toggle("collapsed");
+            trigger.setAttribute("aria-expanded", String(!collapsed));
+          });
+        });
+        this.endTurn.addEventListener("click", () => {
+          if (this.game.endTurn()) { this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.setStatus(`${ownerName(this.game.turn)} has ${this.game.tempo[this.game.turn]} Tempo.`); this.render(); this.maybeRunAI(); }
+        });
+        this.lightNoGoButton.addEventListener("click", () => this.toggleNoGo("light"));
+        this.darkNoGoButton.addEventListener("click", () => this.toggleNoGo("dark"));
+        this.turncoat.addEventListener("click", () => {
+          if (!this.game.turncoatablePieces().length || !this.isHumanTurn()) return;
+          this.selected = null;
+          this.noGoMode = false;
+          this.turncoatMode = !this.turncoatMode;
+          this.setStatus(this.turncoatMode ? "Choose a glowing enemy piece to turncoat." : "Turncoat cancelled.");
+          this.render();
+        });
+        this.undo.addEventListener("click", () => { clearTimeout(this.aiTimer); clearTimeout(this.shieldTimer); this.breakingSignature=""; if (this.game.undo()) { this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.showBoardAfterWin = false; this.setStatus("Action undone."); this.render(); } });
+        this.restart.addEventListener("click", () => this.restartGame());
+        this.winnerRestart.addEventListener("click", () => this.restartGame());
+        this.winnerRestartAfterFeedback.addEventListener("click", () => this.restartGame());
+        this.showBoard.addEventListener("click", () => { this.showBoardAfterWin = true; this.render(); });
+        this.openFeedback.addEventListener("click", () => {
+          this.showBoardAfterWin = false;
+          this.feedbackMode = "form";
+          this.feedbackStatus.textContent = "";
+          this.render();
+          this.feedbackText.focus();
+        });
+        this.cancelFeedback.addEventListener("click", () => { this.feedbackMode = "summary"; this.render(); });
+        this.sendPlaytest.addEventListener("click", () => this.submitPlaytest());
+        this.noGoSetting.addEventListener("change", () => this.restartGame());
+        this.gulliesSetting.addEventListener("change", () => this.restartGame());
+        this.saveLog.addEventListener("click", () => this.downloadLog());
+        this.lightPlayer.addEventListener("change", () => this.maybeRunAI());
+        this.darkPlayer.addEventListener("change", () => this.maybeRunAI());
+      }
+
+      playerType(owner = this.game.turn) { return owner === "light" ? this.lightPlayer.value : this.darkPlayer.value; }
+      isHumanTurn() { return this.playerType() === "human"; }
+
+      toggleNoGo(owner) {
+        if (owner !== this.game.turn || !this.game.canPlaceNoGo() || !this.isHumanTurn()) return;
+        this.selected = null;
+        this.turncoatMode = false;
+        this.noGoMode = !this.noGoMode;
+        this.setStatus(this.noGoMode ? "Choose any empty tile for the No Go area." : "No Go placement cancelled.");
+        this.render();
+      }
+
+      restartGame() {
+        clearTimeout(this.aiTimer);
+        const count = Math.max(0, Math.min(12, Number.parseInt(this.noGoSetting.value,10) || 0));
+        this.noGoSetting.value = count;
+        this.game.noGoPerPlayer = count;
+        this.game.gulliesEnabled = this.gulliesSetting.checked;
+        this.game.reset();
+        this.selected = null;
+        this.noGoMode = false;
+        this.turncoatMode = false;
+        clearTimeout(this.shieldTimer);
+        this.breakingSignature = "";
+        this.showBoardAfterWin = false;
+        this.feedbackMode = "summary";
+        this.feedbackText.value = "";
+        this.feedbackStatus.textContent = "";
+        this.sendPlaytest.disabled = false;
+        this.setStatus(`New game with ${count} No Go area${count === 1 ? "" : "s"} each${this.game.gulliesEnabled ? " and Gullies open" : ""}. Ivory begins.`);
+        this.render();
+        this.maybeRunAI();
+      }
+
+      clickCell(r, c) {
+        if (!this.isHumanTurn() || this.game.winner) return;
+        const piece = this.game.board[r][c];
+        if (this.noGoMode) {
+          const result = this.game.placeNoGo(r,c);
+          if (result.ok) {
+            this.noGoMode = false;
+            this.setStatus(this.game.canEndTurn() ? "No Go area placed. You may PASS." : "No Go area placed permanently.");
+            this.render();
+            this.maybeRunAI();
+          } else this.setStatus(result.message);
+          return;
+        }
+        if (this.turncoatMode) {
+          const result = this.game.turncoat(r,c);
+          if (result.ok) {
+            this.turncoatMode = false;
+            this.setStatus(`${cap(result.piece.type)} turncoated and shielded.`);
+            this.render();
+            this.maybeRunAI();
+          } else this.setStatus(result.message);
+          return;
+        }
+        if (this.selected) {
+          const move = this.game.legalMoves(this.selected.r, this.selected.c).find(m => m.to.r === r && m.to.c === c);
+          if (move) {
+            const result = this.game.makeMove(move);
+            this.selected = null;
+            this.setStatus(this.game.canEndTurn() ? "Move made. Continue or PASS." : `Move made. Spend ${this.game.requiredTempoSpend()-this.game.tempoSpentThisTurn} more Tempo before passing.`);
+            this.render();
+            this.maybeRunAI();
+            return;
+          }
+        }
+        if (piece?.owner === this.game.turn && piece.type !== "nogo" && this.game.tempo[this.game.turn] > 0) {
+          this.selected = {r,c};
+          this.setStatus(`${cap(piece.type)} selected · ${this.game.legalMoves(r,c).length} legal moves.`);
+        } else {
+          this.selected = null;
+        }
+        this.render();
+      }
+
+      render() {
+        const legal = new Set((this.selected ? this.game.legalMoves(this.selected.r,this.selected.c) : []).map(m => key(m.to.r,m.to.c)));
+        const turncoatTargets = new Set(this.game.turncoatablePieces().map(p => key(p.r,p.c)));
+        this.board.replaceChildren();
+        for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          if (!this.game.isInterior(r,c)) cell.classList.add("boundary");
+          if (this.game.isGully(r,c)) cell.classList.add("gully");
+          cell.setAttribute("role", "gridcell");
+          if (legal.has(key(r,c)) || (this.noGoMode && this.game.isPlayable(r,c) && !this.game.board[r][c])) cell.classList.add("legal");
+          if (this.turncoatMode && turncoatTargets.has(key(r,c))) cell.classList.add("turncoat-option");
+          const piece = this.game.board[r][c];
+          if (piece) {
+            const el = document.createElement("div");
+            if (piece.type === "nogo") {
+              el.className = "nogo-piece";
+              el.textContent = "×";
+              el.title = "No Go token";
+            } else {
+              el.className = `piece ${piece.type} ${piece.owner}` + (this.selected?.r === r && this.selected?.c === c ? " selected" : "") + (this.turncoatMode && turncoatTargets.has(key(r,c)) ? " turncoatable" : "");
+              el.title = `${ownerName(piece.owner)} ${cap(piece.type)}`;
+            }
+            el.setAttribute("aria-label", el.title);
+            cell.append(el);
+            if (piece.type !== "nogo" && (piece.shielded || this.game.breakingShieldIds.includes(piece.id))) {
+              const shield = document.createElement("span");
+              shield.className = "shield-icon" + (this.game.breakingShieldIds.includes(piece.id) ? " cracking" : "");
+              shield.title = piece.shielded ? "Protected from turncoating" : "Shield breaking";
+              cell.append(shield);
+            }
+          }
+          cell.addEventListener("click", () => this.clickCell(r,c));
+          this.board.append(cell);
+        }
+        this.turnName.textContent = this.game.winner ? "Game over" : `${ownerName(this.game.turn)}'s turn`;
+        const remaining = Math.max(0, this.game.requiredTempoSpend() - this.game.tempoSpentThisTurn);
+        this.turnHelp.textContent = this.game.winner ? this.game.winReason : this.noGoMode ? "Choose an empty tile." : this.turncoatMode ? "Choose a glowing enemy." : this.isHumanTurn() ? (remaining ? `Spend ${remaining} more Tempo before PASS.` : "You may continue or PASS.") : `${cap(this.playerType())} is thinking…`;
+        this.lightCount.textContent = this.game.tempo.light;
+        this.darkCount.textContent = this.game.tempo.dark;
+        this.lightTempo.classList.toggle("active", this.game.turn === "light" && !this.game.winner);
+        this.darkTempo.classList.toggle("active", this.game.turn === "dark" && !this.game.winner);
+        this.endTurn.disabled = !this.game.canEndTurn() || !this.isHumanTurn();
+        this.lightNoGoButton.disabled = this.game.turn !== "light" || !this.game.canPlaceNoGo() || !this.isHumanTurn();
+        this.darkNoGoButton.disabled = this.game.turn !== "dark" || !this.game.canPlaceNoGo() || !this.isHumanTurn();
+        this.lightNoGoButton.textContent = this.noGoMode && this.game.turn === "light" ? "CANCEL" : "USE · 2";
+        this.darkNoGoButton.textContent = this.noGoMode && this.game.turn === "dark" ? "CANCEL" : "USE · 2";
+        this.turncoat.disabled = !turncoatTargets.size || !this.isHumanTurn();
+        this.turncoat.textContent = this.turncoatMode ? "CANCEL TURNCOAT" : "TURNCOAT";
+        this.undo.disabled = !this.game.history.length;
+        this.log.innerHTML = this.game.log.length ? this.game.log.slice(0,20).map(line => `<div>${this.escape(line)}</div>`).join("") : "<div>No moves yet.</div>";
+        this.winner.classList.toggle("show", Boolean(this.game.winner));
+        this.winner.classList.toggle("inspecting", Boolean(this.game.winner) && this.showBoardAfterWin && this.feedbackMode === "summary");
+        this.winnerSummary.hidden = this.feedbackMode !== "summary";
+        this.feedbackPanel.hidden = this.feedbackMode !== "form";
+        this.feedbackThanks.hidden = this.feedbackMode !== "thanks";
+        this.winnerName.textContent = this.game.winner ? `${ownerName(this.game.winner)} wins` : "";
+        this.winnerReason.textContent = this.game.winReason || "Main Piece surrounded";
+        this.renderTraces();
+        this.renderNoGoRack("light");
+        this.renderNoGoRack("dark");
+        this.scheduleShieldFade();
+      }
+
+      scheduleShieldFade() {
+        const signature = this.game.breakingShieldIds.join(",");
+        if (!signature || signature === this.breakingSignature) return;
+        this.breakingSignature = signature;
+        clearTimeout(this.shieldTimer);
+        this.shieldTimer = setTimeout(() => {
+          this.game.breakingShieldIds = [];
+          this.breakingSignature = "";
+          this.render();
+        }, 2000);
+      }
+
+      renderNoGoRack(owner) {
+        const rack = owner === "light" ? this.lightNoGo : this.darkNoGo;
+        const count = this.game.noGoRemaining[owner];
+        rack.innerHTML = Array.from({length: count}, () => '<span class="nogo-token">×</span>').join("");
+        (owner === "light" ? this.lightNoGoCount : this.darkNoGoCount).textContent = `${count} left`;
+        (owner === "light" ? this.lightSideBoard : this.darkSideBoard).classList.toggle("active", this.game.turn === owner && !this.game.winner);
+      }
+
+      renderTraces() {
+        const shown = this.game.winner ? this.game.turnTraces : this.game.completedTurnTraces;
+        const markers = `<defs>
+          <marker id="arrow-light" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L5,2.5 L0,5 z" fill="#f5e5c3"/></marker>
+          <marker id="arrow-dark" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L5,2.5 L0,5 z" fill="#6b432b"/></marker>
+        </defs>`;
+        const lines = shown.map(trace => {
+          const x1=trace.from.c+.5, y1=trace.from.r+.5, x2=trace.to.c+.5, y2=trace.to.r+.5;
+          const dx=x2-x1, dy=y2-y1, length=Math.hypot(dx,dy) || 1;
+          const trim=.28;
+          return `<line class="trace ${trace.owner}" x1="${x1+dx/length*trim}" y1="${y1+dy/length*trim}" x2="${x2-dx/length*trim}" y2="${y2-dy/length*trim}" marker-end="url(#arrow-${trace.owner})"/>`;
+        }).join("");
+        const target = this.showBoardAfterWin ? this.game.winTarget : null;
+        const winBox = target ? `<rect class="win-surround" x="${target.c-1}" y="${target.r-1}" width="3" height="3" rx=".08"/>` : "";
+        this.traces.innerHTML = markers + lines + winBox;
+      }
+
+      buildPlaytestReport() {
+        const lines = [
+          "TURNCOAT PLAYTEST", "Prototype: 0.9", "", `Date: ${new Date().toLocaleString()}`,
+          "Board: 6 rows × 5 columns", `Gullies: ${this.game.gulliesEnabled ? "ON" : "OFF"}`, `No Go areas per player: ${this.game.noGoPerPlayer}`,
+          `Players: Ivory — ${this.lightPlayer.options[this.lightPlayer.selectedIndex].text}; Chestnut — ${this.darkPlayer.options[this.darkPlayer.selectedIndex].text}`,
+          `Result: ${this.game.winner ? ownerName(this.game.winner) + " wins" : "Unfinished"}`, "", "MOVE LOG",
+          ...(this.game.log.length ? [...this.game.log].reverse() : ["No moves recorded."])
+        ];
+        return lines.join("\n");
+      }
+
+      downloadLog() {
+        const blob = new Blob([this.buildPlaytestReport()], {type:"text/plain"});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `turncoat-playtest-${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        this.setStatus("Move log saved as a text file.");
+      }
+
+      async submitPlaytest() {
+        if (FEEDBACK_ENDPOINT.includes("YOUR_FORM_ID")) {
+          this.feedbackStatus.textContent = "Sending is not connected yet. Add your Formspree endpoint to index.html first.";
+          return;
+        }
+        this.sendPlaytest.disabled = true;
+        this.feedbackStatus.textContent = "Sending…";
+        try {
+          const response = await fetch(FEEDBACK_ENDPOINT, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", "Accept": "application/json"},
+            body: JSON.stringify({
+              _subject: "Turncoat playtest",
+              feedback: this.feedbackText.value.trim() || "No written feedback.",
+              game_log: this.buildPlaytestReport()
+            })
+          });
+          if (!response.ok) throw new Error(`Formspree returned ${response.status}`);
+          this.feedbackMode = "thanks";
+          this.feedbackText.value = "";
+          this.feedbackStatus.textContent = "";
+          this.render();
+        } catch (error) {
+          console.error(error);
+          this.feedbackStatus.textContent = "The playtest could not be sent. Please try again.";
+        } finally {
+          this.sendPlaytest.disabled = false;
+        }
+      }
+
+      setStatus(message) { this.status.textContent = message; }
+      escape(text) { const div = document.createElement("div"); div.textContent = text; return div.innerHTML; }
+
+      maybeRunAI() {
+        clearTimeout(this.aiTimer);
+        if (this.game.winner || this.isHumanTurn()) return;
+        this.render();
+        this.aiTimer = setTimeout(() => this.runBarry(), 1500);
+      }
+
+      runBarry() {
+        if (this.game.winner || this.playerType() !== "barry") return;
+        const moves = this.game.allLegalMoves();
+        const turncoatTargets = this.game.turncoatablePieces();
+        const emptyTiles = [];
+        if (this.game.canPlaceNoGo()) for (let r=0;r<RULES.rows;r++) for (let c=0;c<RULES.cols;c++) if (this.game.isPlayable(r,c) && !this.game.board[r][c]) emptyTiles.push({r,c});
+        if (!moves.length && !emptyTiles.length && !turncoatTargets.length) {
+          if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
+          this.setStatus("Barry found no legal move.");
+          this.render(); this.maybeRunAI(); return;
+        }
+        // Barry chooses both actions and when to stop at random.
+        if (this.game.canEndTurn() && Math.random() < .3) {
+          this.game.endTurn();
+          this.setStatus("Barry decided that was enough.");
+          this.render(); this.maybeRunAI(); return;
+        }
+        const useTurncoat = turncoatTargets.length && (!moves.length && !emptyTiles.length || Math.random() < .22);
+        const useNoGo = !useTurncoat && emptyTiles.length && (!moves.length || Math.random() < .16);
+        const noGoTile = useNoGo ? emptyTiles[Math.floor(Math.random()*emptyTiles.length)] : null;
+        const target = useTurncoat ? turncoatTargets[Math.floor(Math.random()*turncoatTargets.length)] : null;
+        const result = useTurncoat
+          ? this.game.turncoat(target.r,target.c)
+          : useNoGo
+            ? this.game.placeNoGo(noGoTile.r, noGoTile.c)
+            : this.game.makeMove(moves[Math.floor(Math.random() * moves.length)]);
+        this.setStatus(useTurncoat ? "Barry turncoated and shielded a piece." : useNoGo ? "Barry placed a random No Go area." : "Barry made a random move.");
+        this.render();
+        this.maybeRunAI();
+      }
+    }
+
+    window.TurncoatEngine = TurncoatEngine;
+    window.addEventListener("DOMContentLoaded", () => new TurncoatUI());
+  </script>
+</body>
+</html>
