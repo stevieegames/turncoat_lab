@@ -279,6 +279,9 @@
     .bot-how { width: 100%; margin: 0; padding-top: 9px; }
     .bot-how summary { color: #245f9d; letter-spacing: .08em; }
     .bot-how p { margin: 8px 0 0; }
+    .bot-how-warning { margin-top: 12px; padding: 10px; border-left: 3px solid var(--accent); border-radius: 4px; background: rgba(166,66,46,.07); }
+    .bot-how-warning strong { display: block; margin-bottom: 5px; color: var(--accent); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+    .bot-how-warning p { margin: 0; }
     .bot-weight-list { display: grid; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
     .bot-weight-list li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 9px; border-radius: 5px; background: rgba(45,118,188,.08); color: var(--ink); font-size: .72rem; }
     .bot-weight-list strong { color: #245f9d; white-space: nowrap; }
@@ -461,10 +464,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="true"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -677,6 +680,10 @@
       turncoatCube: 20,
       saveCube: 10
     });
+    const KEVIN_EVALUATION = Object.freeze({
+      surroundPosition: 100,
+      distance: 1
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
@@ -747,6 +754,33 @@
           ["Can win immediately", "Takes the win"]
         ],
         trophyMessage: "You beat Turncoat's Cube-loving weighted bot."
+      },
+      {
+        id: "kevin_killer",
+        name: "Kevin — The Killer",
+        shortName: "Kevin",
+        algorithm: "Evaluation Function",
+        difficulty: 3,
+        available: true,
+        playerValue: "kevin",
+        trophyCondition: "human_win",
+        description: "Kevin wants your Main Piece.",
+        shortDescription: "He relentlessly tries to surround your Main Piece, regardless of what it costs him.",
+        educationTitle: "How Kevin thinks",
+        education: [
+          "Barry chooses randomly. Sally has preferences. Kevin has a goal.",
+          "Kevin simulates every legal action and scores the board immediately afterwards. More Kevin pieces around your Main Piece means a much higher score.",
+          "If he is not close enough yet, he uses distance as a smaller tie-breaker and pushes his army towards useful surrounding tiles.",
+          `His formula is: surround pressure × ${KEVIN_EVALUATION.surroundPosition} − total approach distance × ${KEVIN_EVALUATION.distance}. Kevin chooses the highest score and breaks ties randomly. This is an evaluation function.`
+        ],
+        educationWeights: [
+          ["Kevin piece around Main", `+${KEVIN_EVALUATION.surroundPosition}`],
+          ["Each tile of approach distance", `−${KEVIN_EVALUATION.distance}`],
+          ["Can win immediately", "Takes the win"]
+        ],
+        limitationTitle: "But Kevin has a problem…",
+        limitation: "Kevin only judges the board immediately after his action. He never asks what you will do next, so an apparently brilliant attack may walk straight into a trap. A future search bot will look beyond its own move.",
+        trophyMessage: "You survived Turncoat's relentless Main Piece hunter."
       },
       {
         id: "greedy_heuristic",
@@ -1243,6 +1277,73 @@
       return selected?.action || null;
     }
 
+    function evaluateKevinPosition(game, owner) {
+      const enemyMain = game.findMain(other(owner));
+      if (!enemyMain) return { score: 0, surroundPressure: 0, distanceTotal: 0 };
+
+      const surroundCells = DIRECTIONS.map(([dr,dc]) => ({ r: enemyMain.r + dr, c: enemyMain.c + dc }))
+        .filter(cell => game.isPlayable(cell.r, cell.c));
+      const surroundPressure = surroundCells.filter(cell => {
+        const piece = game.board[cell.r][cell.c];
+        return piece?.owner === owner && piece.type !== "nogo";
+      }).length;
+
+      const openTargets = surroundCells.filter(cell => !game.board[cell.r][cell.c]);
+      const friendlyPieces = [];
+      for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+        const piece = game.board[r][c];
+        if (piece?.owner === owner && piece.type !== "nogo") friendlyPieces.push({r,c});
+      }
+
+      const distanceTotal = friendlyPieces.reduce((total, piece) => {
+        if (surroundCells.some(cell => cell.r === piece.r && cell.c === piece.c)) return total;
+        if (!openTargets.length) return total;
+        const nearest = Math.min(...openTargets.map(cell => Math.max(Math.abs(cell.r-piece.r), Math.abs(cell.c-piece.c))));
+        return total + nearest;
+      }, 0);
+
+      return {
+        surroundPressure,
+        distanceTotal,
+        score: surroundPressure * KEVIN_EVALUATION.surroundPosition - distanceTotal * KEVIN_EVALUATION.distance
+      };
+    }
+
+    function scoreKevinAction(game, action, owner = game.turn) {
+      const result = simulateBotAction(game, action);
+      return {
+        action,
+        ...evaluateKevinPosition(result, owner),
+        winsImmediately: result.winner === owner,
+        label: describeBotAction(game, action)
+      };
+    }
+
+    function chooseKevinAction(game, random = Math.random) {
+      const owner = game.turn;
+      const evaluated = getLegalBotActions(game).map(action => scoreKevinAction(game, action, owner));
+      const winning = evaluated.filter(choice => choice.winsImmediately);
+      const bestScore = evaluated.length ? Math.max(...evaluated.map(choice => choice.score)) : -Infinity;
+      const best = evaluated.filter(choice => choice.score === bestScore);
+      const pool = winning.length ? winning : best;
+      const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
+
+      window.turncoatBotDebug = {
+        bot: "Kevin — The Killer",
+        formula: `surround pressure × ${KEVIN_EVALUATION.surroundPosition} − distance × ${KEVIN_EVALUATION.distance}`,
+        winningOverride: winning.length > 0,
+        choices: evaluated.map(choice => ({
+          action: choice.label,
+          surroundPressure: choice.surroundPressure,
+          distanceTotal: choice.distanceTotal,
+          score: choice.score,
+          winsImmediately: choice.winsImmediately
+        })),
+        selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
     class TurncoatUI {
       constructor() {
         this.game = new TurncoatEngine();
@@ -1612,11 +1713,11 @@
 
       runBotAction() {
         const botType = this.playerType();
-        if (this.game.winner || !["barry", "sally", "trevor"].includes(botType)) return;
+        if (this.game.winner || !["barry", "sally", "trevor", "kevin"].includes(botType)) return;
         const actions = getLegalBotActions(this.game);
         if (!actions.length) {
           if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
-          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : "Barry";
+          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : "Barry";
           this.setStatus(`${name} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
@@ -1624,9 +1725,10 @@
         // individual action receives her Wedge-loving probability weight.
         const action = botType === "sally" ? chooseSallyAction(this.game)
           : botType === "trevor" ? chooseTrevorAction(this.game)
+            : botType === "kevin" ? chooseKevinAction(this.game)
             : actions[Math.floor(Math.random() * actions.length)];
         executeBotAction(this.game, action);
-        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : "Barry";
+        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : "Barry";
         const message = action.type === "turncoat" ? `${name} turncoated and shielded a piece.`
           : action.type === "nogo" ? `${name} placed a No Go area.`
             : action.type === "pass" ? `${name} passed.`
@@ -1787,6 +1889,11 @@
                 weights.append(item);
               }
               details.append(weights);
+            }
+            if (bot.limitationTitle && bot.limitation) {
+              const warning = this.element("div", "bot-how-warning");
+              warning.append(this.element("strong", "", bot.limitationTitle), this.element("p", "", bot.limitation));
+              details.append(warning);
             }
             card.append(details);
           }
@@ -2030,12 +2137,16 @@
     window.TurncoatBots = Object.freeze({
       SALLY_WEIGHTS,
       TREVOR_WEIGHTS,
+      KEVIN_EVALUATION,
       getLegalActions: getLegalBotActions,
       calculateSallyWeight,
       calculateTrevorWeight,
+      evaluateKevinPosition,
+      scoreKevinAction,
       chooseWeighted,
       chooseSallyAction,
-      chooseTrevorAction
+      chooseTrevorAction,
+      chooseKevinAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
