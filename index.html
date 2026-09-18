@@ -137,9 +137,23 @@
     .winner-card { display: grid; justify-items: center; gap: 10px; width: min(430px, 88%); max-height: 92%; overflow: auto; }
     .winner-summary, .feedback-panel, .feedback-thanks { width: 100%; display: grid; justify-items: center; gap: 10px; }
     .feedback-panel h2 { margin: 0; font: 500 clamp(1.45rem, 4vw, 2.1rem)/1.1 Georgia,serif; }
+    .feedback-panel h3 { width: 100%; margin: 4px 0 0; font: 500 1.15rem/1.2 Georgia,serif; text-align: left; }
     .feedback-panel p, .feedback-thanks p { margin: 0; font-size: .78rem; line-height: 1.5; text-transform: none; letter-spacing: 0; }
     .feedback-panel label { width: 100%; margin: 2px 0; color: #fff8ed; text-align: left; }
     .feedback-panel textarea { width: 100%; min-height: 115px; resize: vertical; padding: 10px; color: var(--ink); border: 1px solid rgba(255,255,255,.35); border-radius: 5px; background: #fffaf0; }
+    .feedback-question { width: 100%; margin: 0; padding: 0; border: 0; text-align: left; }
+    .feedback-question legend { margin-bottom: 6px; font-size: .75rem; font-weight: 750; }
+    .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .choice-grid.five { grid-template-columns: repeat(5, 1fr); }
+    .choice-grid input { position: absolute; opacity: 0; pointer-events: none; }
+    .choice-grid label { display: grid; place-items: center; min-height: 38px; margin: 0; padding: 7px 4px; border: 1px solid rgba(255,255,255,.35); border-radius: 5px; background: rgba(255,255,255,.1); text-align: center; cursor: pointer; transition: background .15s, border-color .15s, transform .15s; }
+    .choice-grid label:hover { background: rgba(255,255,255,.18); }
+    .choice-grid input:focus-visible + label { outline: 2px solid #9ed0ff; outline-offset: 2px; }
+    .choice-grid input:checked + label { border-color: #67adf0; background: #2d76bc; transform: translateY(-1px); }
+    .feedback-panel .privacy-notice { width: 100%; margin: 0; padding-top: 9px; border-color: rgba(255,255,255,.22); text-align: left; }
+    .feedback-panel .privacy-notice summary { color: #dbeeff; }
+    .feedback-panel .privacy-notice p { margin-top: 8px; color: rgba(255,248,237,.82); }
+    .feedback-panel .privacy-notice a { color: #9ed0ff; }
     .feedback-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .feedback-status { min-height: 1.3em; color: #ffe2a8; }
     [hidden] { display: none !important; }
@@ -216,9 +230,42 @@
                 <div class="feedback-panel" id="feedbackPanel" hidden>
                   <h2>Send this playtest to the developer?</h2>
                   <p>Your game log and the feedback below will be sent. No name or email is required.</p>
-                  <label for="feedbackText">Feedback (optional)
+                  <h3>How was your game?</h3>
+                  <fieldset class="feedback-question">
+                    <legend>Enjoyment</legend>
+                    <div class="choice-grid five">
+                      <input type="radio" id="enjoyment1" name="feedbackEnjoyment" value="1" required><label for="enjoyment1">1</label>
+                      <input type="radio" id="enjoyment2" name="feedbackEnjoyment" value="2"><label for="enjoyment2">2</label>
+                      <input type="radio" id="enjoyment3" name="feedbackEnjoyment" value="3"><label for="enjoyment3">3</label>
+                      <input type="radio" id="enjoyment4" name="feedbackEnjoyment" value="4"><label for="enjoyment4">4</label>
+                      <input type="radio" id="enjoyment5" name="feedbackEnjoyment" value="5"><label for="enjoyment5">5</label>
+                    </div>
+                  </fieldset>
+                  <fieldset class="feedback-question">
+                    <legend>Rules</legend>
+                    <div class="choice-grid">
+                      <input type="radio" id="rulesConfusing" name="feedbackRules" value="Confusing" required><label for="rulesConfusing">Confusing</label>
+                      <input type="radio" id="rulesMostlyClear" name="feedbackRules" value="Mostly clear"><label for="rulesMostlyClear">Mostly clear</label>
+                      <input type="radio" id="rulesClear" name="feedbackRules" value="Clear"><label for="rulesClear">Clear</label>
+                    </div>
+                  </fieldset>
+                  <fieldset class="feedback-question">
+                    <legend>Play again</legend>
+                    <div class="choice-grid">
+                      <input type="radio" id="playAgainYes" name="feedbackPlayAgain" value="Yes" required><label for="playAgainYes">Yes</label>
+                      <input type="radio" id="playAgainMaybe" name="feedbackPlayAgain" value="Maybe"><label for="playAgainMaybe">Maybe</label>
+                      <input type="radio" id="playAgainNo" name="feedbackPlayAgain" value="No"><label for="playAgainNo">No</label>
+                    </div>
+                  </fieldset>
+                  <label for="feedbackText">Anything you'd like to tell me? (optional)
                     <textarea id="feedbackText" placeholder="What worked? What felt confusing or unbalanced?"></textarea>
                   </label>
+                  <details class="privacy-notice">
+                    <summary>Privacy notice</summary>
+                    <p>Nothing is sent unless you press <b>Send playtest</b>. The Turncoat developer receives your survey answers, optional written feedback, game settings, result, move log, date, and game version solely to evaluate and improve Turncoat. Your name and email are not requested. Please do not include personal or sensitive information in your feedback.</p>
+                    <p>Formspree delivers the submission and may process technical data such as your IP address, browser type, access time, and referring page, including in the United States. See <a href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">Formspree's privacy policy</a>.</p>
+                    <p>The developer will retain submitted playtests for no longer than 12 months, then delete or anonymise them. The developer relies on a legitimate interest in improving the game. To ask about, correct, or delete a submission, contact the developer through the same channel that provided this playtest link. You can play without submitting anything.</p>
+                  </details>
                   <div class="feedback-actions">
                     <button id="cancelFeedback">Back</button>
                     <button id="sendPlaytest">Send playtest</button>
@@ -354,7 +401,7 @@
       [[1,0], [-1,-1], [-1,1]]
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
-    const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    const FEEDBACK_ENDPOINT = "https://formspree.io/f/mrpbbyke";
     const other = owner => owner === "light" ? "dark" : "light";
     const cap = text => text[0].toUpperCase() + text.slice(1);
     const ownerName = owner => owner === "light" ? "Ivory" : "Chestnut";
@@ -674,7 +721,7 @@
           this.feedbackMode = "form";
           this.feedbackStatus.textContent = "";
           this.render();
-          this.feedbackText.focus();
+          this.winner.querySelector(".winner-card").scrollTop = 0;
         });
         this.cancelFeedback.addEventListener("click", () => { this.feedbackMode = "summary"; this.render(); });
         this.sendPlaytest.addEventListener("click", () => this.submitPlaytest());
@@ -712,6 +759,7 @@
         this.showBoardAfterWin = false;
         this.feedbackMode = "summary";
         this.feedbackText.value = "";
+        document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
         this.feedbackStatus.textContent = "";
         this.sendPlaytest.disabled = false;
         this.setStatus(`New game with ${count} No Go area${count === 1 ? "" : "s"} each${this.game.gulliesEnabled ? " and Gullies open" : ""}. Ivory begins.`);
@@ -888,6 +936,13 @@
       }
 
       async submitPlaytest() {
+        const enjoyment = document.querySelector('input[name="feedbackEnjoyment"]:checked')?.value;
+        const rules = document.querySelector('input[name="feedbackRules"]:checked')?.value;
+        const playAgain = document.querySelector('input[name="feedbackPlayAgain"]:checked')?.value;
+        if (!enjoyment || !rules || !playAgain) {
+          this.feedbackStatus.textContent = "Please answer the three quick questions before sending.";
+          return;
+        }
         if (FEEDBACK_ENDPOINT.includes("YOUR_FORM_ID")) {
           this.feedbackStatus.textContent = "Sending is not connected yet. Add your Formspree endpoint to index.html first.";
           return;
@@ -900,6 +955,9 @@
             headers: {"Content-Type": "application/json", "Accept": "application/json"},
             body: JSON.stringify({
               _subject: "Turncoat playtest",
+              enjoyment,
+              rules_clarity: rules,
+              play_again: playAgain,
               feedback: this.feedbackText.value.trim() || "No written feedback.",
               game_log: this.buildPlaytestReport()
             })
@@ -907,6 +965,7 @@
           if (!response.ok) throw new Error(`Formspree returned ${response.status}`);
           this.feedbackMode = "thanks";
           this.feedbackText.value = "";
+          document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
           this.feedbackStatus.textContent = "";
           this.render();
         } catch (error) {
