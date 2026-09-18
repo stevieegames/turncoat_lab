@@ -260,8 +260,10 @@
     .bot-trophy-heading p { max-width: 620px; margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
     .bot-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .bot-card { position: relative; display: grid; align-content: start; gap: 10px; min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.3); box-shadow: 0 7px 16px rgba(56,38,21,.08); }
-    .bot-card.available { grid-column: 1 / -1; background: linear-gradient(145deg, rgba(255,255,255,.52), rgba(238,219,187,.55)); box-shadow: inset 4px 0 0 #9a6a29, 0 9px 20px rgba(56,38,21,.1); }
+    .bot-card.released { grid-column: 1 / -1; }
+    .bot-card.available { background: linear-gradient(145deg, rgba(255,255,255,.52), rgba(238,219,187,.55)); box-shadow: inset 4px 0 0 #9a6a29, 0 9px 20px rgba(56,38,21,.1); }
     .bot-card.locked { color: #777064; background: rgba(94,82,67,.08); filter: saturate(.55); }
+    .bot-card.progression-locked { border-style: dashed; }
     .bot-card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
     .bot-card h3 { margin: 0; font: 500 1.35rem/1.05 Georgia,serif; }
     .bot-lock { font-size: 1.15rem; }
@@ -272,6 +274,7 @@
     .bot-trophy-status { font-size: .72rem; font-weight: 800; }
     .bot-trophy-status.earned { color: #866020; }
     .bot-available { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #245f9d; background: rgba(45,118,188,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
+    .bot-progress-lock { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #6f665a; background: rgba(72,63,52,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
     .bot-coming-soon { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #6f665a; background: rgba(72,63,52,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
     .bot-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .bot-play { color: #fff9ed; border-color: #752c1e; background: var(--accent); letter-spacing: .06em; }
@@ -286,6 +289,10 @@
     .bot-weight-list li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 9px; border-radius: 5px; background: rgba(45,118,188,.08); color: var(--ink); font-size: .72rem; }
     .bot-weight-list strong { color: #245f9d; white-space: nowrap; }
     .bot-storage-note { margin: 16px 0 0; color: var(--muted); font-size: .68rem; line-height: 1.45; }
+    .bot-reset-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .bot-reset { color: #762f25; border-color: rgba(118,47,37,.38); background: rgba(166,66,46,.07); font-size: .67rem; letter-spacing: .08em; }
+    .bot-reset:hover:not(:disabled) { color: #fff8ed; background: #8e3524; }
+    .bot-reset-status { margin: 0; color: var(--muted); font-size: .7rem; }
     .trophy-earned-overlay { z-index: 80; }
     .trophy-earned-card { width: min(430px, 100%); text-align: center; }
     .trophy-earned-content { display: grid; justify-items: center; gap: 12px; }
@@ -340,7 +347,7 @@
       .tutorial-replay { padding: 7px 8px; font-size: .6rem; }
       .bot-trophy-card { padding: 20px 13px; }
       .bot-gallery { grid-template-columns: 1fr; }
-      .bot-card.available { grid-column: auto; }
+      .bot-card.released { grid-column: auto; }
     }
   </style>
 </head>
@@ -607,6 +614,10 @@
         <p>Beat each bot to claim its trophy—and discover how different approaches to game AI think.</p>
       </div>
       <div class="bot-gallery" id="botGallery"></div>
+      <div class="bot-reset-row">
+        <button class="bot-reset" id="botTrophiesReset" type="button">RESET TROPHIES</button>
+        <p class="bot-reset-status" id="botTrophiesResetStatus" role="status"></p>
+      </div>
       <p class="bot-storage-note">Trophies are stored only in this browser. They do not require an account and are not synchronised between devices.</p>
     </div>
   </div>
@@ -815,6 +826,12 @@
         description: "Learns Turncoat by playing Turncoat."
       }
     ]);
+    const releasedBots = () => BOT_CATALOG.filter(bot => bot.available);
+    function isBotUnlocked(trophies, botId) {
+      const bots = releasedBots();
+      const index = bots.findIndex(bot => bot.id === botId);
+      return index === 0 || index > 0 && trophies[bots[index - 1].id]?.earned === true;
+    }
     const other = owner => owner === "light" ? "dark" : "light";
     const cap = text => text[0].toUpperCase() + text.slice(1);
     const ownerName = owner => owner === "light" ? "Ivory" : "Chestnut";
@@ -1749,6 +1766,8 @@
         this.gallery = document.getElementById("botGallery");
         this.openButton = document.getElementById("botTrophiesOpen");
         this.closeButton = document.getElementById("botTrophiesClose");
+        this.resetButton = document.getElementById("botTrophiesReset");
+        this.resetStatus = document.getElementById("botTrophiesResetStatus");
         this.celebration = document.getElementById("trophyEarnedOverlay");
         this.earnedName = document.getElementById("trophyEarnedName");
         this.earnedMessage = document.getElementById("trophyEarnedMessage");
@@ -1761,12 +1780,13 @@
       bind() {
         this.openButton.addEventListener("click", () => this.open());
         this.closeButton.addEventListener("click", () => this.close());
+        this.resetButton.addEventListener("click", () => this.resetTrophies());
         this.continueButton.addEventListener("click", () => this.hideCelebration());
         this.gallery.addEventListener("click", event => {
           const button = event.target.closest("[data-play-bot]");
           if (!button) return;
           const bot = BOT_CATALOG.find(item => item.id === button.dataset.playBot && item.available);
-          if (!bot) return;
+          if (!bot || !isBotUnlocked(this.trophies, bot.id)) return;
           this.close(false);
           this.ui.startBotGame(bot.id);
         });
@@ -1790,11 +1810,38 @@
 
       isEarned(botId) { return this.trophies[botId]?.earned === true; }
 
+      previousReleasedBot(botId) {
+        const bots = releasedBots();
+        const index = bots.findIndex(bot => bot.id === botId);
+        return index > 0 ? bots[index - 1] : null;
+      }
+
+      syncPlayerOptions() {
+        for (const select of [this.ui.lightPlayer, this.ui.darkPlayer]) {
+          for (const option of select.options) {
+            const bot = BOT_CATALOG.find(item => item.available && item.playerValue === option.value);
+            if (!bot) continue;
+            const unlocked = isBotUnlocked(this.trophies, bot.id);
+            option.disabled = !unlocked;
+            option.title = unlocked ? "" : `Beat ${this.previousReleasedBot(bot.id)?.shortName || "the previous bot"} to unlock`;
+          }
+        }
+      }
+
+      resetTrophies() {
+        if (!window.confirm("Reset every earned bot trophy on this device?")) return;
+        this.trophies = {};
+        this.save();
+        this.resetStatus.textContent = "Trophies reset. Beat Barry to unlock Sally.";
+        this.render();
+      }
+
       award(botId) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available && item.trophyCondition === "human_win");
-        if (!bot || this.isEarned(botId)) return false;
+        if (!bot || !isBotUnlocked(this.trophies, botId) || this.isEarned(botId)) return false;
         this.trophies[botId] = { earned: true };
         this.save();
+        this.resetStatus.textContent = "";
         this.render();
         this.showCelebration(bot);
         return true;
@@ -1847,10 +1894,11 @@
         this.gallery.replaceChildren();
         for (const bot of BOT_CATALOG) {
           const earned = bot.available && this.isEarned(bot.id);
-          const card = this.element("article", `bot-card ${bot.available ? "available" : "locked"}`);
+          const unlocked = bot.available && isBotUnlocked(this.trophies, bot.id);
+          const card = this.element("article", `bot-card ${bot.available ? "released " : ""}${unlocked ? "available" : "locked"}${bot.available && !unlocked ? " progression-locked" : ""}`);
           const head = this.element("div", "bot-card-head");
           const heading = this.element("h3", "", bot.name);
-          const marker = this.element("span", "bot-lock", bot.available ? (earned ? "🏆" : "○") : "🔒");
+          const marker = this.element("span", "bot-lock", earned ? "🏆" : unlocked ? "○" : "🔒");
           marker.setAttribute("aria-hidden", "true");
           head.append(heading, marker);
           card.append(head);
@@ -1860,7 +1908,7 @@
           card.append(this.element("p", "bot-description", bot.description));
           if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
 
-          if (bot.available) {
+          if (unlocked) {
             card.append(this.element("div", "bot-available", "AVAILABLE"));
             card.append(this.element("div", `bot-trophy-status${earned ? " earned" : ""}`, earned ? "🏆 Trophy earned" : "○ Trophy not earned"));
             const actions = this.element("div", "bot-card-actions");
@@ -1869,6 +1917,10 @@
             play.dataset.playBot = bot.id;
             actions.append(play);
             card.append(actions);
+          } else if (bot.available) {
+            const previous = this.previousReleasedBot(bot.id);
+            card.append(this.element("div", "bot-progress-lock", "LOCKED"));
+            card.append(this.element("div", "bot-trophy-status", `Beat ${previous?.shortName || "the previous bot"} to unlock`));
           } else {
             card.append(this.element("div", "bot-coming-soon", "COMING SOON"));
           }
@@ -1899,6 +1951,7 @@
           }
           this.gallery.append(card);
         }
+        this.syncPlayerOptions();
       }
     }
 
@@ -2138,6 +2191,7 @@
       SALLY_WEIGHTS,
       TREVOR_WEIGHTS,
       KEVIN_EVALUATION,
+      isBotUnlocked,
       getLegalActions: getLegalBotActions,
       calculateSallyWeight,
       calculateTrevorWeight,
