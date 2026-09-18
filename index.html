@@ -166,6 +166,8 @@
     .winner span { display: block; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; line-height: 1.5; }
     .winner button { width: min(220px, 100%); color: #fff8ed; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.12); }
     .winner button:last-child { background: var(--accent); }
+    .winner .next-bot-button { border-color: #c79a4d; background: #9a6a29; }
+    .winner .next-bot-button:hover { background: #79521f; }
     .winner.inspecting { align-items: end; padding-bottom: 24px; color: var(--ink); background: transparent; backdrop-filter: none; pointer-events: none; }
     .winner.inspecting .winner-card { pointer-events: auto; padding: 10px; border-radius: 7px; background: rgba(244,238,226,.9); box-shadow: 0 5px 18px rgba(42,27,17,.3); }
     .winner.inspecting #winnerSummary > strong, .winner.inspecting #winnerSummary > span, .winner.inspecting #showBoard { display: none; }
@@ -300,6 +302,12 @@
     .trophy-earned-content h3 { margin: 0; color: #866020; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
     .trophy-earned-content p { margin: 0; color: var(--muted); }
     .trophy-burst { font-size: 4rem; filter: drop-shadow(0 8px 7px rgba(72,45,11,.24)); animation: trophyPop .7s cubic-bezier(.2,1.6,.4,1) both; }
+    .bot-intro-overlay { z-index: 75; }
+    .bot-intro-card { width: min(450px, 100%); text-align: center; }
+    .bot-intro-content { display: grid; justify-items: center; gap: 12px; }
+    .bot-intro-content h2 { margin: 0; font: 500 clamp(2rem, 7vw, 3.4rem)/.95 Georgia,serif; }
+    .bot-intro-algorithm { color: var(--accent); font-size: .68rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    .bot-intro-summary { max-width: 350px; margin: 0; color: var(--muted); line-height: 1.55; }
     @keyframes trophyPop { from { opacity: 0; transform: scale(.25) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 
     @media (prefers-reduced-motion: reduce) {
@@ -384,6 +392,7 @@
                   <strong id="winnerName"></strong>
                   <span id="winnerReason">Main Piece surrounded</span>
                   <button id="showBoard">Show board</button>
+                  <button class="next-bot-button" id="nextBot" hidden>NEXT BOT?</button>
                   <button id="openFeedback">Send this playtest to the developer?</button>
                   <button id="winnerRestart">Restart</button>
                 </div>
@@ -634,6 +643,18 @@
     </div>
   </div>
 
+  <div class="tutorial-overlay bot-intro-overlay" id="botIntroOverlay" role="dialog" aria-modal="true" aria-label="New bot introduction" hidden>
+    <div class="tutorial-card bot-intro-card">
+      <div class="bot-intro-content">
+        <span class="tutorial-kicker">New opponent</span>
+        <h2 id="botIntroName"></h2>
+        <div class="bot-intro-algorithm" id="botIntroAlgorithm"></div>
+        <p class="bot-intro-summary" id="botIntroSummary"></p>
+        <button class="tutorial-primary" id="botIntroContinue" type="button">START GAME</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     "use strict";
 
@@ -711,6 +732,7 @@
         playerValue: "barry",
         trophyCondition: "human_win",
         description: "Barry doesn't think ahead. He simply chooses a legal action at random.",
+        introSummary: "Barry chooses every legal action with equal probability.",
         educationTitle: "How Barry works",
         education: [
           "Barry finds all the actions he is currently allowed to make and randomly selects one.",
@@ -730,6 +752,7 @@
         trophyCondition: "human_win",
         description: "Sally bloody loves Wedges.",
         shortDescription: "She heavily prefers using and protecting her Wedges—and always Turncoats yours when she can.",
+        introSummary: "Sally heavily favours Wedge actions and always Turncoats an available enemy Wedge.",
         educationTitle: "How Sally thinks",
         education: [
           "Barry gives every legal action an equal chance. Sally gives every action a weight of 1, then heavily increases it when Wedges are involved.",
@@ -756,6 +779,7 @@
         trophyCondition: "human_win",
         description: "Trevor bloody loves Cubes.",
         shortDescription: "He heavily prefers using and protecting his Cubes—and always Turncoats yours when he can.",
+        introSummary: "Trevor heavily favours Cube actions and always Turncoats an available enemy Cube.",
         educationTitle: "How Trevor thinks",
         education: [
           "Trevor uses the same weighted-random idea as Sally, but his obsession is Cubes instead of Wedges.",
@@ -782,6 +806,7 @@
         trophyCondition: "human_win",
         description: "Kevin wants your Main Piece.",
         shortDescription: "He relentlessly tries to surround your Main Piece, regardless of what it costs him.",
+        introSummary: "Kevin relentlessly advances on your Main Piece and ignores almost everything else.",
         educationTitle: "How Kevin thinks",
         education: [
           "Barry chooses randomly. Sally has preferences. Kevin has a goal.",
@@ -809,6 +834,7 @@
         trophyCondition: "human_win",
         description: "Cersei wants everyone on her side.",
         shortDescription: "She balances attacking your Main Piece with opportunities to Turncoat your army.",
+        introSummary: "Cersei balances attacking your Main Piece with opportunities to Turncoat your army.",
         educationTitle: "How Cersei thinks",
         education: [
           "Kevin has one obsession: your Main Piece. Cersei understands that a position can be good for more than one reason.",
@@ -1009,24 +1035,21 @@
       isTurncoatableAt(r, c, byOwner = this.turn) {
         const piece = this.board[r]?.[c];
         if (!piece || piece.type === "nogo" || piece.type === "main" || piece.owner === byOwner || piece.shielded) return false;
-        if (piece.type === "cube") {
-          const occupiedAt = ([dr,dc]) => !this.isPlayable(r+dr,c+dc) || Boolean(this.board[r+dr][c+dc]);
-          const includesOwnPiece = pattern => pattern.some(([dr,dc]) => {
-            if (!this.isPlayable(r+dr,c+dc)) return false;
-            const item=this.board[r+dr][c+dc];
-            return item && item.type !== "nogo" && item.owner === byOwner;
-          });
-          return [ORTHOGONAL,DIAGONAL].some(pattern => pattern.every(occupiedAt) && includesOwnPiece(pattern));
-        }
-        if (piece.type === "wedge") {
-          const occupiedAt = ([dr,dc]) => !this.isPlayable(r+dr,c+dc) || Boolean(this.board[r+dr][c+dc]);
-          const includesOwnPiece = pattern => pattern.some(([dr,dc]) => {
-            if (!this.isPlayable(r+dr,c+dc)) return false;
-            const item=this.board[r+dr][c+dc];
-            return item && item.type !== "nogo" && item.owner === byOwner;
-          });
-          return WEDGE_TRIANGLES.some(pattern => pattern.every(occupiedAt) && includesOwnPiece(pattern));
-        }
+        const patternIsValid = pattern => {
+          let includesActingPiece = false;
+          for (const [dr,dc] of pattern) {
+            const nr=r+dr, nc=c+dc;
+            // The fixed perimeter counts as occupied, but never as the acting
+            // player's required contribution to a Turncoat surround.
+            if (!this.isPlayable(nr,nc)) continue;
+            const surrounding = this.board[nr][nc];
+            if (!surrounding) return false;
+            if (surrounding.type !== "nogo" && surrounding.owner === byOwner) includesActingPiece = true;
+          }
+          return includesActingPiece;
+        };
+        if (piece.type === "cube") return [ORTHOGONAL,DIAGONAL].some(patternIsValid);
+        if (piece.type === "wedge") return WEDGE_TRIANGLES.some(patternIsValid);
         return false;
       }
 
@@ -1478,8 +1501,10 @@
         this.feedbackMode = "summary";
         this.tutorialOpen = false;
         this.botTrophiesOpen = false;
+        this.botIntroOpen = false;
         this.trophySystem = null;
         this.matchContext = null;
+        this.nextBotOfferId = null;
         this.cacheElements();
         this.bind();
         this.beginMatchContext();
@@ -1488,7 +1513,7 @@
       }
 
       cacheElements() {
-        const ids = ["board","traces","turnName","turnHelp","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","openFeedback","winnerRestart","feedbackPanel","feedbackText","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
+        const ids = ["board","traces","turnName","turnHelp","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","nextBot","openFeedback","winnerRestart","feedbackPanel","feedbackText","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
         for (const id of ids) this[id] = document.getElementById(id);
       }
 
@@ -1517,6 +1542,9 @@
         this.restart.addEventListener("click", () => this.restartGame());
         this.winnerRestart.addEventListener("click", () => this.restartGame());
         this.winnerRestartAfterFeedback.addEventListener("click", () => this.restartGame());
+        this.nextBot.addEventListener("click", () => {
+          if (this.nextBotOfferId) this.startBotGame(this.nextBotOfferId);
+        });
         this.showBoard.addEventListener("click", () => { this.showBoardAfterWin = true; this.render(); });
         this.openFeedback.addEventListener("click", () => {
           this.showBoardAfterWin = false;
@@ -1530,8 +1558,8 @@
         this.noGoSetting.addEventListener("change", () => this.restartGame());
         this.gulliesSetting.addEventListener("change", () => this.restartGame());
         this.saveLog.addEventListener("click", () => this.downloadLog());
-        this.lightPlayer.addEventListener("change", () => this.handlePlayerChange());
-        this.darkPlayer.addEventListener("change", () => this.handlePlayerChange());
+        this.lightPlayer.addEventListener("change", event => this.handlePlayerChange(event.currentTarget));
+        this.darkPlayer.addEventListener("change", event => this.handlePlayerChange(event.currentTarget));
       }
 
       playerType(owner = this.game.turn) { return owner === "light" ? this.lightPlayer.value : this.darkPlayer.value; }
@@ -1555,19 +1583,22 @@
         };
       }
 
-      handlePlayerChange() {
+      handlePlayerChange(changedSelect = null) {
         const started = this.game.history.length > 0 || this.game.log.length > 0 || this.game.actionsThisTurn > 0;
         if (started) this.matchContext.eligible = false;
         else this.beginMatchContext();
+        const bot = changedSelect ? BOT_CATALOG.find(item => item.available && item.playerValue === changedSelect.value) : null;
+        if (bot) this.trophySystem?.showBotIntro(bot.id);
         this.maybeRunAI();
       }
 
       startBotGame(botId) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
-        if (!bot) return;
+        if (!bot || this.trophySystem && !isBotUnlocked(this.trophySystem.trophies, bot.id)) return;
         this.lightPlayer.value = "human";
         this.darkPlayer.value = bot.playerValue;
         this.restartGame(bot.id);
+        this.trophySystem?.showBotIntro(bot.id);
       }
 
       toggleNoGo(owner) {
@@ -1593,6 +1624,7 @@
         this.breakingSignature = "";
         this.showBoardAfterWin = false;
         this.feedbackMode = "summary";
+        this.nextBotOfferId = null;
         this.feedbackText.value = "";
         document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
         this.feedbackStatus.textContent = "";
@@ -1709,6 +1741,7 @@
         this.renderNoGoRack("dark");
         this.scheduleShieldFade();
         this.checkTrophyAward();
+        this.nextBot.hidden = !this.game.winner || !this.nextBotOfferId;
       }
 
       checkTrophyAward() {
@@ -1716,7 +1749,9 @@
         this.matchContext.resolved = true;
         const playersUnchanged = this.lightPlayer.value === this.matchContext.players.light && this.darkPlayer.value === this.matchContext.players.dark;
         if (this.matchContext.eligible && playersUnchanged && this.game.winner === this.matchContext.humanSide) {
-          this.trophySystem.award(this.matchContext.botId);
+          const awarded = this.trophySystem.award(this.matchContext.botId);
+          const next = awarded ? this.trophySystem.nextReleasedBot(this.matchContext.botId) : null;
+          if (next && isBotUnlocked(this.trophySystem.trophies, next.id)) this.nextBotOfferId = next.id;
         }
       }
 
@@ -1827,7 +1862,7 @@
 
       maybeRunAI() {
         clearTimeout(this.aiTimer);
-        if (this.tutorialOpen || this.botTrophiesOpen || this.game.winner || this.isHumanTurn()) return;
+        if (this.tutorialOpen || this.botTrophiesOpen || this.botIntroOpen || this.game.winner || this.isHumanTurn()) return;
         this.render();
         this.aiTimer = setTimeout(() => this.runBotAction(), 1500);
       }
@@ -1865,7 +1900,9 @@
       constructor(gameUI) {
         this.ui = gameUI;
         this.storageKey = "turncoatTrophies";
+        this.introStorageKey = "turncoatBotIntrosSeen";
         this.trophies = this.load();
+        this.introsSeen = this.load(this.introStorageKey);
         this.previousFocus = null;
         this.overlay = document.getElementById("botTrophiesOverlay");
         this.gallery = document.getElementById("botGallery");
@@ -1877,6 +1914,11 @@
         this.earnedName = document.getElementById("trophyEarnedName");
         this.earnedMessage = document.getElementById("trophyEarnedMessage");
         this.continueButton = document.getElementById("trophyEarnedContinue");
+        this.introOverlay = document.getElementById("botIntroOverlay");
+        this.introName = document.getElementById("botIntroName");
+        this.introAlgorithm = document.getElementById("botIntroAlgorithm");
+        this.introSummary = document.getElementById("botIntroSummary");
+        this.introContinue = document.getElementById("botIntroContinue");
         this.ui.attachTrophySystem(this);
         this.bind();
         this.render();
@@ -1887,6 +1929,7 @@
         this.closeButton.addEventListener("click", () => this.close());
         this.resetButton.addEventListener("click", () => this.resetTrophies());
         this.continueButton.addEventListener("click", () => this.hideCelebration());
+        this.introContinue.addEventListener("click", () => this.closeBotIntro());
         this.gallery.addEventListener("click", event => {
           const button = event.target.closest("[data-play-bot]");
           if (!button) return;
@@ -1896,14 +1939,17 @@
           this.ui.startBotGame(bot.id);
         });
         this.overlay.addEventListener("click", event => { if (event.target === this.overlay) this.close(); });
+        this.introOverlay.addEventListener("click", event => { if (event.target === this.introOverlay) this.closeBotIntro(); });
         document.addEventListener("keydown", event => {
-          if (event.key === "Escape" && !this.overlay.hidden) this.close();
+          if (event.key !== "Escape") return;
+          if (!this.introOverlay.hidden) this.closeBotIntro();
+          else if (!this.overlay.hidden) this.close();
         });
       }
 
-      load() {
+      load(storageKey = this.storageKey) {
         try {
-          const value = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+          const value = JSON.parse(localStorage.getItem(storageKey) || "{}");
           return value && typeof value === "object" && !Array.isArray(value) ? value : {};
         } catch { return {}; }
       }
@@ -1913,12 +1959,23 @@
         catch { /* Trophies remain available for this session if storage is blocked. */ }
       }
 
+      saveIntros() {
+        try { localStorage.setItem(this.introStorageKey, JSON.stringify(this.introsSeen)); }
+        catch { /* Intro tracking remains available for this session if storage is blocked. */ }
+      }
+
       isEarned(botId) { return this.trophies[botId]?.earned === true; }
 
       previousReleasedBot(botId) {
         const bots = releasedBots();
         const index = bots.findIndex(bot => bot.id === botId);
         return index > 0 ? bots[index - 1] : null;
+      }
+
+      nextReleasedBot(botId) {
+        const bots = releasedBots();
+        const index = bots.findIndex(bot => bot.id === botId);
+        return index >= 0 && index < bots.length - 1 ? bots[index + 1] : null;
       }
 
       syncPlayerOptions() {
@@ -1937,8 +1994,10 @@
         if (!window.confirm("Reset every earned bot trophy on this device?")) return;
         this.trophies = {};
         this.save();
+        this.ui.nextBotOfferId = null;
         this.resetStatus.textContent = "Trophies reset. Beat Barry to unlock Sally.";
         this.render();
+        this.ui.render();
       }
 
       award(botId) {
@@ -1984,8 +2043,31 @@
         document.getElementById("winnerRestart")?.focus();
       }
 
+      showBotIntro(botId) {
+        const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
+        if (!bot || !isBotUnlocked(this.trophies, bot.id) || this.introsSeen[bot.id]) return false;
+        this.introsSeen[bot.id] = true;
+        this.saveIntros();
+        this.ui.botIntroOpen = true;
+        clearTimeout(this.ui.aiTimer);
+        this.introName.textContent = bot.name;
+        this.introAlgorithm.textContent = bot.algorithm;
+        this.introSummary.textContent = bot.introSummary || bot.shortDescription || bot.description;
+        this.introOverlay.hidden = false;
+        document.body.classList.add("bot-trophies-active");
+        requestAnimationFrame(() => this.introContinue.focus());
+        return true;
+      }
+
+      closeBotIntro() {
+        this.introOverlay.hidden = true;
+        this.ui.botIntroOpen = false;
+        this.syncBodyLock();
+        this.ui.maybeRunAI();
+      }
+
       syncBodyLock() {
-        if (this.overlay.hidden && this.celebration.hidden) document.body.classList.remove("bot-trophies-active");
+        if (this.overlay.hidden && this.celebration.hidden && this.introOverlay.hidden) document.body.classList.remove("bot-trophies-active");
       }
 
       element(tag, className = "", text = "") {
