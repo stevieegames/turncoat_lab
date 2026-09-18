@@ -32,8 +32,10 @@
     .h1-subtitle { display: inline-block; margin-left: .18em; color: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .28em; font-weight: 700; letter-spacing: .12em; text-transform: lowercase; vertical-align: baseline; }
     .header-tools { display: flex; align-items: center; gap: 10px; }
     .prototype { color: var(--accent); font-weight: 800; font-size: .67rem; letter-spacing: .13em; text-transform: uppercase; }
-    .tutorial-replay { width: 34px; height: 34px; padding: 0; border-radius: 50%; color: #f3f8ff; border-color: #245f9d; background: #2d76bc; font-size: .9rem; }
+    .tutorial-replay { width: auto; height: auto; padding: 8px 11px; border-radius: 5px; color: #f3f8ff; border-color: #245f9d; background: #2d76bc; font-size: .67rem; letter-spacing: .09em; }
     .tutorial-replay:hover:not(:disabled) { background: #245f9d; }
+    .bot-trophies-button { padding: 8px 11px; color: #fff9ed; border-color: #79521f; background: #9a6a29; font-size: .67rem; letter-spacing: .09em; }
+    .bot-trophies-button:hover:not(:disabled) { background: #79521f; }
 
     main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; align-items: start; }
     .game-area { min-width: 0; }
@@ -250,6 +252,42 @@
     .tutorial-dot { width: 7px; aspect-ratio: 1; border-radius: 50%; background: rgba(53,43,31,.2); }
     .tutorial-dot.active { background: var(--accent); }
 
+    body.bot-trophies-active { overflow: hidden; }
+    .bot-trophy-overlay { z-index: 60; }
+    .bot-trophy-card { width: min(820px, 100%); }
+    .bot-trophy-heading { display: grid; gap: 6px; margin-bottom: 22px; padding-right: 54px; }
+    .bot-trophy-heading h2 { margin: 0; font: 500 clamp(2rem, 5vw, 3.5rem)/.95 Georgia,serif; letter-spacing: -.035em; }
+    .bot-trophy-heading p { max-width: 620px; margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+    .bot-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .bot-card { position: relative; display: grid; align-content: start; gap: 10px; min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.3); box-shadow: 0 7px 16px rgba(56,38,21,.08); }
+    .bot-card.available { grid-column: 1 / -1; background: linear-gradient(145deg, rgba(255,255,255,.52), rgba(238,219,187,.55)); box-shadow: inset 4px 0 0 #9a6a29, 0 9px 20px rgba(56,38,21,.1); }
+    .bot-card.locked { color: #777064; background: rgba(94,82,67,.08); filter: saturate(.55); }
+    .bot-card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .bot-card h3 { margin: 0; font: 500 1.35rem/1.05 Georgia,serif; }
+    .bot-lock { font-size: 1.15rem; }
+    .bot-algorithm { color: var(--accent); font-size: .65rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    .bot-difficulty { font-size: .86rem; letter-spacing: .08em; }
+    .bot-description { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+    .bot-trophy-status { font-size: .72rem; font-weight: 800; }
+    .bot-trophy-status.earned { color: #866020; }
+    .bot-available { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #245f9d; background: rgba(45,118,188,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
+    .bot-coming-soon { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #6f665a; background: rgba(72,63,52,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
+    .bot-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .bot-play { color: #fff9ed; border-color: #752c1e; background: var(--accent); letter-spacing: .06em; }
+    .bot-play:hover:not(:disabled) { background: #8e3524; }
+    .bot-how { width: 100%; margin: 0; padding-top: 9px; }
+    .bot-how summary { color: #245f9d; letter-spacing: .08em; }
+    .bot-how p { margin: 8px 0 0; }
+    .bot-storage-note { margin: 16px 0 0; color: var(--muted); font-size: .68rem; line-height: 1.45; }
+    .trophy-earned-overlay { z-index: 80; }
+    .trophy-earned-card { width: min(430px, 100%); text-align: center; }
+    .trophy-earned-content { display: grid; justify-items: center; gap: 12px; }
+    .trophy-earned-content h2 { margin: 0; font: 500 clamp(2rem, 7vw, 3.4rem)/.95 Georgia,serif; }
+    .trophy-earned-content h3 { margin: 0; color: #866020; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
+    .trophy-earned-content p { margin: 0; color: var(--muted); }
+    .trophy-burst { font-size: 4rem; filter: drop-shadow(0 8px 7px rgba(72,45,11,.24)); animation: trophyPop .7s cubic-bezier(.2,1.6,.4,1) both; }
+    @keyframes trophyPop { from { opacity: 0; transform: scale(.25) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+
     @media (prefers-reduced-motion: reduce) {
       .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-tempo-dot, .tutorial-blocked-word, .tutorial-nogo-word { animation: none !important; }
       .tutorial-arrive, .tutorial-turn-arrive, .tutorial-move-cube, .tutorial-move-wedge, .tutorial-move-main, .tutorial-tempo-cube, .tutorial-tempo-wedge, .tutorial-tempo-main, .tutorial-nogo-drop { left: var(--to-left); top: var(--to-top, var(--top)); }
@@ -258,6 +296,7 @@
       .tutorial-tempo-dot { left: calc(95% - 15px); }
       .tutorial-count-light::after { content: "0"; animation: none; }
       .tutorial-count-dark::after { content: "3"; animation: none; }
+      .trophy-burst { animation: none; }
     }
 
     @media (max-width: 850px) {
@@ -290,6 +329,11 @@
       .tutorial-skip { margin: -8px -4px 0 0; }
       .tutorial-visual { width: min(310px, 82vw); }
       .tutorial-move-labels { font-size: .64rem; }
+      .bot-trophies-button { padding: 7px 8px; font-size: .6rem; }
+      .tutorial-replay { padding: 7px 8px; font-size: .6rem; }
+      .bot-trophy-card { padding: 20px 13px; }
+      .bot-gallery { grid-template-columns: 1fr; }
+      .bot-card.available { grid-column: auto; }
     }
   </style>
 </head>
@@ -300,7 +344,8 @@
         <h1>Turncoat <span class="h1-subtitle">laboratory</span></h1>
       </div>
       <div class="header-tools">
-        <button class="tutorial-replay" id="tutorialReplay" type="button" aria-label="Replay tutorial" title="Tutorial">?</button>
+        <button class="bot-trophies-button" id="botTrophiesOpen" type="button">🏆 BOT TROPHIES</button>
+        <button class="tutorial-replay" id="tutorialReplay" type="button" aria-label="Replay tutorial" title="Tutorial">👓 TUTORIAL</button>
         <div class="prototype">Prototype 0.9</div>
       </div>
     </header>
@@ -546,6 +591,31 @@
     </div>
   </div>
 
+  <div class="tutorial-overlay bot-trophy-overlay" id="botTrophiesOverlay" role="dialog" aria-modal="true" aria-label="Bot Trophies" hidden>
+    <div class="tutorial-card bot-trophy-card">
+      <button class="tutorial-skip" id="botTrophiesClose" type="button">CLOSE</button>
+      <div class="bot-trophy-heading">
+        <span class="tutorial-kicker">Opponent collection</span>
+        <h2>BOT TROPHIES</h2>
+        <p>Beat each bot to claim its trophy—and discover how different approaches to game AI think.</p>
+      </div>
+      <div class="bot-gallery" id="botGallery"></div>
+      <p class="bot-storage-note">Trophies are stored only in this browser. They do not require an account and are not synchronised between devices.</p>
+    </div>
+  </div>
+
+  <div class="tutorial-overlay trophy-earned-overlay" id="trophyEarnedOverlay" role="dialog" aria-modal="true" aria-label="Trophy earned" hidden>
+    <div class="tutorial-card trophy-earned-card">
+      <div class="trophy-earned-content">
+        <div class="trophy-burst" aria-hidden="true">🏆</div>
+        <h2>TROPHY EARNED</h2>
+        <h3 id="trophyEarnedName">BARRY — RANDOM</h3>
+        <p id="trophyEarnedMessage">You beat Turncoat's random bot.</p>
+        <button class="tutorial-primary" id="trophyEarnedContinue" type="button">CONTINUE</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     "use strict";
 
@@ -589,6 +659,57 @@
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
     const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    const BOT_CATALOG = Object.freeze([
+      {
+        id: "barry_random",
+        name: "Barry — Random",
+        algorithm: "Random",
+        difficulty: 1,
+        available: true,
+        playerValue: "barry",
+        trophyCondition: "human_win",
+        description: "Barry doesn't think ahead. He simply chooses a legal action at random.",
+        educationTitle: "How Barry works",
+        education: [
+          "Barry finds all the actions he is currently allowed to make and randomly selects one.",
+          "He doesn't evaluate whether a move is good or bad, whether he's about to be Turncoated, or whether he could win.",
+          "This makes Barry the simplest possible Turncoat bot — and a useful baseline for comparing future bots."
+        ],
+        trophyMessage: "You beat Turncoat's random bot."
+      },
+      {
+        id: "greedy_heuristic",
+        name: "??? — Greedy",
+        algorithm: "Heuristic",
+        difficulty: null,
+        available: false,
+        description: "A bot that actually knows what it wants."
+      },
+      {
+        id: "minimax",
+        name: "??? — Minimax",
+        algorithm: "Minimax",
+        difficulty: null,
+        available: false,
+        description: "Looks ahead before choosing its move."
+      },
+      {
+        id: "monte_carlo",
+        name: "??? — Monte Carlo",
+        algorithm: "Monte Carlo Tree Search",
+        difficulty: null,
+        available: false,
+        description: "Plays out possible futures before making its decision."
+      },
+      {
+        id: "self_learning",
+        name: "??? — Self-Learning",
+        algorithm: "Self-play / Reinforcement Learning",
+        difficulty: null,
+        available: false,
+        description: "Learns Turncoat by playing Turncoat."
+      }
+    ]);
     const other = owner => owner === "light" ? "dark" : "light";
     const cap = text => text[0].toUpperCase() + text.slice(1);
     const ownerName = owner => owner === "light" ? "Ivory" : "Chestnut";
@@ -867,8 +988,12 @@
         this.showBoardAfterWin = false;
         this.feedbackMode = "summary";
         this.tutorialOpen = false;
+        this.botTrophiesOpen = false;
+        this.trophySystem = null;
+        this.matchContext = null;
         this.cacheElements();
         this.bind();
+        this.beginMatchContext();
         this.render();
         this.maybeRunAI();
       }
@@ -916,12 +1041,44 @@
         this.noGoSetting.addEventListener("change", () => this.restartGame());
         this.gulliesSetting.addEventListener("change", () => this.restartGame());
         this.saveLog.addEventListener("click", () => this.downloadLog());
-        this.lightPlayer.addEventListener("change", () => this.maybeRunAI());
-        this.darkPlayer.addEventListener("change", () => this.maybeRunAI());
+        this.lightPlayer.addEventListener("change", () => this.handlePlayerChange());
+        this.darkPlayer.addEventListener("change", () => this.handlePlayerChange());
       }
 
       playerType(owner = this.game.turn) { return owner === "light" ? this.lightPlayer.value : this.darkPlayer.value; }
       isHumanTurn() { return this.playerType() === "human"; }
+
+      attachTrophySystem(system) { this.trophySystem = system; }
+
+      beginMatchContext(requestedBotId = null) {
+        const players = { light: this.lightPlayer.value, dark: this.darkPlayer.value };
+        const botSides = Object.keys(players).filter(side => players[side] === "barry");
+        const humanSides = Object.keys(players).filter(side => players[side] === "human");
+        const detectedBotId = botSides.length === 1 ? "barry_random" : null;
+        this.matchContext = {
+          botId: requestedBotId || detectedBotId,
+          botSide: botSides[0] || null,
+          humanSide: humanSides[0] || null,
+          players,
+          eligible: botSides.length === 1 && humanSides.length === 1 && (!requestedBotId || requestedBotId === detectedBotId),
+          resolved: false
+        };
+      }
+
+      handlePlayerChange() {
+        const started = this.game.history.length > 0 || this.game.log.length > 0 || this.game.actionsThisTurn > 0;
+        if (started) this.matchContext.eligible = false;
+        else this.beginMatchContext();
+        this.maybeRunAI();
+      }
+
+      startBotGame(botId) {
+        const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
+        if (!bot) return;
+        this.lightPlayer.value = "human";
+        this.darkPlayer.value = bot.playerValue;
+        this.restartGame(bot.id);
+      }
 
       toggleNoGo(owner) {
         if (owner !== this.game.turn || !this.game.canPlaceNoGo() || !this.isHumanTurn()) return;
@@ -932,7 +1089,7 @@
         this.render();
       }
 
-      restartGame() {
+      restartGame(botId = null) {
         clearTimeout(this.aiTimer);
         const count = Math.max(0, Math.min(12, Number.parseInt(this.noGoSetting.value,10) || 0));
         this.noGoSetting.value = count;
@@ -950,6 +1107,7 @@
         document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
         this.feedbackStatus.textContent = "";
         this.sendPlaytest.disabled = false;
+        this.beginMatchContext(botId);
         this.setStatus(`New game with ${count} No Go area${count === 1 ? "" : "s"} each${this.game.gulliesEnabled ? " and Gullies open" : ""}. Ivory begins.`);
         this.render();
         this.maybeRunAI();
@@ -1060,6 +1218,16 @@
         this.renderNoGoRack("light");
         this.renderNoGoRack("dark");
         this.scheduleShieldFade();
+        this.checkTrophyAward();
+      }
+
+      checkTrophyAward() {
+        if (!this.game.winner || !this.matchContext || this.matchContext.resolved || !this.trophySystem) return;
+        this.matchContext.resolved = true;
+        const playersUnchanged = this.lightPlayer.value === this.matchContext.players.light && this.darkPlayer.value === this.matchContext.players.dark;
+        if (this.matchContext.eligible && playersUnchanged && this.game.winner === this.matchContext.humanSide) {
+          this.trophySystem.award(this.matchContext.botId);
+        }
       }
 
       scheduleShieldFade() {
@@ -1169,7 +1337,7 @@
 
       maybeRunAI() {
         clearTimeout(this.aiTimer);
-        if (this.tutorialOpen || this.game.winner || this.isHumanTurn()) return;
+        if (this.tutorialOpen || this.botTrophiesOpen || this.game.winner || this.isHumanTurn()) return;
         this.render();
         this.aiTimer = setTimeout(() => this.runBarry(), 1500);
       }
@@ -1203,6 +1371,154 @@
         this.setStatus(useTurncoat ? "Barry turncoated and shielded a piece." : useNoGo ? "Barry placed a random No Go area." : "Barry made a random move.");
         this.render();
         this.maybeRunAI();
+      }
+    }
+
+    class BotTrophySystem {
+      constructor(gameUI) {
+        this.ui = gameUI;
+        this.storageKey = "turncoatTrophies";
+        this.trophies = this.load();
+        this.previousFocus = null;
+        this.overlay = document.getElementById("botTrophiesOverlay");
+        this.gallery = document.getElementById("botGallery");
+        this.openButton = document.getElementById("botTrophiesOpen");
+        this.closeButton = document.getElementById("botTrophiesClose");
+        this.celebration = document.getElementById("trophyEarnedOverlay");
+        this.earnedName = document.getElementById("trophyEarnedName");
+        this.earnedMessage = document.getElementById("trophyEarnedMessage");
+        this.continueButton = document.getElementById("trophyEarnedContinue");
+        this.ui.attachTrophySystem(this);
+        this.bind();
+        this.render();
+      }
+
+      bind() {
+        this.openButton.addEventListener("click", () => this.open());
+        this.closeButton.addEventListener("click", () => this.close());
+        this.continueButton.addEventListener("click", () => this.hideCelebration());
+        this.gallery.addEventListener("click", event => {
+          const button = event.target.closest("[data-play-bot]");
+          if (!button) return;
+          const bot = BOT_CATALOG.find(item => item.id === button.dataset.playBot && item.available);
+          if (!bot) return;
+          this.close(false);
+          this.ui.startBotGame(bot.id);
+        });
+        this.overlay.addEventListener("click", event => { if (event.target === this.overlay) this.close(); });
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && !this.overlay.hidden) this.close();
+        });
+      }
+
+      load() {
+        try {
+          const value = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+          return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+        } catch { return {}; }
+      }
+
+      save() {
+        try { localStorage.setItem(this.storageKey, JSON.stringify(this.trophies)); }
+        catch { /* Trophies remain available for this session if storage is blocked. */ }
+      }
+
+      isEarned(botId) { return this.trophies[botId]?.earned === true; }
+
+      award(botId) {
+        const bot = BOT_CATALOG.find(item => item.id === botId && item.available && item.trophyCondition === "human_win");
+        if (!bot || this.isEarned(botId)) return false;
+        this.trophies[botId] = { earned: true };
+        this.save();
+        this.render();
+        this.showCelebration(bot);
+        return true;
+      }
+
+      open() {
+        this.previousFocus = document.activeElement;
+        this.ui.botTrophiesOpen = true;
+        clearTimeout(this.ui.aiTimer);
+        this.overlay.hidden = false;
+        document.body.classList.add("bot-trophies-active");
+        this.render();
+        requestAnimationFrame(() => this.closeButton.focus());
+      }
+
+      close(resumeGame = true) {
+        this.overlay.hidden = true;
+        this.ui.botTrophiesOpen = false;
+        this.syncBodyLock();
+        if (this.previousFocus && document.contains(this.previousFocus)) this.previousFocus.focus();
+        if (resumeGame) this.ui.maybeRunAI();
+      }
+
+      showCelebration(bot) {
+        this.earnedName.textContent = bot.name.toUpperCase();
+        this.earnedMessage.textContent = bot.trophyMessage;
+        this.celebration.hidden = false;
+        document.body.classList.add("bot-trophies-active");
+        requestAnimationFrame(() => this.continueButton.focus());
+      }
+
+      hideCelebration() {
+        this.celebration.hidden = true;
+        this.syncBodyLock();
+        document.getElementById("winnerRestart")?.focus();
+      }
+
+      syncBodyLock() {
+        if (this.overlay.hidden && this.celebration.hidden) document.body.classList.remove("bot-trophies-active");
+      }
+
+      element(tag, className = "", text = "") {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text) element.textContent = text;
+        return element;
+      }
+
+      render() {
+        this.gallery.replaceChildren();
+        for (const bot of BOT_CATALOG) {
+          const earned = bot.available && this.isEarned(bot.id);
+          const card = this.element("article", `bot-card ${bot.available ? "available" : "locked"}`);
+          const head = this.element("div", "bot-card-head");
+          const heading = this.element("h3", "", bot.name);
+          const marker = this.element("span", "bot-lock", bot.available ? (earned ? "🏆" : "○") : "🔒");
+          marker.setAttribute("aria-hidden", "true");
+          head.append(heading, marker);
+          card.append(head);
+          card.append(this.element("div", "bot-algorithm", `Algorithm · ${bot.algorithm}`));
+          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(5 - bot.difficulty)}` : "?????";
+          card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
+          card.append(this.element("p", "bot-description", bot.description));
+
+          if (bot.available) {
+            card.append(this.element("div", "bot-available", "AVAILABLE"));
+            card.append(this.element("div", `bot-trophy-status${earned ? " earned" : ""}`, earned ? "🏆 Trophy earned" : "○ Trophy not earned"));
+            const actions = this.element("div", "bot-card-actions");
+            const play = this.element("button", "bot-play", earned ? "PLAY AGAIN" : "PLAY BARRY");
+            play.type = "button";
+            play.dataset.playBot = bot.id;
+            actions.append(play);
+            card.append(actions);
+          } else {
+            card.append(this.element("div", "bot-coming-soon", "COMING SOON"));
+          }
+
+          if (bot.education?.length) {
+            const details = this.element("details", "bot-how");
+            details.append(this.element("summary", "", "HOW IT WORKS"));
+            const title = this.element("p");
+            const strong = this.element("strong", "", bot.educationTitle);
+            title.append(strong);
+            details.append(title);
+            bot.education.forEach(paragraph => details.append(this.element("p", "", paragraph)));
+            card.append(details);
+          }
+          this.gallery.append(card);
+        }
       }
     }
 
@@ -1440,6 +1756,7 @@
     window.TurncoatEngine = TurncoatEngine;
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
+      new BotTrophySystem(gameUI);
       new TurncoatTutorial(gameUI);
     });
   </script>
