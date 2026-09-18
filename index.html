@@ -471,10 +471,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="true"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option><option value="cersei">Cersei - multi-factor evaluation</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option><option value="cersei">Cersei - multi-factor evaluation</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -695,6 +695,11 @@
       surroundPosition: 100,
       distance: 1
     });
+    const CERSEI_WEIGHTS = Object.freeze({
+      mainPieceSurround: 100,
+      materialAdvantage: 60,
+      approachDistance: 1
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
@@ -792,6 +797,34 @@
         limitationTitle: "But Kevin has a problem…",
         limitation: "Kevin only judges the board immediately after his action. He never asks what you will do next, so an apparently brilliant attack may walk straight into a trap. A future search bot will look beyond its own move.",
         trophyMessage: "You survived Turncoat's relentless Main Piece hunter."
+      },
+      {
+        id: "cersei_turncoat_queen",
+        name: "Cersei — Turncoat Queen",
+        shortName: "Cersei",
+        algorithm: "Multi-Factor Evaluation",
+        difficulty: 4,
+        available: true,
+        playerValue: "cersei",
+        trophyCondition: "human_win",
+        description: "Cersei wants everyone on her side.",
+        shortDescription: "She balances attacking your Main Piece with opportunities to Turncoat your army.",
+        educationTitle: "How Cersei thinks",
+        education: [
+          "Kevin has one obsession: your Main Piece. Cersei understands that a position can be good for more than one reason.",
+          "She simulates every legal action, then combines Main Piece pressure, the balance of ordinary pieces under each player's control, and approach distance into one score.",
+          "A Turncoat changes the material balance by two: you lose a piece and Cersei gains one. With her current weights, that can tempt her away from Kevin's most direct attack.",
+          "These numbers are called weights. Changing them changes which competing objective matters most—and therefore changes Cersei's personality."
+        ],
+        educationWeights: [
+          ["Cersei piece around Main", `+${CERSEI_WEIGHTS.mainPieceSurround}`],
+          ["Each point of material advantage", `+${CERSEI_WEIGHTS.materialAdvantage}`],
+          ["Each tile of approach distance", `−${CERSEI_WEIGHTS.approachDistance}`],
+          ["Can win immediately", "Takes the win"]
+        ],
+        limitationTitle: "Cersei cannot see the future…",
+        limitation: "She only judges the board immediately after her action. She may greedily acquire a piece while allowing you to destroy her plan—or win—on your next turn. Search comes later.",
+        trophyMessage: "You defeated Turncoat's multi-factor Turncoat Queen."
       },
       {
         id: "greedy_heuristic",
@@ -1294,9 +1327,9 @@
       return selected?.action || null;
     }
 
-    function evaluateKevinPosition(game, owner) {
+    function measureMainPieceAttack(game, owner) {
       const enemyMain = game.findMain(other(owner));
-      if (!enemyMain) return { score: 0, surroundPressure: 0, distanceTotal: 0 };
+      if (!enemyMain) return { surroundPressure: 0, distanceTotal: 0 };
 
       const surroundCells = DIRECTIONS.map(([dr,dc]) => ({ r: enemyMain.r + dr, c: enemyMain.c + dc }))
         .filter(cell => game.isPlayable(cell.r, cell.c));
@@ -1319,10 +1352,14 @@
         return total + nearest;
       }, 0);
 
+      return { surroundPressure, distanceTotal };
+    }
+
+    function evaluateKevinPosition(game, owner) {
+      const attack = measureMainPieceAttack(game, owner);
       return {
-        surroundPressure,
-        distanceTotal,
-        score: surroundPressure * KEVIN_EVALUATION.surroundPosition - distanceTotal * KEVIN_EVALUATION.distance
+        ...attack,
+        score: attack.surroundPressure * KEVIN_EVALUATION.surroundPosition - attack.distanceTotal * KEVIN_EVALUATION.distance
       };
     }
 
@@ -1353,6 +1390,73 @@
           action: choice.label,
           surroundPressure: choice.surroundPressure,
           distanceTotal: choice.distanceTotal,
+          score: choice.score,
+          winsImmediately: choice.winsImmediately
+        })),
+        selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
+    function ordinaryMaterialAdvantage(game, owner) {
+      let friendlyPieces = 0, enemyPieces = 0;
+      for (const piece of game.board.flat()) {
+        if (!piece || piece.type === "main" || piece.type === "nogo") continue;
+        if (piece.owner === owner) friendlyPieces++;
+        else if (piece.owner === other(owner)) enemyPieces++;
+      }
+      return { friendlyPieces, enemyPieces, materialAdvantage: friendlyPieces - enemyPieces };
+    }
+
+    function evaluateCerseiPosition(game, owner) {
+      const attack = measureMainPieceAttack(game, owner);
+      const material = ordinaryMaterialAdvantage(game, owner);
+      const pressureScore = attack.surroundPressure * CERSEI_WEIGHTS.mainPieceSurround;
+      const materialScore = material.materialAdvantage * CERSEI_WEIGHTS.materialAdvantage;
+      const approachPenalty = attack.distanceTotal * CERSEI_WEIGHTS.approachDistance;
+      return {
+        ...attack,
+        ...material,
+        pressureScore,
+        materialScore,
+        approachPenalty,
+        score: pressureScore + materialScore - approachPenalty
+      };
+    }
+
+    function scoreCerseiAction(game, action, owner = game.turn) {
+      const result = simulateBotAction(game, action);
+      return {
+        action,
+        ...evaluateCerseiPosition(result, owner),
+        winsImmediately: result.winner === owner,
+        label: describeBotAction(game, action)
+      };
+    }
+
+    function chooseCerseiAction(game, random = Math.random) {
+      const owner = game.turn;
+      const evaluated = getLegalBotActions(game).map(action => scoreCerseiAction(game, action, owner));
+      const winning = evaluated.filter(choice => choice.winsImmediately);
+      const bestScore = evaluated.length ? Math.max(...evaluated.map(choice => choice.score)) : -Infinity;
+      const best = evaluated.filter(choice => choice.score === bestScore);
+      const pool = winning.length ? winning : best;
+      const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
+
+      window.turncoatBotDebug = {
+        bot: "Cersei — Turncoat Queen",
+        formula: `pressure × ${CERSEI_WEIGHTS.mainPieceSurround} + material advantage × ${CERSEI_WEIGHTS.materialAdvantage} − distance × ${CERSEI_WEIGHTS.approachDistance}`,
+        winningOverride: winning.length > 0,
+        choices: evaluated.map(choice => ({
+          action: choice.label,
+          surroundPressure: choice.surroundPressure,
+          pressureScore: choice.pressureScore,
+          friendlyPieces: choice.friendlyPieces,
+          enemyPieces: choice.enemyPieces,
+          materialAdvantage: choice.materialAdvantage,
+          materialScore: choice.materialScore,
+          distanceTotal: choice.distanceTotal,
+          approachPenalty: choice.approachPenalty,
           score: choice.score,
           winsImmediately: choice.winsImmediately
         })),
@@ -1730,11 +1834,11 @@
 
       runBotAction() {
         const botType = this.playerType();
-        if (this.game.winner || !["barry", "sally", "trevor", "kevin"].includes(botType)) return;
+        if (this.game.winner || !["barry", "sally", "trevor", "kevin", "cersei"].includes(botType)) return;
         const actions = getLegalBotActions(this.game);
         if (!actions.length) {
           if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
-          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : "Barry";
+          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : botType === "cersei" ? "Cersei" : "Barry";
           this.setStatus(`${name} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
@@ -1743,9 +1847,10 @@
         const action = botType === "sally" ? chooseSallyAction(this.game)
           : botType === "trevor" ? chooseTrevorAction(this.game)
             : botType === "kevin" ? chooseKevinAction(this.game)
+              : botType === "cersei" ? chooseCerseiAction(this.game)
             : actions[Math.floor(Math.random() * actions.length)];
         executeBotAction(this.game, action);
-        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : "Barry";
+        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : botType === "cersei" ? "Cersei" : "Barry";
         const message = action.type === "turncoat" ? `${name} turncoated and shielded a piece.`
           : action.type === "nogo" ? `${name} placed a No Go area.`
             : action.type === "pass" ? `${name} passed.`
@@ -2191,16 +2296,22 @@
       SALLY_WEIGHTS,
       TREVOR_WEIGHTS,
       KEVIN_EVALUATION,
+      CERSEI_WEIGHTS,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
       calculateSallyWeight,
       calculateTrevorWeight,
+      measureMainPieceAttack,
       evaluateKevinPosition,
       scoreKevinAction,
+      ordinaryMaterialAdvantage,
+      evaluateCerseiPosition,
+      scoreCerseiAction,
       chooseWeighted,
       chooseSallyAction,
       chooseTrevorAction,
-      chooseKevinAction
+      chooseKevinAction,
+      chooseCerseiAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
