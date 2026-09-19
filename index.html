@@ -399,6 +399,7 @@
     .bot-symbol.tree::before { content: ""; position: absolute; inset: 12% 8% 14%; background: linear-gradient(30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(-30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(90deg, transparent 47%, #287bd0 48% 52%, transparent 53%); }
     .bot-symbol.tree::after { content: "●  ●  ●"; position: absolute; inset: 0; color: var(--accent); font-size: calc(var(--avatar-size) * .1); letter-spacing: .04em; display: flex; align-items: flex-end; justify-content: center; }
     .bot-symbol.prune { width: 68%; height: 64%; font-size: calc(var(--avatar-size) * .24); color: #287bd0; transform: rotate(-8deg); }
+    .bot-symbol.dice { width: 76%; height: 70%; font-size: calc(var(--avatar-size) * .18); letter-spacing: -.08em; transform: rotate(-5deg); }
     .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
     .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
     .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
@@ -602,10 +603,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -876,6 +877,10 @@
       opponentActions: 2,
       winScore: MINNIE_SEARCH.winScore
     });
+    const MONTY_MONTE_CARLO = Object.freeze({
+      thinkingTimeMs: 300,
+      maximumRolloutActions: 96
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
@@ -1087,6 +1092,37 @@
         trophyMessage: "You beat Turncoat's efficient Alpha-Beta searcher."
       },
       {
+        id: "monty_monte_carlo",
+        name: "Monty — Monte Carlo",
+        shortName: "Monty",
+        icon: "dice",
+        iconLabel: "dice representing simulated futures",
+        algorithm: "Monte Carlo Simulation",
+        difficulty: 8,
+        available: true,
+        playerValue: "monty",
+        trophyCondition: "human_win",
+        description: "Monty likes to see how things play out.",
+        shortDescription: "He plays out hundreds of imaginary games and chooses the action that tends to work best.",
+        introSummary: "Monty samples possible futures by playing many imaginary games with random legal actions.",
+        educationTitle: "How Monty thinks",
+        education: [
+          "Minnie systematically searches possible responses. Alfie searches the same kind of tree more efficiently. Monty takes a different approach: he samples complete possible futures.",
+          "For every legal action, Monty repeatedly simulates random legal play for both sides. A Monty win scores +1, a loss scores −1, and a rollout that reaches the limit scores 0.",
+          "After roughly 0.30 seconds, Monty compares each action's average result and chooses the best estimate. Faster devices may fit in more imaginary games during the same thinking time.",
+          "This is Monte Carlo simulation—not Monte Carlo Tree Search. Monty distributes rollouts across candidate actions rather than learning which branches deserve more attention."
+        ],
+        educationWeights: [
+          ["Imaginary Monty win", "+1"],
+          ["Imaginary Monty loss", "−1"],
+          ["Rollout limit reached", "0"],
+          ["Thinking budget", `≈${(MONTY_MONTE_CARLO.thinkingTimeMs / 1000).toFixed(2)} seconds`]
+        ],
+        limitationTitle: "Monty samples rather than proves…",
+        limitation: "Random rollouts can be noisy and inefficient. A future Monte Carlo Tree Search bot will learn which promising futures deserve more simulation.",
+        trophyMessage: "You beat Turncoat's Monte Carlo simulator."
+      },
+      {
         id: "greedy_heuristic",
         name: "??? — Greedy",
         algorithm: "Heuristic",
@@ -1095,12 +1131,12 @@
         description: "A bot that actually knows what it wants."
       },
       {
-        id: "monte_carlo",
-        name: "??? — Monte Carlo",
-        algorithm: "Monte Carlo Tree Search",
+        id: "monte_carlo_tree_search",
+        name: "??? — Monte Carlo Tree Search",
+        algorithm: "MCTS",
         difficulty: null,
         available: false,
-        description: "Plays out possible futures before making its decision."
+        description: "Learns which imagined futures deserve more attention."
       },
       {
         id: "self_learning",
@@ -1133,6 +1169,7 @@
       symbol.className = `bot-symbol ${bot.icon || "unknown"}`;
       if (bot.icon === "duck") symbol.textContent = "🦆🦆";
       else if (bot.icon === "prune") symbol.textContent = "✂";
+      else if (bot.icon === "dice") symbol.textContent = "🎲🎲";
       else if (bot.icon === "surround") {
         for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
         const aggressive = document.createElement("span");
@@ -2083,6 +2120,130 @@
       return selected?.action || null;
     }
 
+    // Monty reuses the real legal-action and execution paths, but his rollout
+    // policy is intentionally just random play. This machinery is kept
+    // separate from Minimax so a later MCTS bot can reuse it without turning
+    // Monty into a tree-search bot.
+    function runRandomRollout(startGame, perspective, random = Math.random, maximumActions = MONTY_MONTE_CARLO.maximumRolloutActions) {
+      const game = new TurncoatEngine(startGame.noGoPerPlayer, startGame.gulliesEnabled);
+      game.restore(startGame.snapshot());
+      game.history = [];
+      game.log = [];
+      game.turnTraces = [];
+      game.completedTurnTraces = [];
+      let actionsPlayed = 0;
+      while (!game.winner && actionsPlayed < maximumActions) {
+        const actions = getLegalBotActions(game);
+        if (!actions.length) break;
+        const action = actions[Math.floor(random() * actions.length)];
+        executeBotAction(game, action);
+        // Engine history and notation are presentation features, not rollout state.
+        game.history = [];
+        game.log = [];
+        game.turnTraces = [];
+        game.completedTurnTraces = [];
+        actionsPlayed++;
+      }
+      return {
+        score: game.winner ? (game.winner === perspective ? 1 : -1) : 0,
+        winner: game.winner,
+        actionsPlayed,
+        reachedLimit: !game.winner && actionsPlayed >= maximumActions
+      };
+    }
+
+    function chooseMontyAction(game, random = Math.random, options = {}) {
+      const perspective = game.turn;
+      const actions = getLegalBotActions(game);
+      if (!actions.length) return null;
+      const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
+      if (immediateWins.length) {
+        const action = immediateWins[Math.floor(random() * immediateWins.length)];
+        window.turncoatBotDebug = {
+          bot: "Monty — Monte Carlo",
+          algorithm: "Monte Carlo simulation with random legal rollouts",
+          winningOverride: true,
+          legalActionCount: actions.length,
+          selected: describeBotAction(game, action),
+          totalRollouts: 0,
+          selectedRollouts: 0,
+          selectedWins: 0,
+          selectedWinRate: 100,
+          searchTimeMs: 0
+        };
+        return action;
+      }
+
+      const budgetMs = Math.max(1, Number(options.thinkingTimeMs ?? MONTY_MONTE_CARLO.thinkingTimeMs));
+      const maximumActions = Math.max(1, Number(options.maximumRolloutActions ?? MONTY_MONTE_CARLO.maximumRolloutActions));
+      const started = performance.now();
+      const deadline = started + budgetMs;
+      const candidates = actions.map(action => ({
+        action,
+        label: describeBotAction(game, action),
+        result: simulateBotAction(game, action),
+        visits: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        scoreTotal: 0
+      }));
+      // Shuffle once so a very tight time budget does not privilege DOM/board order.
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+
+      let totalRollouts = 0;
+      let cursor = 0;
+      do {
+        const candidate = candidates[cursor % candidates.length];
+        const rollout = runRandomRollout(candidate.result, perspective, random, maximumActions);
+        candidate.visits++;
+        candidate.scoreTotal += rollout.score;
+        if (rollout.score > 0) candidate.wins++;
+        else if (rollout.score < 0) candidate.losses++;
+        else candidate.draws++;
+        totalRollouts++;
+        cursor++;
+      } while (performance.now() < deadline);
+
+      for (const candidate of candidates) candidate.averageScore = candidate.visits ? candidate.scoreTotal / candidate.visits : -Infinity;
+      const testedCandidates = candidates.filter(candidate => candidate.visits > 0);
+      const bestScore = Math.max(...testedCandidates.map(candidate => candidate.averageScore));
+      const best = testedCandidates.filter(candidate => candidate.averageScore === bestScore);
+      const selected = best[Math.floor(random() * best.length)];
+      const elapsed = performance.now() - started;
+      window.turncoatBotDebug = {
+        bot: "Monty — Monte Carlo",
+        algorithm: "Monte Carlo simulation with uniformly distributed random rollouts",
+        perspective,
+        winningOverride: false,
+        thinkingBudgetMs: budgetMs,
+        maximumRolloutActions: maximumActions,
+        legalActionCount: actions.length,
+        totalRollouts,
+        searchTimeMs: Math.round(elapsed * 10) / 10,
+        selected: selected.label,
+        selectedRollouts: selected.visits,
+        selectedWins: selected.wins,
+        selectedLosses: selected.losses,
+        selectedDraws: selected.draws,
+        selectedWinRate: selected.visits ? Math.round(selected.wins / selected.visits * 1000) / 10 : 0,
+        selectedAverageScore: Math.round(selected.averageScore * 1000) / 1000,
+        choices: testedCandidates.map(candidate => ({
+          action: candidate.label,
+          rollouts: candidate.visits,
+          wins: candidate.wins,
+          losses: candidate.losses,
+          draws: candidate.draws,
+          winRate: candidate.visits ? Math.round(candidate.wins / candidate.visits * 1000) / 10 : 0,
+          averageScore: Math.round(candidate.averageScore * 1000) / 1000
+        }))
+      };
+      return selected.action;
+    }
+
     const signedThought = value => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value || 0))}`;
     const compactNumber = value => Math.max(0, Math.round(value || 0)).toLocaleString();
     const BOT_THOUGHT_BUILDERS = Object.freeze({
@@ -2095,7 +2256,8 @@
         const positions = (debug.nodesSearched || 0) + (debug.leavesEvaluated || 0);
         return { stats: [`🌳 ${compactNumber(positions)} future positions considered · 1 response deep`, `🌳 Worst-case score: ${Math.round(debug.selectedValue || 0)} · ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s`], flavour: ["🌳 Minnie wondered what you'd do next."] };
       },
-      alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · 2 responses deep`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] })
+      alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · 2 responses deep`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
+      monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] })
     });
 
     function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
@@ -2594,7 +2756,8 @@
           walter: chooseWalterAction,
           cersei: chooseCerseiAction,
           minnie: chooseMinnieAction,
-          alfie: chooseAlfieAction
+          alfie: chooseAlfieAction,
+          monty: chooseMontyAction
         };
         const action = selectors[botType]
           ? selectors[botType](this.game)
@@ -2819,7 +2982,8 @@
           head.append(identity, marker);
           card.append(head);
           card.append(this.element("div", "bot-algorithm", `Algorithm · ${bot.algorithm}`));
-          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(7 - bot.difficulty)}` : "???????";
+          const difficultyScale = Math.max(...releasedBots().map(item => item.difficulty || 0), 1);
+          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(Math.max(0, difficultyScale - bot.difficulty))}` : "?".repeat(difficultyScale);
           card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
           card.append(this.element("p", "bot-description", bot.description));
           if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
@@ -3166,6 +3330,7 @@
       CERSEI_WEIGHTS,
       MINNIE_SEARCH,
       ALFIE_SEARCH,
+      MONTY_MONTE_CARLO,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
@@ -3186,6 +3351,7 @@
       alphaBetaMinnieHorizon,
       compareMinnieAndAlfie,
       alphaBetaAlfieHorizon,
+      runRandomRollout,
       buildBotThought,
       chooseWeighted,
       chooseSallyAction,
@@ -3193,7 +3359,8 @@
       chooseWalterAction,
       chooseCerseiAction,
       chooseMinnieAction,
-      chooseAlfieAction
+      chooseAlfieAction,
+      chooseMontyAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
