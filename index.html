@@ -401,6 +401,17 @@
     .bot-symbol.prune { width: 68%; height: 64%; font-size: calc(var(--avatar-size) * .24); color: #287bd0; transform: rotate(-8deg); }
     .bot-symbol.dice { width: 76%; height: 70%; font-size: calc(var(--avatar-size) * .18); letter-spacing: -.08em; transform: rotate(-5deg); }
     .bot-symbol.mcts { width: 74%; height: 68%; font-size: calc(var(--avatar-size) * .24); filter: drop-shadow(0 1px 1px rgba(34,77,48,.2)); }
+    .bot-symbol.stevie { width: 74%; height: 68%; font-size: calc(var(--avatar-size) * .23); }
+    .bot-robot.stevie-face { position: relative; font-size: calc(var(--avatar-size) * .72); }
+    .stevie-eyebrows, .stevie-tash { position: absolute; z-index: 2; pointer-events: none; }
+    .stevie-eyebrows { top: 36%; left: 28%; width: 44%; height: 9%; }
+    .stevie-eyebrows::before, .stevie-eyebrows::after { content: ""; position: absolute; top: 0; width: 42%; height: 3px; border-radius: 4px; background: #38251d; }
+    .stevie-eyebrows::before { left: 0; transform: rotate(12deg); }
+    .stevie-eyebrows::after { right: 0; transform: rotate(-12deg); }
+    .stevie-tash { left: 37%; top: 61%; width: 26%; height: 9%; }
+    .stevie-tash::before, .stevie-tash::after { content: ""; position: absolute; top: 0; width: 55%; height: 100%; border-radius: 80% 25% 70% 25%; background: #4a3023; }
+    .stevie-tash::before { right: 48%; transform: rotate(14deg); }
+    .stevie-tash::after { left: 48%; transform: scaleX(-1) rotate(14deg); }
     .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
     .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
     .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
@@ -604,10 +615,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -891,6 +902,26 @@
     const TACTICAL_ROLLOUT_POLICY = Object.freeze({
       safetyCandidates: 4
     });
+    const STEVIE_RULES = Object.freeze({
+      ownOccupancy: 95,
+      enemyOccupancyReduction: 105,
+      occupancyAdvantage: 45,
+      immediateTurncoat: 180,
+      doubleTurncoat: 650,
+      classicOpening: 260,
+      openingAdvance: 55,
+      noGoBait: 500,
+      cubeAdvance: 55,
+      deepCube: 70,
+      moveAwayFromMain: 45,
+      mainOnEdge: -320,
+      mainInCorner: -700,
+      perimeterNoGo: -190,
+      tempoCost: -24,
+      thirdActionReluctance: -260,
+      passValue: 32,
+      nearBestRandomRange: 12
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
@@ -1165,12 +1196,46 @@
         trophyMessage: "You beat Turncoat's explore-versus-exploit tree searcher."
       },
       {
-        id: "greedy_heuristic",
-        name: "??? — Greedy",
-        algorithm: "Heuristic",
+        id: "stevie_designer",
+        name: "Stevie — The Designer",
+        shortName: "Stevie",
+        icon: "stevie",
+        iconLabel: "Turncoat's bald, moustached designer with formidable eyebrows",
+        algorithm: "Rule-Based Expert System",
+        difficulty: 10,
+        available: true,
+        playerValue: "stevie",
+        trophyCondition: "human_win",
+        description: "Stevie plays Turncoat the way its designer thinks it should be played.",
+        shortDescription: "A hand-crafted hierarchy of strategies, habits, preferences and weird little tricks from Turncoat's designer.",
+        introSummary: "Stevie follows the designer's own strategic rules: preserve his Main Piece's options, restrict yours, and look for cheeky combinations.",
+        educationTitle: "How Stevie thinks",
+        education: [
+          "Stevie is an expert system: a collection of strategies and rules written by Turncoat's designer. He does not search thousands of futures or learn from data.",
+          "His hierarchy is explicit: take a win, prevent an immediate loss, strongly prefer a double Turncoat, then compare strategic rules.",
+          "His main measure is occupancy: preserve the playable space around his own Main Piece while reducing the space around yours. A central, completely open Main Piece has occupancy 9—including its own tile.",
+          "His personality rules include the Stevie Classic Cube opening, disruptive No Gos, deep Cube advances and refusing to spend TEMPO on an action he considers pointless."
+        ],
+        educationWeights: [
+          ["Immediate win", "Always"],
+          ["Prevent immediate loss", "Absolute when possible"],
+          ["Double Turncoat", `+${STEVIE_RULES.doubleTurncoat}`],
+          ["Own occupancy", `+${STEVIE_RULES.ownOccupancy} each`],
+          ["Enemy occupancy removed", `+${STEVIE_RULES.enemyOccupancyReduction} each`],
+          ["Edge / corner Main Piece", `${STEVIE_RULES.mainOnEdge} / ${STEVIE_RULES.mainInCorner}`],
+          ["Unhelpful TEMPO", "Prefers PASS"]
+        ],
+        limitationTitle: "Stevie plays how Stevie says he plays…",
+        limitation: "These rules are hand-authored beliefs, not behavioural evidence. A future Stevie — The Impostor could instead learn from how the real Stevie actually plays.",
+        trophyMessage: "You beat Turncoat's designer at his own game."
+      },
+      {
+        id: "stevie_impostor",
+        name: "Stevie — The Impostor",
+        algorithm: "Behavioural Cloning",
         difficulty: null,
         available: false,
-        description: "A bot that actually knows what it wants."
+        description: "Learns how Stevie actually plays—not merely how he says he plays."
       },
       {
         id: "self_learning",
@@ -1194,7 +1259,15 @@
       avatar.setAttribute("aria-label", `${bot.name}: robot thinking about ${bot.iconLabel || "its strategy"}`);
       const robot = document.createElement("span");
       robot.className = "bot-robot";
-      robot.textContent = "🤖";
+      robot.textContent = bot.icon === "stevie" ? "👨‍🦲" : "🤖";
+      if (bot.icon === "stevie") {
+        robot.classList.add("stevie-face");
+        const eyebrows = document.createElement("i");
+        eyebrows.className = "stevie-eyebrows";
+        const tash = document.createElement("i");
+        tash.className = "stevie-tash";
+        robot.append(eyebrows, tash);
+      }
       robot.setAttribute("aria-hidden", "true");
       const thought = document.createElement("span");
       thought.className = "bot-thought";
@@ -1205,6 +1278,7 @@
       else if (bot.icon === "prune") symbol.textContent = "✂";
       else if (bot.icon === "dice") symbol.textContent = "🎲🎲";
       else if (bot.icon === "mcts") symbol.textContent = "🌳";
+      else if (bot.icon === "stevie") symbol.textContent = "🧠";
       else if (bot.icon === "surround") {
         for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
         const aggressive = document.createElement("span");
@@ -2191,7 +2265,7 @@
       return selected?.action || null;
     }
 
-    function immediateWinningActions(game, owner = game.turn, actions = getLegalBotActions(game), stopAfterFirst = false) {
+    function immediateWinningActions(game, owner = game.turn, actions = null, stopAfterFirst = false) {
       if (game.winner || game.turn !== owner) return [];
       const targetMain = game.findMain(other(owner));
       if (!targetMain) return [];
@@ -2203,6 +2277,7 @@
       // One action can occupy at most one new surround tile. Avoid simulating
       // every legal action when an immediate surround is geometrically impossible.
       if (openSurroundTiles > 1) return [];
+      actions ||= getLegalBotActions(game);
       const wins = [];
       const sandbox = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
       const base = game.snapshot();
@@ -2243,7 +2318,7 @@
       const safe = evaluated.filter(candidate => {
         if (candidate.result.winner) return candidate.result.winner === actor;
         if (candidate.result.turn === actor) return true;
-        return immediateWinningActions(candidate.result, candidate.result.turn, getLegalBotActions(candidate.result), true).length === 0;
+        return immediateWinningActions(candidate.result, candidate.result.turn, null, true).length === 0;
       });
       const pool = safe.length ? safe : evaluated;
       const turncoats = pool.filter(candidate => candidate.action.type === "turncoat");
@@ -2516,6 +2591,206 @@
       return selected.action;
     }
 
+    function measureStevieOccupancy(game, owner) {
+      const main = game.findMain(owner);
+      if (!main) return { occupancy: 0, openNeighbours: 0, playableNeighbours: 0 };
+      let openNeighbours = 0, playableNeighbours = 0;
+      for (const [dr,dc] of DIRECTIONS) {
+        const r = main.r + dr, c = main.c + dc;
+        if (!game.isPlayable(r,c)) continue;
+        playableNeighbours++;
+        if (!game.board[r][c]) openNeighbours++;
+      }
+      // Stevie counts the Main Piece's own tile, hence a fully open centre is 9.
+      return { occupancy: 1 + openNeighbours, openNeighbours, playableNeighbours };
+    }
+
+    function stevieTurncoatsThisTurn(game, owner) {
+      const prefix = `${ownerName(owner)} turncoats `;
+      const turnMarker = `${ownerName(owner)} turn ·`;
+      let count = 0;
+      for (const entry of game.log) {
+        if (entry.startsWith(turnMarker)) break;
+        if (entry.startsWith(prefix)) count++;
+      }
+      return count;
+    }
+
+    function stevieHasActedBefore(game, owner) {
+      const name = ownerName(owner);
+      return game.log.some(entry => entry.startsWith(`${name} `) && (
+        entry.includes("–") || entry.includes("No Go →") || entry.includes("turncoats ") || entry.includes(" passes")
+      ));
+    }
+
+    function stevieOpponentHasImmediateWin(game, owner) {
+      if (game.winner) return game.winner === other(owner);
+      const opponent = other(owner);
+      const threatState = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
+      threatState.restore(game.snapshot());
+      if (threatState.turn === owner) {
+        threatState.turn = opponent;
+        threatState.actionsThisTurn = 0;
+        threatState.tempoSpentThisTurn = 0;
+        threatState.turnStartingTempo = threatState.tempo[opponent];
+      }
+      return immediateWinningActions(threatState, opponent, null, true).length > 0;
+    }
+
+    function isNoGoInFrontOfEnemy(game, action, owner) {
+      if (action.type !== "nogo") return false;
+      const opponent = other(owner);
+      const forward = opponent === "light" ? -1 : 1;
+      for (let r=0;r<RULES.rows;r++) for (let c=0;c<RULES.cols;c++) {
+        const piece = game.board[r][c];
+        if (piece?.owner === opponent && piece.type !== "nogo" && action.to.r === r + forward && action.to.c === c) return true;
+      }
+      return false;
+    }
+
+    function scoreStevieAction(game, action, owner = game.turn) {
+      const beforeOwn = measureStevieOccupancy(game, owner);
+      const beforeEnemy = measureStevieOccupancy(game, other(owner));
+      const movingPiece = action.type === "move" ? game.board[action.move.from.r][action.move.from.c] : null;
+      const result = simulateBotAction(game, action);
+      const afterOwn = measureStevieOccupancy(result, owner);
+      const afterEnemy = measureStevieOccupancy(result, other(owner));
+      const reasons = [];
+      let score = 0;
+      const ownChange = afterOwn.occupancy - beforeOwn.occupancy;
+      const enemyChange = afterEnemy.occupancy - beforeEnemy.occupancy;
+      score += ownChange * STEVIE_RULES.ownOccupancy;
+      score += -enemyChange * STEVIE_RULES.enemyOccupancyReduction;
+      score += ((afterOwn.occupancy - afterEnemy.occupancy) - (beforeOwn.occupancy - beforeEnemy.occupancy)) * STEVIE_RULES.occupancyAdvantage;
+      if (ownChange) reasons.push(`own occupancy ${ownChange > 0 ? "+" : ""}${ownChange}`);
+      if (enemyChange) reasons.push(`enemy occupancy ${enemyChange > 0 ? "+" : ""}${enemyChange}`);
+
+      const tempoCost = action.type === "nogo" ? 2 : action.type === "pass" ? 0 : 1;
+      score += tempoCost * STEVIE_RULES.tempoCost;
+      if (action.type === "pass") { score += STEVIE_RULES.passValue; reasons.push("TEMPO not worth spending"); }
+      else if (game.tempoSpentThisTurn >= 2) { score += STEVIE_RULES.thirdActionReluctance; reasons.push("third action must earn its TEMPO"); }
+
+      const turncoatsBefore = stevieTurncoatsThisTurn(game, owner);
+      let doubleTurncoat = false;
+      if (action.type === "turncoat") {
+        score += STEVIE_RULES.immediateTurncoat;
+        reasons.push("immediate Turncoat");
+        doubleTurncoat = turncoatsBefore >= 1 || (!result.winner && result.turn === owner && result.turncoatablePieces(owner).length > 0 && result.tempo[owner] >= 1);
+        if (doubleTurncoat) { score += STEVIE_RULES.doubleTurncoat; reasons.push("double Turncoat"); }
+      }
+
+      const opening = !stevieHasActedBefore(game, owner);
+      let stevieClassic = false;
+      if (opening && action.type === "move" && movingPiece?.type === "cube") {
+        const forward = owner === "light" ? -1 : 1;
+        const dr = action.move.to.r - action.move.from.r;
+        const dc = action.move.to.c - action.move.from.c;
+        stevieClassic = dr === forward && Math.abs(dc) === 1;
+        if (stevieClassic) { score += STEVIE_RULES.classicOpening; reasons.push("Stevie Classic"); }
+      }
+
+      let noGoBait = false;
+      if (opening && isNoGoInFrontOfEnemy(game, action, owner)) {
+        noGoBait = true;
+        score += STEVIE_RULES.noGoBait;
+        reasons.push("No Go bait");
+      }
+
+      if (action.type === "move" && movingPiece?.owner === owner) {
+        const forward = owner === "light" ? -1 : 1;
+        const advance = (action.move.to.r - action.move.from.r) * forward;
+        if (advance > 0) { score += advance * STEVIE_RULES.openingAdvance; reasons.push("advance"); }
+        if (movingPiece.type === "cube" && advance > 0) {
+          score += advance * STEVIE_RULES.cubeAdvance;
+          const enemyMain = game.findMain(other(owner));
+          if (enemyMain) {
+            const beforeDistance = Math.max(Math.abs(action.move.from.r-enemyMain.r),Math.abs(action.move.from.c-enemyMain.c));
+            const afterDistance = Math.max(Math.abs(action.move.to.r-enemyMain.r),Math.abs(action.move.to.c-enemyMain.c));
+            if (afterDistance < beforeDistance) { score += STEVIE_RULES.deepCube; reasons.push("deep Cube"); }
+          }
+        }
+        const ownMain = game.findMain(owner);
+        if (ownMain && movingPiece.type !== "main") {
+          const beforeDistance = Math.max(Math.abs(action.move.from.r-ownMain.r),Math.abs(action.move.from.c-ownMain.c));
+          const afterDistance = Math.max(Math.abs(action.move.to.r-ownMain.r),Math.abs(action.move.to.c-ownMain.c));
+          if (afterDistance > beforeDistance) { score += STEVIE_RULES.moveAwayFromMain; reasons.push("clears Main Piece"); }
+        }
+      }
+
+      let mainPositionPenalty = 0;
+      if (action.type === "move" && movingPiece?.type === "main") {
+        if (afterOwn.playableNeighbours <= 3) mainPositionPenalty = STEVIE_RULES.mainInCorner;
+        else if (afterOwn.playableNeighbours < 8) mainPositionPenalty = STEVIE_RULES.mainOnEdge;
+        if (mainPositionPenalty) reasons.push(afterOwn.playableNeighbours <= 3 ? "corner avoided" : "edge avoided");
+        score += mainPositionPenalty;
+      }
+
+      let perimeterNoGo = false;
+      if (action.type === "nogo" && (action.to.r === 0 || action.to.r === RULES.rows-1 || action.to.c === 0 || action.to.c === RULES.cols-1)) {
+        perimeterNoGo = true;
+        const strategicallyUseful = enemyChange < 0 || noGoBait;
+        if (!strategicallyUseful) { score += STEVIE_RULES.perimeterNoGo; reasons.push("wasteful perimeter No Go"); }
+      }
+
+      return {
+        action, result, score, label: describeBotAction(game, action), reasons,
+        winsImmediately: result.winner === owner,
+        losesImmediately: result.winner === other(owner),
+        preventsImmediateLoss: !stevieOpponentHasImmediateWin(result, owner),
+        ownOccupancyBefore: beforeOwn.occupancy,
+        ownOccupancyAfter: afterOwn.occupancy,
+        enemyOccupancyBefore: beforeEnemy.occupancy,
+        enemyOccupancyAfter: afterEnemy.occupancy,
+        doubleTurncoat, stevieClassic, noGoBait, perimeterNoGo, mainPositionPenalty
+      };
+    }
+
+    function chooseStevieAction(game, random = Math.random) {
+      const owner = game.turn;
+      const actions = getLegalBotActions(game);
+      const evaluated = actions.map(action => scoreStevieAction(game, action, owner));
+      const winning = evaluated.filter(choice => choice.winsImmediately);
+      const underImmediateThreat = stevieOpponentHasImmediateWin(game, owner);
+      const safe = underImmediateThreat ? evaluated.filter(choice => choice.preventsImmediateLoss && !choice.losesImmediately) : evaluated;
+      const doubleTurncoats = safe.filter(choice => choice.doubleTurncoat);
+      let pool = winning.length ? winning : doubleTurncoats.length ? doubleTurncoats : safe.length ? safe : evaluated;
+      const bestScore = pool.length ? Math.max(...pool.map(choice => choice.score)) : -Infinity;
+      const nearBest = pool.filter(choice => choice.score >= bestScore - STEVIE_RULES.nearBestRandomRange);
+      const selected = nearBest.length ? nearBest[Math.floor(random() * nearBest.length)] : null;
+      let flavourMessage = "Your move, geez.";
+      if (selected?.doubleTurncoat) flavourMessage = "Ooo, cheeky double.";
+      else if (selected?.stevieClassic) flavourMessage = "It's a Stevie classic.";
+      else if (selected?.noGoBait) flavourMessage = "Would you fall for it?";
+      else if (selected?.action.type === "turncoat") flavourMessage = "Turncoat this — bam.";
+      else if (selected?.action.type === "pass") flavourMessage = "Not worth another TEMPO.";
+      else if (selected?.reasons.includes("deep Cube")) flavourMessage = "Let's break this!";
+      const randomFact = random() < 0.08
+        ? ["Octopuses have three hearts.", "A day on Venus is longer than its year."][Math.floor(random() * 2)]
+        : null;
+
+      window.turncoatBotDebug = {
+        bot: "Stevie — The Designer",
+        algorithm: "Rule-based expert system",
+        ruleHierarchy: ["immediate win", "prevent immediate loss", "double Turncoat", "strategic rules"],
+        winningOverride: winning.length > 0,
+        underImmediateThreat,
+        doubleTurncoatOverride: !winning.length && doubleTurncoats.length > 0,
+        legalActionCount: actions.length,
+        choices: evaluated.map(choice => ({ action: choice.label, score: choice.score, reasons: choice.reasons, ownOccupancy: choice.ownOccupancyAfter, enemyOccupancy: choice.enemyOccupancyAfter, preventsImmediateLoss: choice.preventsImmediateLoss })),
+        selected: selected?.label || null,
+        selectedActionType: selected?.action.type || null,
+        selectedScore: selected?.score ?? null,
+        selectedReasons: selected?.reasons || [],
+        ownOccupancyBefore: selected?.ownOccupancyBefore ?? measureStevieOccupancy(game, owner).occupancy,
+        ownOccupancyAfter: selected?.ownOccupancyAfter ?? null,
+        enemyOccupancyBefore: selected?.enemyOccupancyBefore ?? measureStevieOccupancy(game, other(owner)).occupancy,
+        enemyOccupancyAfter: selected?.enemyOccupancyAfter ?? null,
+        flavourMessage,
+        randomFact
+      };
+      return selected?.action || null;
+    }
+
     const signedThought = value => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value || 0))}`;
     const compactNumber = value => Math.max(0, Math.round(value || 0)).toLocaleString();
     const BOT_THOUGHT_BUILDERS = Object.freeze({
@@ -2530,7 +2805,8 @@
       },
       alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · depth ${compactNumber(debug.completedResponseDepth)}/${compactNumber(debug.configuredResponseDepth || ALFIE_SEARCH.opponentActions)}`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
       monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] }),
-      carlo: debug => ({ stats: [`🌳 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.iterations)} simulations · ${compactNumber(debug.nodesCreated)} tree nodes`, `🧠 Best branch explored ${compactNumber(debug.selectedVisits)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🌳 ${compactNumber(debug.rolloutCount)} rollouts · explored ${compactNumber(debug.branchesExplored)} branches`], flavour: ["🌳 Exploring... exploiting...", "🧠 This future looks promising.", "🌳 Maybe one more look down this branch..."] })
+      carlo: debug => ({ stats: [`🌳 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.iterations)} simulations · ${compactNumber(debug.nodesCreated)} tree nodes`, `🧠 Best branch explored ${compactNumber(debug.selectedVisits)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🌳 ${compactNumber(debug.rolloutCount)} rollouts · explored ${compactNumber(debug.branchesExplored)} branches`], flavour: ["🌳 Exploring... exploiting...", "🧠 This future looks promising.", "🌳 Maybe one more look down this branch..."] }),
+      stevie: debug => ({ stats: [`🧠 Your occupancy ${compactNumber(debug.enemyOccupancyBefore)} → ${compactNumber(debug.enemyOccupancyAfter)} · Mine ${compactNumber(debug.ownOccupancyBefore)} → ${compactNumber(debug.ownOccupancyAfter)}`, `🧠 ${debug.doubleTurncoatOverride ? "Double Turncoat available" : (debug.selectedReasons || []).join(" · ") || "Rule score " + Math.round(debug.selectedScore || 0)}`, `🧠 ${debug.selectedActionType === "pass" ? "Not worth another TEMPO" : `Expert-rule score: ${Math.round(debug.selectedScore || 0)}`}`], flavour: [debug.flavourMessage, "Turncoat this — bam.", "Let's break this!", "Your move, geez.", "Ooo, cheeky double.", "It's a Stevie classic.", debug.randomFact].filter(Boolean) })
     });
 
     function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
@@ -3031,7 +3307,8 @@
           minnie: chooseMinnieAction,
           alfie: chooseAlfieAction,
           monty: chooseMontyAction,
-          carlo: chooseCarloAction
+          carlo: chooseCarloAction,
+          stevie: chooseStevieAction
         };
         const action = selectors[botType]
           ? selectors[botType](this.game)
@@ -3607,6 +3884,7 @@
       MONTY_MONTE_CARLO,
       CARLO_MCTS,
       TACTICAL_ROLLOUT_POLICY,
+      STEVIE_RULES,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
@@ -3632,6 +3910,8 @@
       chooseTacticalRolloutAction,
       createMctsNode,
       selectMctsChild,
+      measureStevieOccupancy,
+      scoreStevieAction,
       buildBotThought,
       chooseWeighted,
       chooseSallyAction,
@@ -3641,7 +3921,8 @@
       chooseMinnieAction,
       chooseAlfieAction,
       chooseMontyAction,
-      chooseCarloAction
+      chooseCarloAction,
+      chooseStevieAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
