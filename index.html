@@ -81,7 +81,9 @@
     .side-column { height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
     .side-board { min-height: 150px; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 12px 7px; border: 1px solid rgba(73,51,29,.24); border-radius: 8px; background: rgba(244,226,196,.55); }
     .side-board.active { box-shadow: 0 0 0 2px rgba(173,48,40,.3); }
-    .side-title { font-size: .59rem; font-weight: 850; text-transform: uppercase; letter-spacing: .1em; text-align: center; }
+    .side-title { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .59rem; font-weight: 850; text-transform: uppercase; letter-spacing: .1em; text-align: center; }
+    .side-title-owner { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .side-title .side-dot { width: 11px; }
     .token-rack { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
     .nogo-token { width: 27px; aspect-ratio: 1; font-size: 1.55rem; }
     .side-count { margin-top: auto; color: var(--muted); font-size: .67rem; }
@@ -93,19 +95,35 @@
     .shield-icon.cracking { animation: crackFade 2s ease-out forwards; }
     @keyframes crackFade { 0% { opacity: 1; transform: scale(1); } 30% { transform: scale(1.18) rotate(-7deg); } 100% { opacity: 0; transform: scale(.75) rotate(14deg); } }
 
-    .tempo-card { margin-top: 14px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; padding: 14px 17px; background: rgba(244,238,226,.61); border: 1px solid var(--line); border-radius: 8px; }
-    .tempo-label { text-transform: uppercase; letter-spacing: .14em; font-size: .68rem; font-weight: 800; }
+    .tempo-card { margin-top: 14px; display: grid; grid-template-columns: minmax(145px,210px) minmax(125px,210px); justify-content: center; align-items: center; column-gap: 10px; row-gap: 9px; padding: 14px 17px; background: rgba(244,238,226,.61); border: 1px solid var(--line); border-radius: 8px; }
+    .tempo-label { grid-column: 1 / -1; justify-self: center; text-transform: uppercase; letter-spacing: .14em; font-size: .68rem; font-weight: 800; }
     .tempo { display: flex; align-items: center; gap: 9px; }
     .tempo-side { display: flex; gap: 5px; padding: 5px 8px; border-radius: 20px; transition: background .2s; }
     .tempo-side.active { background: rgba(166,66,46,.12); }
     .token { width: 19px; aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(42,32,22,.4); box-shadow: inset 0 1px 2px rgba(255,255,255,.45), 0 2px 3px rgba(42,32,22,.18); }
     .token.light { background: var(--light); }
     .token.dark { background: var(--dark); }
+    .side-label { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .side-dot { display: inline-block; width: 17px; aspect-ratio: 1; flex: 0 0 auto; border: 1px solid rgba(42,32,22,.48); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(255,255,255,.5), 0 2px 3px rgba(42,32,22,.22); }
+    .side-dot.light { background: var(--light); }
+    .side-dot.dark { background: var(--dark); }
     .tempo-count { min-width: 16px; text-align: center; font-weight: 750; font-size: .8rem; }
+    .tempo-scale { grid-column: 1 / -1; justify-self: center; width: min(320px,100%); display: grid; grid-template-columns: 22px minmax(105px,1fr) 22px; align-items: center; gap: 7px; min-width: 175px; }
+    .tempo-scale-end { width: 21px; aspect-ratio: 1; border: 1px solid rgba(42,32,22,.45); border-radius: 50%; box-shadow: inset 0 1px 2px rgba(255,255,255,.5), 0 2px 3px rgba(42,32,22,.2); }
+    .tempo-scale-end.light { background: var(--light); }
+    .tempo-scale-end.dark { background: var(--dark); }
+    .tempo-scale-end.active { box-shadow: 0 0 0 3px rgba(166,66,46,.16), inset 0 1px 2px rgba(255,255,255,.5), 0 2px 3px rgba(42,32,22,.2); }
+    .tempo-live-track { position: relative; height: 28px; border-radius: 16px; background: linear-gradient(90deg, rgba(246,238,220,.9) 0 48%, rgba(92,58,33,.22) 52% 100%); box-shadow: inset 0 0 0 1px var(--line); }
+    .tempo-live-track::before { content: ""; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1px; background: rgba(75,57,40,.3); }
+    .tempo-scale-token { position: absolute; top: 6px; left: var(--tempo-position); width: 16px; aspect-ratio: 1; translate: -50% 0; border: 1px solid; border-radius: 50%; box-shadow: 0 2px 4px rgba(43,28,16,.25); transition: left .6s ease-in-out, background-color .05s .28s linear, border-color .05s .28s linear; }
+    .tempo-scale-token.light { border-color: var(--light-edge); background: var(--light); }
+    .tempo-scale-token.dark { border-color: var(--dark-edge); background: var(--dark); }
     button.pass-button { min-width: 125px; padding: 14px 23px; color: #fff9ed; border-color: #752c1e; background: var(--accent); font-size: .92rem; letter-spacing: .14em; }
     button.pass-button:hover:not(:disabled) { background: #8e3524; }
     button.turncoat-button { min-width: 145px; padding: 14px 17px; color: #f3f8ff; border-color: #245f9d; background: #2d76bc; font-size: .82rem; letter-spacing: .08em; }
     button.turncoat-button:hover:not(:disabled) { background: #245f9d; }
+    button.turncoat-button.available { animation: turncoatReadyPulse 1.8s ease-in-out infinite alternate; }
+    @keyframes turncoatReadyPulse { from { box-shadow: 0 0 0 0 rgba(45,118,188,.28); } to { box-shadow: 0 0 0 4px rgba(45,118,188,.2), 0 0 14px rgba(45,118,188,.65); } }
 
     aside { display: grid; gap: 14px; }
     .panel { background: rgba(244,238,226,.78); border: 1px solid var(--line); border-radius: 9px; padding: 18px; box-shadow: 0 8px 22px rgba(50,35,20,.07); backdrop-filter: blur(8px); }
@@ -168,17 +186,23 @@
     .winner button:last-child { background: var(--accent); }
     .winner .next-bot-button { border-color: #c79a4d; background: #9a6a29; }
     .winner .next-bot-button:hover { background: #79521f; }
-    .winner.inspecting { align-items: end; padding-bottom: 24px; color: var(--ink); background: transparent; backdrop-filter: none; pointer-events: none; }
-    .winner.inspecting .winner-card { pointer-events: auto; padding: 10px; border-radius: 7px; background: rgba(244,238,226,.9); box-shadow: 0 5px 18px rgba(42,27,17,.3); }
-    .winner.inspecting #winnerSummary > strong, .winner.inspecting #winnerSummary > span, .winner.inspecting #showBoard { display: none; }
-    .winner.inspecting #openFeedback { color: #f3f8ff; border-color: #245f9d; background: #2d76bc; }
-    .winner.inspecting #openFeedback:hover { background: #245f9d; }
+    .winner strong.side-label { display: flex; }
+    .winner .side-dot { display: inline-block; margin: 0; }
+    .post-game-dock { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: rgba(244,238,226,.92); box-shadow: 0 7px 18px rgba(42,27,17,.13); }
+    .post-game-dock .winner-summary { grid-template-columns: repeat(3, minmax(0,1fr)); align-items: center; gap: 8px; }
+    .post-game-dock #winnerName, .post-game-dock #winnerReason, .post-game-dock #showBoard { display: none; }
+    .post-game-dock button { width: 100%; }
+    .post-game-dock .next-bot-button { color: #fff8ed; border-color: #c79a4d; background: #9a6a29; }
+    .post-game-dock #openFeedback { color: #f3f8ff; border-color: #245f9d; background: #2d76bc; }
+    .post-game-dock #winnerRestart { color: #fff8ed; border-color: #752c1e; background: var(--accent); }
     .win-surround { fill: rgba(255,214,61,.16); stroke: #ffd33d; stroke-width: .09; stroke-dasharray: .18 .1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgba(255,211,61,.85)); }
 
     body.tutorial-active { overflow: hidden; }
     .tutorial-overlay { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(35,24,16,.9); backdrop-filter: blur(8px); }
     .tutorial-card { position: relative; width: min(620px, 100%); max-height: min(760px, calc(100vh - 36px)); overflow: auto; padding: clamp(24px, 5vw, 42px); border: 1px solid rgba(70,48,28,.45); border-radius: 12px; color: var(--ink); background: linear-gradient(145deg, #f7eddb, #e5d2b2); box-shadow: 0 28px 70px rgba(19,12,7,.48), inset 0 0 0 4px rgba(255,255,255,.2); }
     .tutorial-screen { display: grid; justify-items: center; gap: 16px; text-align: center; }
+    #tutorialLesson { display: grid; }
+    #tutorialLesson > footer { margin-top: 16px; }
     .tutorial-screen h2 { margin: 0; font: 500 clamp(1.75rem, 5vw, 3rem)/.98 Georgia,serif; letter-spacing: -.025em; }
     .tutorial-screen > p { max-width: 470px; margin: 0; color: var(--muted); font-size: clamp(.88rem, 2vw, 1rem); line-height: 1.5; }
     .tutorial-kicker { color: var(--accent); font-size: .68rem; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
@@ -197,14 +221,37 @@
     .tutorial-surround { position: absolute; z-index: 1; left: 20%; top: 20%; width: 60%; height: 60%; border: 4px solid #ffd33d; border-radius: 5px; opacity: 0; box-shadow: 0 0 18px rgba(255,211,61,.9), inset 0 0 18px rgba(255,211,61,.18); animation: tutorialFlash 4.4s ease-in-out infinite; }
     .tutorial-win-word, .tutorial-turn-word { position: absolute; z-index: 5; left: 50%; bottom: 5%; translate: -50% 0; padding: 6px 12px; border-radius: 20px; color: #fff; background: rgba(37,91,143,.94); font-size: .72rem; font-weight: 900; letter-spacing: .13em; opacity: 0; animation: tutorialFlash 4.4s ease-in-out infinite; }
     .tutorial-arrive { --to-left: 60%; --to-top: 60%; animation: tutorialArrive 4.4s ease-in-out infinite; }
-    .tutorial-turn-arrive { --to-left: 60%; --to-top: 40%; animation: tutorialArrive 4.4s ease-in-out infinite; }
-    .tutorial-turn-before { animation: tutorialTurnBefore 4.4s ease-in-out infinite; }
-    .tutorial-turn-after { opacity: 0; animation: tutorialTurnAfter 4.4s ease-in-out infinite; }
-    .tutorial-turn-word { background: #2d76bc; }
+    .tutorial-turn-before { animation: tutorialTurnBefore 9s ease-in-out infinite; }
+    .tutorial-turn-after { opacity: 0; animation: tutorialTurnAfter 9s ease-in-out infinite; }
+    .tutorial-turn-orth { animation: tutorialTurnOrthFormation 9s ease-in-out infinite; }
+    .tutorial-turn-diagonal { opacity: 0; animation: tutorialTurnDiagonalFormation 9s ease-in-out infinite; }
+    .tutorial-turn-orth-arrive { animation: tutorialTurnOrthArrive 9s ease-in-out infinite; }
+    .tutorial-turn-diagonal-arrive { opacity: 0; animation: tutorialTurnDiagonalArrive 9s ease-in-out infinite; }
+    .tutorial-turn-lines { position: absolute; z-index: 4; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .tutorial-turn-square { fill: rgba(45,118,188,.09); stroke: #2d76bc; stroke-width: .09; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 2px rgba(45,118,188,.7)); }
+    .tutorial-turn-square.orthogonal { animation: tutorialTurnOrthSquare 9s ease-in-out infinite; }
+    .tutorial-turn-square.diagonal { animation: tutorialTurnDiagonalSquare 9s ease-in-out infinite; }
+    .tutorial-turn-formation-label { position: absolute; z-index: 5; top: 4%; left: 50%; translate: -50% 0; padding: 4px 8px; border-radius: 20px; color: #fff; background: rgba(45,118,188,.92); font-size: .58rem; font-weight: 900; letter-spacing: .08em; white-space: nowrap; }
+    .tutorial-turn-formation-label.orthogonal { animation: tutorialTurnOrthFormation 9s ease-in-out infinite; }
+    .tutorial-turn-formation-label.diagonal { opacity: 0; animation: tutorialTurnDiagonalFormation 9s ease-in-out infinite; }
+    .tutorial-turn-word { background: #2d76bc; animation: tutorialTurnWord 9s ease-in-out infinite; }
+    .tutorial-turncoat-stage { position: relative; width: 100%; aspect-ratio: 1; }
+    .tutorial-turncoat-stage .tutorial-board { position: absolute; inset: 0; }
+    .tutorial-turncoat-cubes { animation: tutorialCubeBoardPhase 18s ease-in-out infinite; }
+    .tutorial-turncoat-wedges { opacity: 0; animation: tutorialWedgeBoardPhase 18s ease-in-out infinite; }
     @keyframes tutorialArrive { 0%,18%,100% { left: var(--from-left); top: var(--from-top); } 40%,84% { left: var(--to-left); top: var(--to-top); } }
     @keyframes tutorialFlash { 0%,38%,100% { opacity: 0; transform: scale(.94); } 48%,82% { opacity: 1; transform: scale(1); } }
-    @keyframes tutorialTurnBefore { 0%,39%,100% { opacity: 1; transform: rotateY(0); } 52%,84% { opacity: 0; transform: rotateY(90deg); } }
-    @keyframes tutorialTurnAfter { 0%,43%,100% { opacity: 0; transform: rotateY(-90deg); } 56%,84% { opacity: 1; transform: rotateY(0); } }
+    @keyframes tutorialTurnBefore { 0%,18%,43%,63%,93%,100% { opacity: 1; transform: rotateY(0); } 23%,39%,68%,89% { opacity: 0; transform: rotateY(90deg); } }
+    @keyframes tutorialTurnAfter { 0%,18%,43%,63%,93%,100% { opacity: 0; transform: rotateY(-90deg); } 23%,39%,68%,89% { opacity: 1; transform: rotateY(0); } }
+    @keyframes tutorialTurnOrthFormation { 0%,42% { opacity: 1; } 47%,100% { opacity: 0; } }
+    @keyframes tutorialTurnDiagonalFormation { 0%,47%,100% { opacity: 0; } 52%,92% { opacity: 1; } 97% { opacity: 0; } }
+    @keyframes tutorialTurnOrthArrive { 0%,8% { left: var(--from-left); top: var(--from-top); opacity: 1; } 18%,42% { left: var(--to-left); top: var(--to-top); opacity: 1; } 47%,100% { left: var(--to-left); top: var(--to-top); opacity: 0; } }
+    @keyframes tutorialTurnDiagonalArrive { 0%,48%,100% { left: var(--from-left); top: var(--from-top); opacity: 0; } 52%,58% { left: var(--from-left); top: var(--from-top); opacity: 1; } 68%,92% { left: var(--to-left); top: var(--to-top); opacity: 1; } 97% { left: var(--to-left); top: var(--to-top); opacity: 0; } }
+    @keyframes tutorialTurnOrthSquare { 0%,17%,46%,100% { opacity: 0; stroke-dashoffset: 1; } 24%,40% { opacity: 1; stroke-dashoffset: 0; } }
+    @keyframes tutorialTurnDiagonalSquare { 0%,64%,96%,100% { opacity: 0; stroke-dashoffset: 1; } 71%,90% { opacity: 1; stroke-dashoffset: 0; } }
+    @keyframes tutorialTurnWord { 0%,21%,42%,66%,92%,100% { opacity: 0; transform: scale(.94); } 26%,38%,72%,88% { opacity: 1; transform: scale(1); } }
+    @keyframes tutorialCubeBoardPhase { 0%,47% { opacity: 1; } 50%,100% { opacity: 0; } }
+    @keyframes tutorialWedgeBoardPhase { 0%,50%,100% { opacity: 0; } 53%,97% { opacity: 1; } }
 
     .tutorial-move-board { --rows: 3; aspect-ratio: 5 / 3; }
     .tutorial-move-labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; color: var(--muted); font-size: .72rem; }
@@ -237,6 +284,18 @@
     @keyframes tempoCountLight { 0%,15%,100% { content: "3"; } 24%,41% { content: "2"; } 51%,68% { content: "1"; } 78%,88% { content: "0"; } }
     @keyframes tempoCountDark { 0%,15%,100% { content: "0"; } 24%,41% { content: "1"; } 51%,68% { content: "2"; } 78%,88% { content: "3"; } }
     .tutorial-tempo-caption { min-height: 2.4em; color: var(--accent); font-size: .78rem; font-weight: 800; }
+    .tutorial-action-costs { width: min(390px, 88vw); display: grid; grid-template-columns: minmax(0,1fr) 124px; gap: 18px; align-items: stretch; }
+    .action-cost-list { display: grid; gap: 8px; }
+    .action-cost-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.32); color: var(--ink); font-size: .78rem; font-weight: 800; text-align: left; }
+    .action-cost-item strong { color: var(--accent); white-space: nowrap; }
+    .action-cost-demo { display: grid; align-content: center; gap: 11px; padding: 12px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.34); }
+    .action-cost-demo-row { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 7px; color: var(--accent); font-size: 1.05rem; font-weight: 900; }
+    .cost-tempo-track { position: relative; height: 18px; border-radius: 12px; background: linear-gradient(90deg, rgba(246,238,220,.9), rgba(92,58,33,.22)); box-shadow: inset 0 0 0 1px rgba(73,51,29,.2); }
+    .cost-tempo-dot { position: absolute; top: 3px; left: 9px; width: 12px; aspect-ratio: 1; border: 1px solid var(--light-edge); border-radius: 50%; background: var(--light); animation: tutorialCostPass 4.8s ease-in-out infinite; }
+    .action-cost-demo-row:nth-child(2) .cost-tempo-dot { animation-delay: .9s; }
+    .action-cost-demo-row:nth-child(3) .cost-tempo-dot { animation-delay: 1.8s; }
+    .action-cost-demo-row:nth-child(3) .cost-tempo-dot:nth-child(2) { left: 25px; animation-delay: 2.05s; }
+    @keyframes tutorialCostPass { 0%,18%,100% { left: 9px; border-color: var(--light-edge); background: var(--light); } 42%,82% { left: calc(100% - 21px); border-color: var(--dark-edge); background: var(--dark); } }
     .tutorial-cell.demo-boundary { background: radial-gradient(circle at center, rgba(255,218,190,.5), rgba(180,37,32,.25)); }
     .tutorial-nogo-drop { animation: tutorialNoGoDrop 5.8s ease-in-out infinite; }
     .tutorial-blocked-cube { animation: tutorialBlockedMove 5.8s ease-in-out infinite; }
@@ -267,6 +326,7 @@
     .bot-card.locked { color: #777064; background: rgba(94,82,67,.08); filter: saturate(.55); }
     .bot-card.progression-locked { border-style: dashed; }
     .bot-card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .bot-card-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .bot-card h3 { margin: 0; font: 500 1.35rem/1.05 Georgia,serif; }
     .bot-lock { font-size: 1.15rem; }
     .bot-algorithm { color: var(--accent); font-size: .65rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
@@ -308,14 +368,41 @@
     .bot-intro-content h2 { margin: 0; font: 500 clamp(2rem, 7vw, 3.4rem)/.95 Georgia,serif; }
     .bot-intro-algorithm { color: var(--accent); font-size: .68rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
     .bot-intro-summary { max-width: 350px; margin: 0; color: var(--muted); line-height: 1.55; }
+    .bot-avatar { --avatar-size: 58px; position: relative; display: inline-flex; align-items: end; gap: 1px; width: calc(var(--avatar-size) * 1.6); height: var(--avatar-size); flex: 0 0 auto; }
+    .bot-avatar.large { --avatar-size: 90px; }
+    .bot-avatar.compact { --avatar-size: 40px; }
+    .bot-robot { display: grid; place-items: center; width: var(--avatar-size); height: var(--avatar-size); font-size: calc(var(--avatar-size) * .68); line-height: 1; filter: drop-shadow(0 3px 3px rgba(50,34,22,.18)); }
+    .bot-thought { position: absolute; right: 0; top: 0; display: grid; place-items: center; width: calc(var(--avatar-size) * .7); height: calc(var(--avatar-size) * .52); border: 2px solid rgba(71,58,44,.55); border-radius: 50%; background: #fffaf0; box-shadow: 0 3px 8px rgba(55,37,21,.14); }
+    .bot-thought::before, .bot-thought::after { content: ""; position: absolute; border: 1.5px solid rgba(71,58,44,.5); border-radius: 50%; background: #fffaf0; }
+    .bot-thought::before { left: -8px; bottom: -4px; width: 8px; height: 8px; }
+    .bot-thought::after { left: -14px; bottom: -10px; width: 4px; height: 4px; }
+    .bot-symbol { position: relative; display: grid; place-items: center; width: 62%; height: 62%; color: var(--ink); font-size: calc(var(--avatar-size) * .2); line-height: 1; }
+    .bot-symbol.duck { width: 92%; font-size: calc(var(--avatar-size) * .15); letter-spacing: -.14em; }
+    .bot-symbol.wedge { width: 56%; height: 58%; background: var(--light-edge); clip-path: polygon(50% 0,100% 100%,0 100%); }
+    .bot-symbol.wedge::after { content: ""; width: 72%; height: 70%; margin-top: 20%; background: var(--light); clip-path: inherit; }
+    .bot-symbol.cube { grid-template-columns: repeat(2,1fr); gap: 2px; width: 60%; height: 60%; }
+    .bot-symbol.cube i { display: block; border: 1.5px solid var(--dark-edge); border-radius: 1px; background: var(--light); box-shadow: inset -1px -1px 2px rgba(0,0,0,.12); }
+    .bot-symbol.split-cube { width: 48%; height: 48%; border: 2px solid var(--dark-edge); border-radius: 2px; background: var(--light); box-shadow: inset -2px -2px 3px rgba(0,0,0,.12); }
+    .bot-symbol.split-cube { background: linear-gradient(90deg, var(--light) 0 50%, var(--dark) 50% 100%); }
+    .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
+    .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
+    .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
+    .bot-symbol.surround .bot-aggressive { position: absolute; right: -6%; top: -18%; font-size: calc(var(--avatar-size) * .18); filter: drop-shadow(0 1px 1px rgba(80,20,10,.25)); }
     @keyframes trophyPop { from { opacity: 0; transform: scale(.25) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 
     @media (prefers-reduced-motion: reduce) {
-      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-tempo-dot, .tutorial-blocked-word, .tutorial-nogo-word { animation: none !important; }
-      .tutorial-arrive, .tutorial-turn-arrive, .tutorial-move-cube, .tutorial-move-wedge, .tutorial-move-main, .tutorial-tempo-cube, .tutorial-tempo-wedge, .tutorial-tempo-main, .tutorial-nogo-drop { left: var(--to-left); top: var(--to-top, var(--top)); }
+      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-turn-orth, .tutorial-turn-diagonal, .tutorial-turn-square, .tutorial-turn-formation-label, .tutorial-turncoat-cubes, .tutorial-turncoat-wedges, .tutorial-tempo-dot, .tutorial-blocked-word, .tutorial-nogo-word, .cost-tempo-dot, button.turncoat-button.available { animation: none !important; }
+      .tutorial-arrive, .tutorial-turn-orth-arrive, .tutorial-turn-diagonal-arrive, .tutorial-move-cube, .tutorial-move-wedge, .tutorial-move-main, .tutorial-tempo-cube, .tutorial-tempo-wedge, .tutorial-tempo-main, .tutorial-nogo-drop { left: var(--to-left); top: var(--to-top, var(--top)); }
       .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-after, .tutorial-nogo-surround, .tutorial-nogo-word { opacity: 1; }
       .tutorial-turn-before { opacity: 0; }
+      .tutorial-turn-orth { opacity: 1; }
+      .tutorial-turn-diagonal { opacity: 0; }
+      .tutorial-turn-square.orthogonal { opacity: 1; stroke-dashoffset: 0; }
+      .tutorial-turn-square.diagonal { opacity: 0; }
+      .tutorial-turncoat-cubes { opacity: 0; }
+      .tutorial-turncoat-wedges { opacity: 1; }
       .tutorial-tempo-dot { left: calc(95% - 15px); }
+      .cost-tempo-dot { left: calc(100% - 21px); border-color: var(--dark-edge); background: var(--dark); }
       .tutorial-count-light::after { content: "0"; animation: none; }
       .tutorial-count-dark::after { content: "3"; animation: none; }
       .trophy-burst { animation: none; }
@@ -335,6 +422,7 @@
       .turn-help { max-width: 190px; font-size: .73rem; }
       .board-wrap { padding: 9px; }
       .winner { inset: 9px; }
+      .post-game-dock .winner-summary { grid-template-columns: 1fr; }
       .board-stage { grid-template-columns: minmax(0, 1fr) 76px; gap: 4px; }
       .side-board { min-height: 112px; padding: 7px 3px; }
       .side-title { font-size: .53rem; }
@@ -342,6 +430,7 @@
       .side-count { font-size: .58rem; }
       aside { grid-template-columns: 1fr; }
       .tempo-card { grid-template-columns: 1fr 1fr; padding: 12px; }
+      .tempo-scale { min-width: 0; }
       .tempo { justify-self: end; }
       button.pass-button, button.turncoat-button { width: 100%; min-width: 0; padding: 12px 8px; }
       button.turncoat-button { font-size: .7rem; }
@@ -350,6 +439,7 @@
       .tutorial-card { max-height: calc(100vh - 16px); padding: 22px 16px; }
       .tutorial-skip { margin: -8px -4px 0 0; }
       .tutorial-visual { width: min(310px, 82vw); }
+      .tutorial-action-costs { width: min(330px, 82vw); grid-template-columns: minmax(0,1fr) 104px; gap: 10px; }
       .tutorial-move-labels { font-size: .64rem; }
       .bot-trophies-button { padding: 7px 8px; font-size: .6rem; }
       .tutorial-replay { padding: 7px 8px; font-size: .6rem; }
@@ -450,25 +540,31 @@
           </div>
           <div class="side-column">
             <div class="side-board" id="darkSideBoard">
-              <span class="side-title">Chestnut No Go</span>
+              <span class="side-title"><span class="side-title-owner">Chestnut <i class="side-dot dark" aria-hidden="true"></i></span><span>No Go's</span></span>
               <div class="token-rack" id="darkNoGo"></div>
               <span class="side-count" id="darkNoGoCount">4 left</span>
               <button class="side-use" id="darkNoGoButton">USE · 2</button>
             </div>
             <div class="side-board" id="lightSideBoard">
-              <span class="side-title">Ivory No Go</span>
+              <span class="side-title"><span class="side-title-owner">Ivory <i class="side-dot light" aria-hidden="true"></i></span><span>No Go's</span></span>
               <div class="token-rack" id="lightNoGo"></div>
               <span class="side-count" id="lightNoGoCount">4 left</span>
               <button class="side-use" id="lightNoGoButton">USE · 2</button>
             </div>
           </div>
         </div>
+        <div class="post-game-dock" id="postGameDock" hidden></div>
         <div class="tempo-card">
           <span class="tempo-label">Tempo</span>
-          <div class="tempo" aria-label="Tempo distribution">
-            <div class="tempo-side" id="lightTempo"><span class="token light"></span><span class="tempo-count" id="lightCount">2</span></div>
-            <span>⇄</span>
-            <div class="tempo-side" id="darkTempo"><span class="token dark"></span><span class="tempo-count" id="darkCount">1</span></div>
+          <div class="tempo-scale" id="tempoScale" role="img" aria-label="Ivory has 2 Tempo; Chestnut has 1 Tempo">
+            <span class="tempo-scale-end light" id="lightTempo" aria-hidden="true"></span>
+            <div class="tempo-live-track" aria-hidden="true">
+              <i class="tempo-scale-token light" data-tempo-token="0"></i>
+              <i class="tempo-scale-token light" data-tempo-token="1"></i>
+              <i class="tempo-scale-token dark" data-tempo-token="2"></i>
+            </div>
+            <span class="tempo-scale-end dark" id="darkTempo" aria-hidden="true"></span>
+            <span id="lightCount" hidden>2</span><span id="darkCount" hidden>1</span>
           </div>
           <button class="turncoat-button" id="turncoat">TURNCOAT</button>
           <button class="pass-button" id="endTurn">PASS</button>
@@ -476,8 +572,8 @@
       </section>
 
       <aside>
-        <section class="panel accordion">
-          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
+        <section class="panel accordion collapsed">
+          <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
               <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option><option value="cersei">Cersei - multi-factor evaluation</option></select>
@@ -499,8 +595,8 @@
           </div>
         </section>
 
-        <section class="panel accordion">
-          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Rules in this build</span><span class="accordion-arrow">⌄</span></button>
+        <section class="panel accordion collapsed">
+          <button class="accordion-trigger" type="button" aria-expanded="false"><span>Rules in this build</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <ul class="rules">
               <li><span class="glyph">■</span><span><b>Cube</b><br>Moves 1 tile. Turncoated by four occupied orthogonal or diagonal tiles forming a square, including at least one attacking piece.</span></li>
@@ -518,8 +614,8 @@
           </div></div>
         </section>
 
-        <section class="panel accordion">
-          <button class="accordion-trigger" type="button" aria-expanded="true"><span>Move log</span><span class="accordion-arrow">⌄</span></button>
+        <section class="panel accordion collapsed">
+          <button class="accordion-trigger" type="button" aria-expanded="false"><span>Move log</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <div class="log" id="log"><div>No moves yet.</div></div>
           </div></div>
@@ -542,7 +638,7 @@
 
       <div id="tutorialLesson" hidden>
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="0">
-          <span class="tutorial-kicker">1 / 5 — Win</span>
+          <span class="tutorial-kicker">1 / 6 — Win</span>
           <h2>SURROUND THE MAIN PIECE</h2>
           <p>Surround your opponent's Main Piece to win.</p>
           <div class="tutorial-visual">
@@ -551,17 +647,20 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="1" hidden>
-          <span class="tutorial-kicker">2 / 5 — Turncoat</span>
+          <span class="tutorial-kicker">2 / 6 — Turncoat</span>
           <h2>SURROUND TO TURNCOAT</h2>
           <p>Surround enemy pieces and they change sides.</p>
           <div class="tutorial-visual">
-            <div class="tutorial-board" data-demo="turncoat" aria-label="An surrounded Chestnut Cube changing to Ivory"></div>
+            <div class="tutorial-turncoat-stage">
+              <div class="tutorial-board tutorial-turncoat-cubes" data-demo="turncoat" aria-label="A Chestnut Cube changing to Ivory after orthogonal and diagonal square surrounds"></div>
+              <div class="tutorial-board tutorial-turncoat-wedges" data-demo="turncoat-wedge" aria-label="A Chestnut Wedge changing to Ivory after two valid triangular surrounds"></div>
+            </div>
           </div>
           <p><b>You don't capture pieces — you turn them.</b></p>
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="2" hidden>
-          <span class="tutorial-kicker">3 / 5 — Move</span>
+          <span class="tutorial-kicker">3 / 6 — Move</span>
           <h2>MOVE YOUR PIECES</h2>
           <p>Choose a piece, then move to a highlighted tile.</p>
           <div class="tutorial-visual">
@@ -575,7 +674,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="3" hidden>
-          <span class="tutorial-kicker">4 / 5 — Tempo</span>
+          <span class="tutorial-kicker">4 / 6 — Tempo</span>
           <h2>USE YOUR TEMPO</h2>
           <p>TEMPO lets you take up to 3 actions.</p>
           <div class="tutorial-visual">
@@ -591,7 +690,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="4" hidden>
-          <span class="tutorial-kicker">5 / 5 — No Go</span>
+          <span class="tutorial-kicker">5 / 6 — No Go</span>
           <h2>USE NO GO TOKENS</h2>
           <p>Use No Go tokens to deny movement and help surround your opponent.</p>
           <div class="tutorial-visual">
@@ -599,8 +698,26 @@
           </div>
         </section>
 
+        <section class="tutorial-screen tutorial-slide" data-tutorial-step="5" hidden>
+          <span class="tutorial-kicker">6 / 6 — Action costs</span>
+          <h2>ACTIONS COST TEMPO</h2>
+          <p>Every action passes TEMPO to your opponent.</p>
+          <div class="tutorial-action-costs">
+            <div class="action-cost-list">
+              <div class="action-cost-item"><span>Movement</span><strong>1 TEMPO</strong></div>
+              <div class="action-cost-item"><span>Turncoating</span><strong>1 TEMPO</strong></div>
+              <div class="action-cost-item"><span>No Go token</span><strong>2 TEMPO</strong></div>
+            </div>
+            <div class="action-cost-demo" aria-hidden="true">
+              <div class="action-cost-demo-row"><span>↔</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i></span></div>
+              <div class="action-cost-demo-row"><span>↻</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i></span></div>
+              <div class="action-cost-demo-row"><span>×</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i><i class="cost-tempo-dot"></i></span></div>
+            </div>
+          </div>
+        </section>
+
         <footer class="tutorial-screen">
-          <div class="tutorial-progress"><span id="tutorialProgress">1 / 5</span><span class="tutorial-dots" id="tutorialDots" aria-hidden="true"></span></div>
+          <div class="tutorial-progress"><span id="tutorialProgress">1 / 6</span><span class="tutorial-dots" id="tutorialDots" aria-hidden="true"></span></div>
           <button class="tutorial-primary" id="tutorialNext" type="button">NEXT</button>
         </footer>
       </div>
@@ -647,6 +764,7 @@
     <div class="tutorial-card bot-intro-card">
       <div class="bot-intro-content">
         <span class="tutorial-kicker">New opponent</span>
+        <div id="botIntroAvatar"></div>
         <h2 id="botIntroName"></h2>
         <div class="bot-intro-algorithm" id="botIntroAlgorithm"></div>
         <p class="bot-intro-summary" id="botIntroSummary"></p>
@@ -726,6 +844,8 @@
         id: "barry_random",
         name: "Barry — Random",
         shortName: "Barry",
+        icon: "duck",
+        iconLabel: "ducks",
         algorithm: "Random",
         difficulty: 1,
         available: true,
@@ -745,6 +865,8 @@
         id: "sally_wedge_lover",
         name: "Sally — Wedge Lover 🔺",
         shortName: "Sally",
+        icon: "wedge",
+        iconLabel: "a Wedge",
         algorithm: "Weighted Probability",
         difficulty: 2,
         available: true,
@@ -772,6 +894,8 @@
         id: "trevor_blockhead",
         name: "Trevor — Blockhead ◻️",
         shortName: "Trevor",
+        icon: "cube",
+        iconLabel: "blocks",
         algorithm: "Weighted Probability",
         difficulty: 2,
         available: true,
@@ -799,6 +923,8 @@
         id: "kevin_killer",
         name: "Kevin — The Killer",
         shortName: "Kevin",
+        icon: "surround",
+        iconLabel: "an angry attack surrounding a Main Piece",
         algorithm: "Evaluation Function",
         difficulty: 3,
         available: true,
@@ -827,6 +953,8 @@
         id: "cersei_turncoat_queen",
         name: "Cersei — Turncoat Queen",
         shortName: "Cersei",
+        icon: "split-cube",
+        iconLabel: "an Ivory and Chestnut Cube",
         algorithm: "Multi-Factor Evaluation",
         difficulty: 4,
         available: true,
@@ -890,6 +1018,34 @@
       const bots = releasedBots();
       const index = bots.findIndex(bot => bot.id === botId);
       return index === 0 || index > 0 && trophies[bots[index - 1].id]?.earned === true;
+    }
+    function createBotAvatar(bot, extraClass = "") {
+      const avatar = document.createElement("div");
+      avatar.className = `bot-avatar ${extraClass}`.trim();
+      avatar.setAttribute("role", "img");
+      avatar.setAttribute("aria-label", `${bot.name}: robot thinking about ${bot.iconLabel || "its strategy"}`);
+      const robot = document.createElement("span");
+      robot.className = "bot-robot";
+      robot.textContent = "🤖";
+      robot.setAttribute("aria-hidden", "true");
+      const thought = document.createElement("span");
+      thought.className = "bot-thought";
+      thought.setAttribute("aria-hidden", "true");
+      const symbol = document.createElement("span");
+      symbol.className = `bot-symbol ${bot.icon || "unknown"}`;
+      if (bot.icon === "duck") symbol.textContent = "🦆🦆";
+      else if (bot.icon === "cube") for (let i=0;i<4;i++) symbol.append(document.createElement("i"));
+      else if (bot.icon === "surround") {
+        for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
+        const aggressive = document.createElement("span");
+        aggressive.className = "bot-aggressive";
+        aggressive.textContent = "😠";
+        symbol.append(aggressive);
+      }
+      else if (!bot.icon) symbol.textContent = "?";
+      thought.append(symbol);
+      avatar.append(robot, thought);
+      return avatar;
     }
     const other = owner => owner === "light" ? "dark" : "light";
     const cap = text => text[0].toUpperCase() + text.slice(1);
@@ -1513,7 +1669,7 @@
       }
 
       cacheElements() {
-        const ids = ["board","traces","turnName","turnHelp","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","nextBot","openFeedback","winnerRestart","feedbackPanel","feedbackText","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
+        const ids = ["board","traces","turnName","turnHelp","tempoScale","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","postGameDock","nextBot","openFeedback","winnerRestart","feedbackText","feedbackPanel","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
         for (const id of ids) this[id] = document.getElementById(id);
       }
 
@@ -1543,7 +1699,7 @@
         this.winnerRestart.addEventListener("click", () => this.restartGame());
         this.winnerRestartAfterFeedback.addEventListener("click", () => this.restartGame());
         this.nextBot.addEventListener("click", () => {
-          if (this.nextBotOfferId) this.startBotGame(this.nextBotOfferId);
+          if (this.nextBotOfferId) this.startBotGame(this.nextBotOfferId, true);
         });
         this.showBoard.addEventListener("click", () => { this.showBoardAfterWin = true; this.render(); });
         this.openFeedback.addEventListener("click", () => {
@@ -1592,13 +1748,13 @@
         this.maybeRunAI();
       }
 
-      startBotGame(botId) {
+      startBotGame(botId, forceIntro = false) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
         if (!bot || this.trophySystem && !isBotUnlocked(this.trophySystem.trophies, bot.id)) return;
         this.lightPlayer.value = "human";
         this.darkPlayer.value = bot.playerValue;
         this.restartGame(bot.id);
-        this.trophySystem?.showBotIntro(bot.id);
+        this.trophySystem?.showBotIntro(bot.id, forceIntro);
       }
 
       toggleNoGo(owner) {
@@ -1713,11 +1869,17 @@
           cell.addEventListener("click", () => this.clickCell(r,c));
           this.board.append(cell);
         }
-        this.turnName.textContent = this.game.winner ? "Game over" : `${ownerName(this.game.turn)}'s turn`;
+        if (this.game.winner) {
+          this.turnName.classList.remove("side-label");
+          this.turnName.textContent = "Game over";
+        } else {
+          this.renderSideLabel(this.turnName, this.game.turn, `${ownerName(this.game.turn)}'s turn`);
+        }
         const remaining = Math.max(0, this.game.requiredTempoSpend() - this.game.tempoSpentThisTurn);
         this.turnHelp.textContent = this.game.winner ? this.game.winReason : this.noGoMode ? "Choose an empty tile." : this.turncoatMode ? "Choose a glowing enemy." : this.isHumanTurn() ? (remaining ? `Spend ${remaining} more Tempo before PASS.` : "You may continue or PASS.") : `${cap(this.playerType())} is thinking…`;
         this.lightCount.textContent = this.game.tempo.light;
         this.darkCount.textContent = this.game.tempo.dark;
+        this.renderTempoScale();
         this.lightTempo.classList.toggle("active", this.game.turn === "light" && !this.game.winner);
         this.darkTempo.classList.toggle("active", this.game.turn === "dark" && !this.game.winner);
         this.endTurn.disabled = !this.game.canEndTurn() || !this.isHumanTurn();
@@ -1725,16 +1887,20 @@
         this.darkNoGoButton.disabled = this.game.turn !== "dark" || !this.game.canPlaceNoGo() || !this.isHumanTurn();
         this.lightNoGoButton.textContent = this.noGoMode && this.game.turn === "light" ? "CANCEL" : "USE · 2";
         this.darkNoGoButton.textContent = this.noGoMode && this.game.turn === "dark" ? "CANCEL" : "USE · 2";
-        this.turncoat.disabled = !turncoatTargets.size || !this.isHumanTurn();
+        const turncoatAvailable = Boolean(turncoatTargets.size) && this.isHumanTurn();
+        this.turncoat.disabled = !turncoatAvailable;
+        this.turncoat.classList.toggle("available", turncoatAvailable && !this.turncoatMode);
         this.turncoat.textContent = this.turncoatMode ? "CANCEL TURNCOAT" : "TURNCOAT";
         this.undo.disabled = !this.game.history.length;
         this.log.innerHTML = this.game.log.length ? this.game.log.slice(0,20).map(line => `<div>${this.escape(line)}</div>`).join("") : "<div>No moves yet.</div>";
-        this.winner.classList.toggle("show", Boolean(this.game.winner));
-        this.winner.classList.toggle("inspecting", Boolean(this.game.winner) && this.showBoardAfterWin && this.feedbackMode === "summary");
+        const inspectingBoard = Boolean(this.game.winner) && this.showBoardAfterWin && this.feedbackMode === "summary";
+        this.placePostGameSummary(inspectingBoard);
+        this.winner.classList.toggle("show", Boolean(this.game.winner) && !inspectingBoard);
         this.winnerSummary.hidden = this.feedbackMode !== "summary";
         this.feedbackPanel.hidden = this.feedbackMode !== "form";
         this.feedbackThanks.hidden = this.feedbackMode !== "thanks";
-        this.winnerName.textContent = this.game.winner ? `${ownerName(this.game.winner)} wins` : "";
+        if (this.game.winner) this.renderSideLabel(this.winnerName, this.game.winner, `${ownerName(this.game.winner)} wins`);
+        else { this.winnerName.classList.remove("side-label"); this.winnerName.textContent = ""; }
         this.winnerReason.textContent = this.game.winReason || "Main Piece surrounded";
         this.renderTraces();
         this.renderNoGoRack("light");
@@ -1742,6 +1908,43 @@
         this.scheduleShieldFade();
         this.checkTrophyAward();
         this.nextBot.hidden = !this.game.winner || !this.nextBotOfferId;
+      }
+
+      renderSideLabel(element, owner, text) {
+        const dot = document.createElement("span");
+        dot.className = `side-dot ${owner}`;
+        dot.setAttribute("aria-hidden", "true");
+        element.classList.add("side-label");
+        element.replaceChildren(dot, document.createTextNode(text));
+      }
+
+      renderTempoScale() {
+        const light = this.game.tempo.light;
+        const dark = this.game.tempo.dark;
+        const tokens = [...this.tempoScale.querySelectorAll(".tempo-scale-token")];
+        tokens.forEach((token, index) => {
+          const isLight = index < light;
+          const groupIndex = isLight ? index : index - light;
+          const groupCount = isLight ? light : dark;
+          const position = isLight
+            ? 8 + (groupIndex + 1) * (34 / (groupCount + 1))
+            : 58 + (groupIndex + 1) * (34 / (groupCount + 1));
+          token.style.setProperty("--tempo-position", `${position}%`);
+          token.classList.toggle("light", isLight);
+          token.classList.toggle("dark", !isLight);
+        });
+        this.tempoScale.setAttribute("aria-label", `Ivory has ${light} Tempo; Chestnut has ${dark} Tempo`);
+      }
+
+      placePostGameSummary(inspectingBoard) {
+        const winnerCard = this.winner.querySelector(".winner-card");
+        if (inspectingBoard) {
+          if (this.winnerSummary.parentElement !== this.postGameDock) this.postGameDock.append(this.winnerSummary);
+          this.postGameDock.hidden = false;
+        } else {
+          if (this.winnerSummary.parentElement !== winnerCard) winnerCard.insertBefore(this.winnerSummary, this.feedbackPanel);
+          this.postGameDock.hidden = true;
+        }
       }
 
       checkTrophyAward() {
@@ -1915,6 +2118,7 @@
         this.earnedMessage = document.getElementById("trophyEarnedMessage");
         this.continueButton = document.getElementById("trophyEarnedContinue");
         this.introOverlay = document.getElementById("botIntroOverlay");
+        this.introAvatar = document.getElementById("botIntroAvatar");
         this.introName = document.getElementById("botIntroName");
         this.introAlgorithm = document.getElementById("botIntroAlgorithm");
         this.introSummary = document.getElementById("botIntroSummary");
@@ -2043,13 +2247,14 @@
         document.getElementById("winnerRestart")?.focus();
       }
 
-      showBotIntro(botId) {
+      showBotIntro(botId, force = false) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
-        if (!bot || !isBotUnlocked(this.trophies, bot.id) || this.introsSeen[bot.id]) return false;
+        if (!bot || !isBotUnlocked(this.trophies, bot.id) || (!force && this.introsSeen[bot.id])) return false;
         this.introsSeen[bot.id] = true;
         this.saveIntros();
         this.ui.botIntroOpen = true;
         clearTimeout(this.ui.aiTimer);
+        this.introAvatar.replaceChildren(createBotAvatar(bot, "large"));
         this.introName.textContent = bot.name;
         this.introAlgorithm.textContent = bot.algorithm;
         this.introSummary.textContent = bot.introSummary || bot.shortDescription || bot.description;
@@ -2084,10 +2289,12 @@
           const unlocked = bot.available && isBotUnlocked(this.trophies, bot.id);
           const card = this.element("article", `bot-card ${bot.available ? "released " : ""}${unlocked ? "available" : "locked"}${bot.available && !unlocked ? " progression-locked" : ""}`);
           const head = this.element("div", "bot-card-head");
+          const identity = this.element("div", "bot-card-identity");
           const heading = this.element("h3", "", bot.name);
           const marker = this.element("span", "bot-lock", earned ? "🏆" : unlocked ? "○" : "🔒");
           marker.setAttribute("aria-hidden", "true");
-          head.append(heading, marker);
+          identity.append(createBotAvatar(bot), heading);
+          head.append(identity, marker);
           card.append(head);
           card.append(this.element("div", "bot-algorithm", `Algorithm · ${bot.algorithm}`));
           const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(5 - bot.difficulty)}` : "?????";
@@ -2145,7 +2352,7 @@
     class TurncoatTutorial {
       constructor(gameUI) {
         this.ui = gameUI;
-        this.version = 2;
+        this.version = 5;
         this.storageKey = "tutorialVersionSeen";
         this.step = 0;
         this.previousFocus = null;
@@ -2159,16 +2366,18 @@
         this.progress = document.getElementById("tutorialProgress");
         this.dots = document.getElementById("tutorialDots");
         this.replay = document.getElementById("tutorialReplay");
+        const seenVersion = this.seenVersion();
+        this.firstEverTutorial = seenVersion === 0;
         this.buildDemos();
         this.buildProgress();
         this.bind();
-        if (this.seenVersion() < this.version) this.open(true);
+        if (seenVersion < this.version) this.open(true);
       }
 
       bind() {
         document.getElementById("tutorialLearn").addEventListener("click", () => this.showStep(0));
         document.getElementById("tutorialWelcomeSkip").addEventListener("click", () => this.close(true));
-        document.getElementById("tutorialPlay").addEventListener("click", () => this.close(true));
+        document.getElementById("tutorialPlay").addEventListener("click", () => this.finishTutorial());
         this.skip.addEventListener("click", () => this.close(true));
         this.next.addEventListener("click", () => this.step < this.slides.length - 1 ? this.showStep(this.step + 1) : this.showComplete());
         this.replay.addEventListener("click", () => this.open(false));
@@ -2204,6 +2413,13 @@
         this.ui.tutorialOpen = false;
         if (this.previousFocus && document.contains(this.previousFocus)) this.previousFocus.focus();
         this.ui.maybeRunAI();
+      }
+
+      finishTutorial() {
+        const introduceBarry = this.firstEverTutorial;
+        this.firstEverTutorial = false;
+        this.close(true);
+        if (introduceBarry) this.ui.trophySystem?.showBotIntro("barry_random", true);
       }
 
       showWelcome() {
@@ -2310,6 +2526,32 @@
         board.querySelector(`.tutorial-cell[data-r="${r}"][data-c="${c}"]`)?.classList.add("demo-legal");
       }
 
+      addTurncoatOutline(board, firstPoints, secondPoints, firstLabel, secondLabel) {
+        const lines = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        lines.setAttribute("class", "tutorial-turn-lines");
+        lines.setAttribute("viewBox", "0 0 5 5");
+        lines.setAttribute("aria-hidden", "true");
+        const firstOutline = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        firstOutline.setAttribute("class", "tutorial-turn-square orthogonal");
+        firstOutline.setAttribute("points", firstPoints);
+        firstOutline.setAttribute("pathLength", "1");
+        const secondOutline = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        secondOutline.setAttribute("class", "tutorial-turn-square diagonal");
+        secondOutline.setAttribute("points", secondPoints);
+        secondOutline.setAttribute("pathLength", "1");
+        lines.append(firstOutline, secondOutline);
+        const firstBadge = document.createElement("div");
+        firstBadge.className = "tutorial-turn-formation-label orthogonal";
+        firstBadge.textContent = firstLabel;
+        const secondBadge = document.createElement("div");
+        secondBadge.className = "tutorial-turn-formation-label diagonal";
+        secondBadge.textContent = secondLabel;
+        const turnWord = document.createElement("div");
+        turnWord.className = "tutorial-turn-word";
+        turnWord.textContent = "CHANGES SIDES";
+        board.append(lines, firstBadge, secondBadge, turnWord);
+      }
+
       buildDemos() {
         const win = this.prepareBoard("win");
         this.addPiece(win, "main", "dark", 2, 2);
@@ -2323,14 +2565,34 @@
         win.append(surround, winWord);
 
         const turncoat = this.prepareBoard("turncoat");
-        [[1,2],[2,1],[3,2]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "light", r, c));
+        [[1,2],[2,1],[3,2]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "light", r, c, "tutorial-turn-orth"));
+        [[1,1],[1,3],[3,1]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "light", r, c, "tutorial-turn-diagonal"));
         this.addPiece(turncoat, "cube", "dark", 2, 2, "tutorial-turn-before");
         this.addPiece(turncoat, "cube", "light", 2, 2, "tutorial-turn-after");
-        this.addPiece(turncoat, "cube", "light", 3, 4, "tutorial-turn-arrive", {r:2,c:3});
-        const turnWord = document.createElement("div");
-        turnWord.className = "tutorial-turn-word";
-        turnWord.textContent = "CHANGES SIDES";
-        turncoat.append(turnWord);
+        this.addPiece(turncoat, "cube", "light", 3, 4, "tutorial-turn-orth-arrive", {r:2,c:3});
+        this.addPiece(turncoat, "cube", "light", 4, 4, "tutorial-turn-diagonal-arrive", {r:3,c:3});
+        this.addTurncoatOutline(
+          turncoat,
+          "2.5,1.5 3.5,2.5 2.5,3.5 1.5,2.5",
+          "1.5,1.5 3.5,1.5 3.5,3.5 1.5,3.5",
+          "CUBE · N · E · S · W",
+          "CUBE · NW · NE · SE · SW"
+        );
+
+        const wedgeTurncoat = this.prepareBoard("turncoat-wedge");
+        [[3,1],[3,3]].forEach(([r,c]) => this.addPiece(wedgeTurncoat, "cube", "light", r, c, "tutorial-turn-orth"));
+        [[1,1],[1,3]].forEach(([r,c]) => this.addPiece(wedgeTurncoat, "cube", "light", r, c, "tutorial-turn-diagonal"));
+        this.addPiece(wedgeTurncoat, "wedge", "dark", 2, 2, "tutorial-turn-before");
+        this.addPiece(wedgeTurncoat, "wedge", "light", 2, 2, "tutorial-turn-after");
+        this.addPiece(wedgeTurncoat, "cube", "light", 0, 3, "tutorial-turn-orth-arrive", {r:1,c:2});
+        this.addPiece(wedgeTurncoat, "cube", "light", 4, 3, "tutorial-turn-diagonal-arrive", {r:3,c:2});
+        this.addTurncoatOutline(
+          wedgeTurncoat,
+          "2.5,1.5 3.5,3.5 1.5,3.5",
+          "1.5,1.5 3.5,1.5 2.5,3.5",
+          "WEDGE · N · SE · SW",
+          "WEDGE · NW · NE · S"
+        );
 
         const move = this.prepareBoard("move", 3, 5);
         const moveSpecs = [
@@ -2379,6 +2641,7 @@
       TREVOR_WEIGHTS,
       KEVIN_EVALUATION,
       CERSEI_WEIGHTS,
+      createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
       calculateSallyWeight,
