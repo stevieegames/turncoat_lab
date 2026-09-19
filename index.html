@@ -39,9 +39,20 @@
 
     main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; align-items: start; }
     .game-area { min-width: 0; }
-    .turn-strip { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .turn-strip { min-height: 72px; display: grid; grid-template-columns: minmax(130px,1fr) minmax(240px,1.4fr) minmax(180px,1fr); align-items: center; gap: 14px; margin-bottom: 12px; }
+    .turn-identity { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
     .turn-name { font-family: Georgia, serif; font-size: clamp(1.35rem, 3vw, 2rem); }
-    .turn-help { color: var(--muted); font-size: .84rem; text-align: right; max-width: 360px; }
+    .turn-help { justify-self: stretch; width: 100%; color: var(--muted); font-size: .84rem; text-align: right; }
+    .bot-thought-slot { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bot-thought-slot[hidden] { display: none; }
+    .bot-thought-label { color: var(--muted); font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .bot-thought-readout { max-width: min(520px, 100%); display: flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid rgba(45,118,188,.24); border-radius: 999px; background: rgba(239,247,255,.66); color: #31516c; font-size: .7rem; line-height: 1.25; box-shadow: 0 2px 8px rgba(40,83,119,.08); animation: thoughtIn 1s ease both; }
+    .bot-thought-readout.flavour { border-color: rgba(121,82,31,.25); background: rgba(255,249,237,.72); color: #704b25; font-style: italic; }
+    .bot-thought-readout.flavour .bot-thought-name { color: #704b25; font-style: normal; }
+    .bot-thought-readout[hidden] { display: none; }
+    .bot-thought-name { color: #234d72; font-weight: 850; white-space: nowrap; }
+    .bot-thought-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @keyframes thoughtIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
     .board-stage { display: grid; grid-template-columns: minmax(0, 550px) 118px; align-items: stretch; justify-content: center; gap: 10px; }
     .board-wrap { position: relative; width: 100%; padding: 17px; border: 1px solid rgba(58,44,28,.34); border-radius: 10px; background: linear-gradient(135deg,#c39a67,#e0bd88 48%,#b88959); box-shadow: 0 25px 50px rgba(49,35,21,.22), inset 0 0 0 4px rgba(255,255,255,.16); }
@@ -422,8 +433,13 @@
       .shell { width: min(100% - 18px, 500px); padding-top: 22px; }
       header { align-items: start; }
       .header-tools { flex-direction: column-reverse; align-items: end; gap: 6px; }
-      .turn-strip { min-height: 52px; }
-      .turn-help { max-width: 190px; font-size: .73rem; }
+      .turn-strip { min-height: 62px; grid-template-columns: minmax(82px,.8fr) minmax(0,1.2fr) minmax(98px,.9fr); gap: 6px; }
+      .turn-name { font-size: 1.12rem; }
+      .turn-help { max-width: 150px; font-size: .68rem; }
+      .bot-thought-readout { max-width: 100%; padding: 5px 6px; font-size: .58rem; border-radius: 8px; }
+      .bot-thought-label { font-size: .52rem; }
+      .bot-thought-name { display: none; }
+      .bot-thought-text { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
       .board-wrap { padding: 9px; }
       .winner { inset: 9px; }
       .post-game-dock .winner-summary { grid-template-columns: 1fr; }
@@ -469,7 +485,13 @@
     <main>
       <section class="game-area" aria-label="Turncoat game">
         <div class="turn-strip">
-          <div class="turn-name" id="turnName">Ivory's turn</div>
+          <div class="turn-identity">
+            <div class="turn-name" id="turnName">Ivory's turn</div>
+          </div>
+          <div class="bot-thought-slot" id="botThoughtSlot" hidden>
+            <span class="bot-thought-label">Bot thought:</span>
+            <div class="bot-thought-readout" id="botThought" role="status" aria-live="polite" hidden><strong class="bot-thought-name" id="botThoughtName"></strong><span class="bot-thought-text" id="botThoughtText"></span></div>
+          </div>
           <div class="turn-help" id="turnHelp">Select a piece to spend Tempo.</div>
         </div>
         <div class="board-stage">
@@ -1511,6 +1533,7 @@
       const total = pool.reduce((sum, choice) => sum + choice.weight, 0);
       window.turncoatBotDebug = {
         bot: "Sally — Wedge Lover",
+        legalActionCount: choices.length,
         winningOverride: winning.length > 0,
         favouriteTurncoatOverride: !winning.length && favouriteTurncoats.length > 0,
         threatenedWedgeIds: threatenedIds,
@@ -1520,7 +1543,9 @@
           probability: winning.length ? 1 / pool.length : choice.weight / total,
           reasons: choice.reasons
         })),
-        selected: selected?.label || null
+        selected: selected?.label || null,
+        selectedWeight: selected?.weight ?? null,
+        selectedReasons: selected?.reasons || []
       };
       return selected?.action || null;
     }
@@ -1595,7 +1620,9 @@
           score: choice.score,
           winsImmediately: choice.winsImmediately
         })),
-        selected: selected?.label || null
+        selected: selected?.label || null,
+        selectedScore: selected?.score ?? null,
+        selectedAttackScore: selected?.pressureScore ?? null
       };
       return selected?.action || null;
     }
@@ -1692,7 +1719,11 @@
           winsImmediately: choice.winsImmediately,
           losesImmediately: choice.losesImmediately
         })),
-        selected: selected?.label || null
+        selected: selected?.label || null,
+        selectedAttackScore: selected?.attackScore ?? null,
+        selectedRiskScore: selected?.dangerScore ?? null,
+        selectedOccupancyScore: selected?.occupancyScore ?? null,
+        selectedScore: selected?.score ?? null
       };
       return selected?.action || null;
     }
@@ -1759,7 +1790,10 @@
           score: choice.score,
           winsImmediately: choice.winsImmediately
         })),
-        selected: selected?.label || null
+        selected: selected?.label || null,
+        selectedAttackScore: selected?.pressureScore ?? null,
+        selectedMaterialScore: selected?.materialScore ?? null,
+        selectedScore: selected?.score ?? null
       };
       return selected?.action || null;
     }
@@ -2049,6 +2083,33 @@
       return selected?.action || null;
     }
 
+    const signedThought = value => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value || 0))}`;
+    const compactNumber = value => Math.max(0, Math.round(value || 0)).toLocaleString();
+    const BOT_THOUGHT_BUILDERS = Object.freeze({
+      barry: debug => ({ stats: [`🎲 ${compactNumber(debug.legalActionCount)} legal actions · picked randomly`], flavour: ["🎲 Barry had no idea.", "🎲 Every legal action looked equally good to Barry."] }),
+      sally: debug => ({ stats: [`🔺 Chosen action had ${compactNumber(debug.selectedWeight || 1)}× weight`, `🔺 ${compactNumber(debug.legalActionCount)} actions weighed · Wedges preferred`], flavour: ["🔺 Sally bloody loves Wedges."] }),
+      kevin: debug => ({ stats: [`🎯 Attack score: ${Math.round(debug.selectedScore || 0)}`, `🎯 Main Piece pressure: ${signedThought(debug.selectedAttackScore)}`], flavour: ["🎯 Kevin wants your Main Piece."] }),
+      walter: debug => ({ stats: [`🛡️ Attack ${signedThought(debug.selectedAttackScore)} · Risk −${Math.abs(Math.round(debug.selectedRiskScore || 0))}`, `🛡️ Safety ${signedThought(debug.selectedOccupancyScore)} · Score ${Math.round(debug.selectedScore || 0)}`], flavour: ["🛡️ Walter's watching his back."] }),
+      cersei: debug => ({ stats: [`👑 Attack ${signedThought(debug.selectedAttackScore)} · Material ${signedThought(debug.selectedMaterialScore)} · Score ${Math.round(debug.selectedScore || 0)}`, `👑 Position score: ${Math.round(debug.selectedScore || 0)}`], flavour: ["👑 Cersei wants everyone on her side."] }),
+      minnie: debug => {
+        const positions = (debug.nodesSearched || 0) + (debug.leavesEvaluated || 0);
+        return { stats: [`🌳 ${compactNumber(positions)} future positions considered · 1 response deep`, `🌳 Worst-case score: ${Math.round(debug.selectedValue || 0)} · ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s`], flavour: ["🌳 Minnie wondered what you'd do next."] };
+      },
+      alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · 2 responses deep`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] })
+    });
+
+    function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
+      const bot = BOT_CATALOG.find(item => item.available && item.playerValue === botType);
+      const builder = BOT_THOUGHT_BUILDERS[botType];
+      if (!bot || !builder) return null;
+      const groups = builder(debug);
+      const style = groups[preferredStyle]?.length ? preferredStyle : preferredStyle === "stats" ? "flavour" : "stats";
+      const options = (groups[style] || []).filter(Boolean);
+      const alternatives = options.filter(message => message !== previousMessage);
+      const pool = alternatives.length ? alternatives : options;
+      return { botName: bot.shortName, message: pool[Math.floor(random() * pool.length)] || "", style };
+    }
+
     class TurncoatUI {
       constructor() {
         this.game = new TurncoatEngine();
@@ -2066,6 +2127,8 @@
         this.trophySystem = null;
         this.matchContext = null;
         this.nextBotOfferId = null;
+        this.botThoughtData = null;
+        this.botThoughtStyles = {};
         this.cacheElements();
         this.bind();
         this.beginMatchContext();
@@ -2074,7 +2137,7 @@
       }
 
       cacheElements() {
-        const ids = ["board","traces","turnName","turnHelp","tempoScale","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","postGameDock","nextBot","openFeedback","winnerRestart","feedbackText","feedbackPanel","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
+        const ids = ["board","traces","turnName","turnHelp","botThoughtSlot","botThought","botThoughtName","botThoughtText","tempoScale","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","postGameDock","nextBot","openFeedback","winnerRestart","feedbackText","feedbackPanel","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
         for (const id of ids) this[id] = document.getElementById(id);
       }
 
@@ -2148,6 +2211,7 @@
         const started = this.game.history.length > 0 || this.game.log.length > 0 || this.game.actionsThisTurn > 0;
         if (started) this.matchContext.eligible = false;
         else this.beginMatchContext();
+        this.botThoughtData = null;
         const bot = changedSelect ? BOT_CATALOG.find(item => item.available && item.playerValue === changedSelect.value) : null;
         if (bot) this.trophySystem?.showBotIntro(bot.id);
         this.maybeRunAI();
@@ -2186,6 +2250,7 @@
         this.showBoardAfterWin = false;
         this.feedbackMode = "summary";
         this.nextBotOfferId = null;
+        this.botThoughtData = null;
         this.feedbackText.value = "";
         document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
         this.feedbackStatus.textContent = "";
@@ -2313,6 +2378,38 @@
         this.scheduleShieldFade();
         this.checkTrophyAward();
         this.nextBot.hidden = !this.game.winner || !this.nextBotOfferId;
+        this.renderBotThought();
+      }
+
+      renderBotThought() {
+        const thought = this.botThoughtData;
+        this.botThoughtSlot.hidden = !thought;
+        this.botThought.hidden = !thought;
+        if (!thought) {
+          this.botThoughtName.textContent = "";
+          this.botThoughtText.textContent = "";
+          return;
+        }
+        const thoughtKey = `${thought.botName}|${thought.message}|${thought.style}`;
+        if (this.botThought.dataset.thoughtKey !== thoughtKey) {
+          this.botThought.dataset.thoughtKey = thoughtKey;
+          this.botThought.style.animation = "none";
+          void this.botThought.offsetWidth;
+          this.botThought.style.animation = "";
+        }
+        this.botThought.classList.toggle("flavour", thought.style === "flavour");
+        this.botThought.classList.toggle("stats", thought.style === "stats");
+        this.botThoughtName.textContent = `${thought.botName}:`;
+        this.botThoughtText.textContent = thought.message;
+        this.botThought.setAttribute("aria-label", `${thought.botName} thought: ${thought.message}`);
+      }
+
+      updateBotThought(botType, debug) {
+        const previous = this.botThoughtData?.message || "";
+        const previousStyle = this.botThoughtStyles[botType] || "flavour";
+        const nextStyle = previousStyle === "stats" ? "flavour" : "stats";
+        this.botThoughtData = buildBotThought(botType, debug, previous, Math.random, nextStyle);
+        if (this.botThoughtData) this.botThoughtStyles[botType] = this.botThoughtData.style;
       }
 
       renderSideLabel(element, owner, text) {
@@ -2483,7 +2580,10 @@
         if (this.game.winner || !bot) return;
         const actions = getLegalBotActions(this.game);
         if (!actions.length) {
+          const acting = this.game.turn;
           if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
+          if (!this.game.winner && this.game.turn !== acting && this.isHumanTurn()) this.updateBotThought(botType, { legalActionCount: 0 });
+          else this.botThoughtData = null;
           this.setStatus(`${bot.shortName} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
@@ -2499,7 +2599,18 @@
         const action = selectors[botType]
           ? selectors[botType](this.game)
           : actions[Math.floor(Math.random() * actions.length)];
+        if (botType === "barry") {
+          window.turncoatBotDebug = {
+            bot: "Barry — Random",
+            legalActionCount: actions.length,
+            selected: describeBotAction(this.game, action)
+          };
+        }
+        const acting = this.game.turn;
         executeBotAction(this.game, action);
+        const handedToHuman = !this.game.winner && this.game.turn !== acting && this.isHumanTurn();
+        if (handedToHuman) this.updateBotThought(botType, window.turncoatBotDebug || { legalActionCount: actions.length });
+        else this.botThoughtData = null;
         const message = action.type === "turncoat" ? `${bot.shortName} turncoated and shielded a piece.`
           : action.type === "nogo" ? `${bot.shortName} placed a No Go area.`
             : action.type === "pass" ? `${bot.shortName} passed.`
@@ -3075,6 +3186,7 @@
       alphaBetaMinnieHorizon,
       compareMinnieAndAlfie,
       alphaBetaAlfieHorizon,
+      buildBotThought,
       chooseWeighted,
       chooseSallyAction,
       chooseKevinAction,
