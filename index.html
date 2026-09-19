@@ -36,6 +36,8 @@
     .tutorial-replay:hover:not(:disabled) { background: #245f9d; }
     .bot-trophies-button { padding: 8px 11px; color: #fff9ed; border-color: #79521f; background: #9a6a29; font-size: .67rem; letter-spacing: .09em; }
     .bot-trophies-button:hover:not(:disabled) { background: #79521f; }
+    .developer-mode-button { padding: 8px 11px; color: #f1fbff; border-color: #276a83; background: #1e617a; font-size: .67rem; letter-spacing: .09em; }
+    .developer-mode-button:hover:not(:disabled) { background: #174d61; }
 
     main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; align-items: start; }
     .game-area { min-width: 0; }
@@ -148,7 +150,7 @@
     label { display: grid; gap: 6px; margin-bottom: 12px; color: var(--muted); font-size: .75rem; }
     label.check-label { display: flex; align-items: center; gap: 9px; color: var(--ink); }
     .check-label input { width: 18px; height: 18px; accent-color: var(--accent); }
-    select, input[type="number"] { appearance: none; width: 100%; padding: 10px 34px 10px 11px; color: var(--ink); background: rgba(255,255,255,.45); border: 1px solid var(--line); border-radius: 5px; }
+    select, input[type="number"], input[type="text"] { appearance: none; width: 100%; padding: 10px 34px 10px 11px; color: var(--ink); background: rgba(255,255,255,.45); border: 1px solid var(--line); border-radius: 5px; }
     select { background: rgba(255,255,255,.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='m3 5 4 4 4-4' fill='none' stroke='%23746c61' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center; }
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     button { border: 1px solid var(--line); border-radius: 5px; padding: 10px 12px; color: var(--ink); background: rgba(255,255,255,.42); cursor: pointer; font-weight: 700; font-size: .76rem; }
@@ -214,6 +216,42 @@
     .post-game-dock #openFeedback { color: #f3f8ff; border-color: #245f9d; background: #2d76bc; }
     .post-game-dock #winnerRestart { color: #fff8ed; border-color: #752c1e; background: var(--accent); }
     .win-surround { fill: rgba(255,214,61,.16); stroke: #ffd33d; stroke-width: .09; stroke-dasharray: .18 .1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px rgba(255,211,61,.85)); }
+
+    body.simulation-lab-active { overflow: hidden; }
+    .simulation-overlay { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(17,28,31,.91); backdrop-filter: blur(8px); }
+    .simulation-card { width: min(980px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: clamp(18px, 3vw, 30px); border: 1px solid rgba(74,151,178,.45); border-radius: 12px; background: linear-gradient(145deg, #f7eddb, #dce8e5); box-shadow: 0 28px 70px rgba(6,16,19,.55); }
+    .simulation-header { display: flex; justify-content: space-between; gap: 20px; align-items: start; margin-bottom: 18px; }
+    .simulation-header h2 { margin: 0; font: 500 clamp(1.8rem, 5vw, 3rem)/1 Georgia,serif; }
+    .simulation-header p { margin: 6px 0 0; color: var(--muted); font-size: .78rem; }
+    .simulation-close { width: auto; flex: 0 0 auto; }
+    .simulation-controls { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px 18px; }
+    .simulation-controls .full { grid-column: 1 / -1; }
+    .simulation-mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .simulation-mode-tabs button.active { color: #f1fbff; border-color: #276a83; background: #1e617a; }
+    .simulation-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px 14px; }
+    .simulation-options label { margin: 0; }
+    .simulation-checkboxes { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .simulation-checkboxes .check-label { margin: 0; }
+    .simulation-bot-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
+    .simulation-bot-grid label { display: flex; align-items: center; gap: 7px; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 5px; background: rgba(255,255,255,.34); color: var(--ink); }
+    .simulation-actions { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; }
+    .simulation-actions .run { color: #fff; border-color: #276a83; background: #1e617a; }
+    .simulation-actions .stop { color: #fff; border-color: #7d2d22; background: #a33b2a; }
+    .simulation-progress { height: 8px; overflow: hidden; border-radius: 99px; background: rgba(36,72,81,.14); }
+    .simulation-progress i { display: block; width: var(--progress, 0%); height: 100%; border-radius: inherit; background: #2b8bad; transition: width .15s linear; }
+    .simulation-status { min-height: 1.5em; margin: 7px 0 0; color: var(--muted); font: .74rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .simulation-results { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .simulation-results h3 { margin: 0 0 10px; font: 500 1.25rem Georgia,serif; }
+    .simulation-summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+    .simulation-stat { padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.35); }
+    .simulation-stat b, .simulation-stat span { display: block; }
+    .simulation-stat b { font: 700 1.1rem/1.2 Georgia,serif; }
+    .simulation-stat span { margin-top: 3px; color: var(--muted); font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; }
+    .simulation-table-wrap { overflow-x: auto; }
+    .simulation-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+    .simulation-table th, .simulation-table td { padding: 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    .simulation-table th:first-child, .simulation-table td:first-child { text-align: left; }
+    .simulation-table th { color: var(--muted); font-size: .62rem; letter-spacing: .07em; text-transform: uppercase; }
 
     body.tutorial-active { overflow: hidden; }
     .tutorial-overlay { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(35,24,16,.9); backdrop-filter: blur(8px); }
@@ -483,9 +521,14 @@
       .tutorial-move-labels { font-size: .64rem; }
       .bot-trophies-button { padding: 7px 8px; font-size: .6rem; }
       .tutorial-replay { padding: 7px 8px; font-size: .6rem; }
+      .developer-mode-button { padding: 7px 8px; font-size: .58rem; }
       .bot-trophy-card { padding: 20px 13px; }
       .bot-gallery { grid-template-columns: 1fr; }
       .bot-card.released { grid-column: auto; }
+      .simulation-controls, .simulation-options { grid-template-columns: 1fr; }
+      .simulation-bot-grid { grid-template-columns: 1fr 1fr; }
+      .simulation-actions { grid-template-columns: 1fr 1fr; }
+      .simulation-summary { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -496,6 +539,7 @@
         <h1>Turncoat <span class="h1-subtitle">laboratory</span></h1>
       </div>
       <div class="header-tools">
+        <button class="developer-mode-button" id="developerModeOpen" type="button" hidden>🧪 DEVELOPER MODE</button>
         <button class="bot-trophies-button" id="botTrophiesOpen" type="button">🏆 BOT TROPHIES</button>
         <button class="tutorial-replay" id="tutorialReplay" type="button" aria-label="Replay tutorial" title="Tutorial">👓 TUTORIAL</button>
         <div class="prototype">Prototype 0.9</div>
@@ -685,6 +729,51 @@
         </section>
       </aside>
     </main>
+  </div>
+
+  <div class="simulation-overlay" id="simulationOverlay" role="dialog" aria-modal="true" aria-labelledby="simulationTitle" hidden>
+    <div class="simulation-card">
+      <div class="simulation-header">
+        <div><h2 id="simulationTitle">🧪 Simulation Lab</h2><p>Headless games using the live Turncoat engine and bot implementations.</p></div>
+        <button class="simulation-close" id="simulationClose" type="button">Close</button>
+      </div>
+      <div class="simulation-controls">
+        <div class="simulation-mode-tabs full">
+          <button id="simulationHeadToHeadTab" class="active" type="button">Bot vs Bot</button>
+          <button id="simulationTournamentTab" type="button">Tournament</button>
+        </div>
+        <label id="simulationPlayerAField">Player A<select id="simulationPlayerA"></select></label>
+        <label id="simulationPlayerBField">Player B<select id="simulationPlayerB"></select></label>
+        <div class="simulation-bot-grid full" id="simulationTournamentBots" hidden></div>
+        <div class="simulation-options full">
+          <label>Games per matchup
+            <select id="simulationGamesPreset"><option value="10">10</option><option value="100" selected>100</option><option value="1000">1,000</option><option value="custom">Custom</option></select>
+          </label>
+          <label id="simulationCustomGamesField" hidden>Custom games<input id="simulationCustomGames" type="number" min="1" max="100000" value="250"></label>
+          <label>Seed<input id="simulationSeed" type="text" value="turncoat-lab-1" autocomplete="off"></label>
+        </div>
+        <div class="simulation-checkboxes full">
+          <label class="check-label"><input id="simulationSwapSides" type="checkbox" checked> Swap starting sides equally</label>
+          <label class="check-label"><input id="simulationRecordDataset" type="checkbox"> Record full dataset</label>
+        </div>
+        <p class="recorder-note full">Fast batch compute is used for time-budgeted bots so large experiments remain practical. Their algorithms are unchanged; reduced decision budgets are stored with every experiment.</p>
+        <div class="simulation-actions full">
+          <button class="run" id="simulationRun" type="button">Run simulation</button>
+          <button class="stop" id="simulationStop" type="button" disabled>Stop</button>
+          <button id="simulationExportCsv" type="button" disabled>Export results CSV</button>
+          <button id="simulationExportJson" type="button" disabled>Export dataset JSON</button>
+        </div>
+        <div class="full">
+          <div class="simulation-progress" aria-hidden="true"><i id="simulationProgressBar"></i></div>
+          <p class="simulation-status" id="simulationStatus" role="status" aria-live="polite">Ready.</p>
+        </div>
+      </div>
+      <section class="simulation-results" id="simulationResults" hidden>
+        <h3 id="simulationResultsTitle">Results</h3>
+        <div class="simulation-summary" id="simulationSummary"></div>
+        <div class="simulation-table-wrap" id="simulationTableWrap"></div>
+      </section>
+    </div>
   </div>
 
   <div class="tutorial-overlay" id="tutorialOverlay" role="dialog" aria-modal="true" aria-label="Turncoat tutorial" hidden>
@@ -947,6 +1036,17 @@
       thirdActionReluctance: -260,
       passValue: 32,
       nearBestRandomRange: 12
+    });
+    const SIMULATION_SCHEMA_VERSION = 1;
+    const SIMULATION_BATCH_OPTIONS = Object.freeze({
+      maximumGameActions: 220,
+      yieldEveryActions: 12,
+      botOptions: Object.freeze({
+        minnie: Object.freeze({ branchLimit: 3 }),
+        alfie: Object.freeze({ thinkingTimeMs: 8, responseDepth: ALFIE_SEARCH.opponentActions }),
+        monty: Object.freeze({ thinkingTimeMs: 40, maximumRollouts: 2, maximumRolloutActions: 20 }),
+        carlo: Object.freeze({ thinkingTimeMs: 60, maximumIterations: 4, maximumRolloutActions: 20, explorationConstant: CARLO_MCTS.explorationConstant })
+      })
     });
     const BOT_CATALOG = Object.freeze([
       {
@@ -2002,7 +2102,15 @@
         return { value: context.cache.get(cacheKey), line: [] };
       }
 
-      const children = orderedSearchChildren(game, perspective);
+      let children;
+      if (context.branchLimit) {
+        const sampledActions = getLegalBotActions(game);
+        for (let i=sampledActions.length-1; i>0; i--) {
+          const j = Math.floor((context.random || Math.random)() * (i + 1));
+          [sampledActions[i], sampledActions[j]] = [sampledActions[j], sampledActions[i]];
+        }
+        children = sampledActions.slice(0, context.branchLimit).map(action => ({ action, result: simulateBotAction(game, action) }));
+      } else children = orderedSearchChildren(game, perspective);
       if (!children.length) {
         context.leaves++;
         return { value: evaluateMinniePosition(game, perspective), line: [] };
@@ -2011,8 +2119,7 @@
       const maximizing = game.turn === perspective;
       let bestValue = maximizing ? -Infinity : Infinity;
       let bestLine = [];
-      for (const action of actions) {
-        const result = simulateBotAction(game, action);
+      for (const { action, result } of children) {
         // Minnie explores every legal continuation of her own TEMPO turn. At
         // the MIN layer, each legal opponent action is a leaf in this first
         // shallow version; no response is sampled or skipped.
@@ -2030,7 +2137,7 @@
       return { value: bestValue, line: bestLine };
     }
 
-    function chooseMinnieAction(game, random = Math.random) {
+    function chooseMinnieAction(game, random = Math.random, options = {}) {
       const perspective = game.turn;
       const actions = getLegalBotActions(game);
       const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
@@ -2048,8 +2155,17 @@
       }
 
       const started = performance.now();
-      const context = { nodes: 0, leaves: 0, cacheHits: 0, cache: new Map() };
-      const choices = actions.map(action => {
+      const branchLimit = Number.isFinite(options.branchLimit) ? Math.max(1, Number(options.branchLimit)) : null;
+      const candidates = actions.slice();
+      if (branchLimit) {
+        for (let i=candidates.length-1; i>0; i--) {
+          const j = Math.floor(random() * (i + 1));
+          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        candidates.length = Math.min(branchLimit, candidates.length);
+      }
+      const context = { nodes: 0, leaves: 0, cacheHits: 0, cache: new Map(), branchLimit, random };
+      const choices = candidates.map(action => {
         const result = simulateBotAction(game, action);
         const beforeNodes = context.nodes;
         const searched = result.winner
@@ -2084,6 +2200,7 @@
         nodesSearched: context.nodes,
         leavesEvaluated: context.leaves,
         repeatedStatesReused: context.cacheHits,
+        branchLimit,
         searchTimeMs: Math.round((performance.now() - started) * 10) / 10
       };
       return selected?.action || null;
@@ -2216,7 +2333,7 @@
       return { value, line, complete };
     }
 
-    function chooseAlfieAction(game, random = Math.random) {
+    function chooseAlfieAction(game, random = Math.random, options = {}) {
       const perspective = game.turn;
       const actions = getLegalBotActions(game);
       const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
@@ -2227,7 +2344,9 @@
       }
 
       const started = performance.now();
-      const deadline = started + ALFIE_SEARCH.thinkingTimeMs;
+      const thinkingTimeMs = Math.max(1, Number(options.thinkingTimeMs ?? ALFIE_SEARCH.thinkingTimeMs));
+      const responseDepth = Math.max(1, Number(options.responseDepth ?? ALFIE_SEARCH.opponentActions));
+      const deadline = started + thinkingTimeMs;
       const ordered = orderedSearchChildren(game, perspective);
       const totals = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0 };
       let completedDepth = 0;
@@ -2237,7 +2356,7 @@
       // Iterative deepening always retains the last fully searched result. On
       // lower-branching positions Alfie reaches the new deeper horizon; on a
       // busy opening he returns promptly instead of freezing the browser.
-      for (let depth = 1; depth <= ALFIE_SEARCH.opponentActions; depth++) {
+      for (let depth = 1; depth <= responseDepth; depth++) {
         const context = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0, cache: new Map(), deadline, timedOut: false, requestedDepth: depth };
         let alpha = -Infinity, bestValue = -Infinity;
         const iterationChoices = [];
@@ -2284,7 +2403,8 @@
         repeatedStatesReused: totals.cacheHits,
         maximumTurnDepthReached: totals.maxDepthReached,
         completedResponseDepth: completedDepth,
-        configuredResponseDepth: ALFIE_SEARCH.opponentActions,
+        configuredResponseDepth: responseDepth,
+        thinkingBudgetMs: thinkingTimeMs,
         timeLimited: timedOut,
         searchTimeMs: Math.round((performance.now() - started) * 10) / 10
       };
@@ -2407,6 +2527,7 @@
 
       const budgetMs = Math.max(1, Number(options.thinkingTimeMs ?? MONTY_MONTE_CARLO.thinkingTimeMs));
       const maximumActions = Math.max(1, Number(options.maximumRolloutActions ?? MONTY_MONTE_CARLO.maximumRolloutActions));
+      const maximumRollouts = Number.isFinite(options.maximumRollouts) ? Math.max(1, Number(options.maximumRollouts)) : Infinity;
       const started = performance.now();
       const deadline = started + budgetMs;
       const candidates = actions.map(action => ({
@@ -2437,7 +2558,7 @@
         else candidate.draws++;
         totalRollouts++;
         cursor++;
-      } while (performance.now() < deadline);
+      } while (totalRollouts < maximumRollouts && performance.now() < deadline);
 
       for (const candidate of candidates) candidate.averageScore = candidate.visits ? candidate.scoreTotal / candidate.visits : -Infinity;
       const testedCandidates = candidates.filter(candidate => candidate.visits > 0);
@@ -2452,6 +2573,7 @@
         winningOverride: false,
         thinkingBudgetMs: budgetMs,
         maximumRolloutActions: maximumActions,
+        maximumRollouts: Number.isFinite(maximumRollouts) ? maximumRollouts : null,
         legalActionCount: actions.length,
         totalRollouts,
         searchTimeMs: Math.round(elapsed * 10) / 10,
@@ -2529,6 +2651,7 @@
       const budgetMs = Math.max(1, Number(options.thinkingTimeMs ?? CARLO_MCTS.thinkingTimeMs));
       const rolloutLimit = Math.max(1, Number(options.maximumRolloutActions ?? CARLO_MCTS.maximumRolloutActions));
       const explorationConstant = Math.max(0, Number(options.explorationConstant ?? CARLO_MCTS.explorationConstant));
+      const maximumIterations = Number.isFinite(options.maximumIterations) ? Math.max(1, Number(options.maximumIterations)) : Infinity;
       const started = performance.now();
       const deadline = started + budgetMs;
       const root = createMctsNode(game, null, null, 0, random);
@@ -2577,7 +2700,7 @@
           else visited.draws++;
         }
         iterations++;
-      } while (performance.now() < deadline);
+      } while (iterations < maximumIterations && performance.now() < deadline);
 
       const mostVisits = Math.max(...root.children.map(child => child.visits));
       const finalists = root.children.filter(child => child.visits === mostVisits);
@@ -2598,6 +2721,7 @@
         perspective,
         winningOverride: false,
         thinkingBudgetMs: budgetMs,
+        maximumIterations: Number.isFinite(maximumIterations) ? maximumIterations : null,
         explorationConstant,
         maximumRolloutActions: rolloutLimit,
         iterations,
@@ -2817,6 +2941,33 @@
       return selected?.action || null;
     }
 
+    const BOT_ACTION_SELECTORS = Object.freeze({
+      sally: chooseSallyAction,
+      kevin: chooseKevinAction,
+      walter: chooseWalterAction,
+      cersei: chooseCerseiAction,
+      minnie: chooseMinnieAction,
+      alfie: chooseAlfieAction,
+      monty: chooseMontyAction,
+      carlo: chooseCarloAction,
+      stevie: chooseStevieAction
+    });
+
+    function chooseBotAction(game, botType, random = Math.random, options = {}) {
+      const actions = getLegalBotActions(game);
+      if (!actions.length) return null;
+      const selector = BOT_ACTION_SELECTORS[botType];
+      const action = selector ? selector(game, random, options[botType] || {}) : actions[Math.floor(random() * actions.length)];
+      if (botType === "barry") {
+        window.turncoatBotDebug = {
+          bot: "Barry — Random",
+          legalActionCount: actions.length,
+          selected: action ? describeBotAction(game, action) : null
+        };
+      }
+      return action;
+    }
+
     const signedThought = value => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value || 0))}`;
     const compactNumber = value => Math.max(0, Math.round(value || 0)).toLocaleString();
     const BOT_THOUGHT_BUILDERS = Object.freeze({
@@ -2883,6 +3034,19 @@
       return {...base, notation: "PASS"};
     }
 
+    function canonicalRecorderState(game) {
+      const rawState = JSON.parse(game.snapshot());
+      delete rawState.log;
+      delete rawState.turnTraces;
+      delete rawState.completedTurnTraces;
+      return {
+        schema: "turncoat-engine-snapshot-v1",
+        rows: RULES.rows,
+        columns: RULES.cols,
+        ...rawState
+      };
+    }
+
     class PlayerRecorder {
       constructor(ui) {
         this.ui = ui;
@@ -2915,6 +3079,7 @@
           const parsed = JSON.parse(localStorage.getItem(PLAYER_RECORDER_STORAGE_KEY));
           if (parsed && parsed.schemaVersion === PLAYER_RECORDER_SCHEMA_VERSION && parsed.player && Array.isArray(parsed.games) && Array.isArray(parsed.decisions)) {
             parsed.settings ||= { recordingEnabled: true };
+            for (const decision of parsed.decisions) decision.origin ||= "human";
             return parsed;
           }
         } catch (error) {
@@ -3024,13 +3189,10 @@
         if (!gameRecord) return null;
         const game = this.ui.game;
         const legalActions = getLegalBotActions(game).map(candidate => canonicalRecorderAction(game, candidate));
-        const rawState = JSON.parse(game.snapshot());
-        delete rawState.log;
-        delete rawState.turnTraces;
-        delete rawState.completedTurnTraces;
         return {
           decisionId: recorderId("decision"),
           gameId: gameRecord.gameId,
+          origin: "human",
           anonymousPlayerId: this.data.player.anonymousPlayerId,
           playerProfileName: this.data.player.profileName,
           playerSide: game.turn,
@@ -3039,12 +3201,7 @@
           decisionNumber: this.data.decisions.filter(decision => decision.gameId === gameRecord.gameId).length + 1,
           recordedAt: new Date().toISOString(),
           decisionTimeMs: Math.max(0, Math.round(performance.now() - (this.decisionStartedAt ?? performance.now()))),
-          stateBefore: {
-            schema: "turncoat-engine-snapshot-v1",
-            rows: RULES.rows,
-            columns: RULES.cols,
-            ...rawState
-          },
+          stateBefore: canonicalRecorderState(game),
           turnState: {
             currentPlayer: game.turn,
             tempo: {...game.tempo},
@@ -3166,6 +3323,7 @@
         this.tutorialOpen = false;
         this.botTrophiesOpen = false;
         this.botIntroOpen = false;
+        this.developerLabOpen = false;
         this.trophySystem = null;
         this.matchContext = null;
         this.nextBotOfferId = null;
@@ -3637,7 +3795,7 @@
 
       maybeRunAI() {
         clearTimeout(this.aiTimer);
-        if (this.tutorialOpen || this.botTrophiesOpen || this.botIntroOpen || this.game.winner || this.isHumanTurn()) return;
+        if (this.tutorialOpen || this.botTrophiesOpen || this.botIntroOpen || this.developerLabOpen || this.game.winner || this.isHumanTurn()) return;
         this.render();
         this.aiTimer = setTimeout(() => this.runBotAction(), 1500);
       }
@@ -3655,28 +3813,8 @@
           this.setStatus(`${bot.shortName} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
-        // Every bot shares the legal-action source; only its selection idea changes.
-        const selectors = {
-          sally: chooseSallyAction,
-          kevin: chooseKevinAction,
-          walter: chooseWalterAction,
-          cersei: chooseCerseiAction,
-          minnie: chooseMinnieAction,
-          alfie: chooseAlfieAction,
-          monty: chooseMontyAction,
-          carlo: chooseCarloAction,
-          stevie: chooseStevieAction
-        };
-        const action = selectors[botType]
-          ? selectors[botType](this.game)
-          : actions[Math.floor(Math.random() * actions.length)];
-        if (botType === "barry") {
-          window.turncoatBotDebug = {
-            bot: "Barry — Random",
-            legalActionCount: actions.length,
-            selected: describeBotAction(this.game, action)
-          };
-        }
+        // Normal play and the Simulation Lab share this exact bot decision path.
+        const action = chooseBotAction(this.game, botType);
         const acting = this.game.turn;
         executeBotAction(this.game, action);
         const handedToHuman = !this.game.winner && this.game.turn !== acting && this.isHumanTurn();
@@ -3944,6 +4082,421 @@
           this.gallery.append(card);
         }
         this.syncPlayerOptions();
+      }
+    }
+
+    function hashSimulationSeed(value) {
+      let hash = 2166136261;
+      for (const character of String(value)) {
+        hash ^= character.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function seededSimulationRandom(seed) {
+      let state = hashSimulationSeed(seed) || 0x6d2b79f5;
+      return () => {
+        state += 0x6d2b79f5;
+        let value = state;
+        value = Math.imul(value ^ value >>> 15, value | 1);
+        value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+        return ((value ^ value >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    const yieldSimulationThread = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    async function simulateHeadlessGame(options) {
+      const {
+        gameId,
+        lightBot,
+        darkBot,
+        seed,
+        noGoPerPlayer = RULES.defaultNoGoTokens,
+        gulliesEnabled = false,
+        recordDataset = false,
+        shouldStop = () => false,
+        botOptions = SIMULATION_BATCH_OPTIONS.botOptions,
+        maximumGameActions = SIMULATION_BATCH_OPTIONS.maximumGameActions,
+        yieldEveryActions = SIMULATION_BATCH_OPTIONS.yieldEveryActions
+      } = options;
+      const game = new TurncoatEngine(noGoPerPlayer, gulliesEnabled);
+      const startedAt = new Date().toISOString();
+      game.history = { push() {} };
+      const random = seededSimulationRandom(seed);
+      const players = { light: lightBot, dark: darkBot };
+      const decisions = [];
+      let actionCount = 0;
+      let turnCount = 1;
+      let turncoats = 0;
+      let totalTempoSpent = 0;
+
+      while (!game.winner && actionCount < maximumGameActions && !shouldStop()) {
+        const acting = game.turn;
+        const bot = players[acting];
+        const legalActions = getLegalBotActions(game);
+        if (!legalActions.length) {
+          if (!game.endTurn(true)) {
+            game.winner = other(acting);
+            game.winType = "no_legal_action";
+            game.winReason = `${ownerName(acting)} had no legal action.`;
+          } else turnCount++;
+          continue;
+        }
+
+        const stateBefore = recordDataset ? canonicalRecorderState(game) : null;
+        const canonicalLegal = recordDataset ? legalActions.map(action => canonicalRecorderAction(game, action)) : null;
+        const chosen = chooseBotAction(game, bot.playerValue, random, botOptions);
+        if (!chosen) {
+          game.winner = other(acting);
+          game.winType = "no_selected_action";
+          game.winReason = `${bot.shortName} failed to select a legal action.`;
+          break;
+        }
+        const chosenCanonical = recordDataset ? canonicalRecorderAction(game, chosen) : null;
+        const tempoBefore = game.tempo[acting];
+        const decisionTurnNumber = turnCount;
+        const result = executeBotAction(game, chosen);
+        if (!result?.ok) throw new Error(`${bot.shortName} selected an illegal action: ${JSON.stringify(chosenCanonical || chosen)}`);
+        totalTempoSpent += Math.max(0, tempoBefore - game.tempo[acting]);
+        if (chosen.type === "turncoat") turncoats++;
+        actionCount++;
+        if (game.turn !== acting && !game.winner) turnCount++;
+
+        if (recordDataset) {
+          decisions.push({
+            decisionId: `${gameId}_decision_${decisions.length + 1}`,
+            gameId,
+            origin: "bot",
+            actor: { id: bot.id, name: bot.shortName, algorithm: bot.algorithm, side: acting },
+            opponent: { id: players[other(acting)].id, name: players[other(acting)].shortName, algorithm: players[other(acting)].algorithm },
+            turnNumber: decisionTurnNumber,
+            decisionNumber: decisions.length + 1,
+            stateBefore,
+            turnState: {
+              currentPlayer: acting,
+              tempo: stateBefore.tempo,
+              turnStartingTempo: stateBefore.turnStartingTempo,
+              tempoSpentThisTurn: stateBefore.tempoSpentThisTurn,
+              actionsThisTurn: stateBefore.actionsThisTurn,
+              requiredTempoSpend: stateBefore.turnStartingTempo === 3 ? 2 : 1,
+              canPass: canonicalLegal.some(action => action.type === "pass")
+            },
+            legalActions: canonicalLegal,
+            chosenAction: chosenCanonical
+          });
+        }
+        if (actionCount % yieldEveryActions === 0) await yieldSimulationThread();
+      }
+
+      const stopped = shouldStop() && !game.winner;
+      const draw = !game.winner;
+      const gameRecord = {
+        gameId,
+        seed,
+        origin: "simulation",
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        players: {
+          light: { id: lightBot.id, name: lightBot.shortName, algorithm: lightBot.algorithm },
+          dark: { id: darkBot.id, name: darkBot.shortName, algorithm: darkBot.algorithm }
+        },
+        winner: game.winner,
+        winnerBotId: game.winner ? players[game.winner].id : null,
+        winCondition: game.winType || (draw ? stopped ? "stopped" : "action_limit" : null),
+        completed: Boolean(game.winner),
+        draw,
+        stopped,
+        actionCount,
+        turnCount,
+        turncoats,
+        totalTempoSpent,
+        averageTempoPerTurn: turnCount ? totalTempoSpent / turnCount : 0
+      };
+      for (const decision of decisions) {
+        decision.result = { winner: game.winner, winnerBotId: gameRecord.winnerBotId, winCondition: gameRecord.winCondition, draw };
+      }
+      return { game: gameRecord, decisions };
+    }
+
+    class SimulationLab {
+      constructor(gameUI) {
+        this.ui = gameUI;
+        this.mode = "headToHead";
+        this.running = false;
+        this.stopRequested = false;
+        this.lastRun = null;
+        this.lastDataset = null;
+        this.cacheElements();
+        this.populateBots();
+        this.bind();
+        this.openButton.hidden = false;
+      }
+
+      cacheElements() {
+        const ids = ["developerModeOpen","simulationOverlay","simulationClose","simulationHeadToHeadTab","simulationTournamentTab","simulationPlayerAField","simulationPlayerBField","simulationPlayerA","simulationPlayerB","simulationTournamentBots","simulationGamesPreset","simulationCustomGamesField","simulationCustomGames","simulationSeed","simulationSwapSides","simulationRecordDataset","simulationRun","simulationStop","simulationExportCsv","simulationExportJson","simulationProgressBar","simulationStatus","simulationResults","simulationResultsTitle","simulationSummary","simulationTableWrap"];
+        for (const id of ids) this[id.replace("simulation", "").replace(/^./, letter => letter.toLowerCase()) || id] = document.getElementById(id);
+        this.openButton = document.getElementById("developerModeOpen");
+        this.overlay = document.getElementById("simulationOverlay");
+      }
+
+      populateBots() {
+        const bots = releasedBots();
+        const options = bots.map(bot => `<option value="${bot.id}">${bot.shortName} — ${bot.algorithm}</option>`).join("");
+        this.playerA.innerHTML = options;
+        this.playerB.innerHTML = options;
+        if (bots[1]) this.playerB.value = bots[1].id;
+        this.tournamentBots.replaceChildren(...bots.map(bot => {
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.value = bot.id;
+          input.checked = true;
+          label.append(input, document.createTextNode(bot.shortName));
+          return label;
+        }));
+      }
+
+      bind() {
+        this.openButton.addEventListener("click", () => this.open());
+        this.close.addEventListener("click", () => this.closeLab());
+        this.headToHeadTab.addEventListener("click", () => this.setMode("headToHead"));
+        this.tournamentTab.addEventListener("click", () => this.setMode("tournament"));
+        this.gamesPreset.addEventListener("change", () => { this.customGamesField.hidden = this.gamesPreset.value !== "custom"; });
+        this.run.addEventListener("click", () => this.runExperiment());
+        this.stop.addEventListener("click", () => { this.stopRequested = true; this.status.textContent = "Stopping after the current decision…"; });
+        this.exportCsv.addEventListener("click", () => this.exportResultsCsv());
+        this.exportJson.addEventListener("click", () => this.exportDatasetJson());
+        this.overlay.addEventListener("click", event => { if (event.target === this.overlay && !this.running) this.closeLab(); });
+        document.addEventListener("keydown", event => { if (event.key === "Escape" && !this.overlay.hidden && !this.running) this.closeLab(); });
+      }
+
+      open() {
+        this.ui.developerLabOpen = true;
+        clearTimeout(this.ui.aiTimer);
+        this.overlay.hidden = false;
+        document.body.classList.add("simulation-lab-active");
+        requestAnimationFrame(() => this.close.focus());
+      }
+
+      closeLab() {
+        if (this.running) return;
+        this.overlay.hidden = true;
+        this.ui.developerLabOpen = false;
+        document.body.classList.remove("simulation-lab-active");
+        this.ui.maybeRunAI();
+      }
+
+      setMode(mode) {
+        this.mode = mode;
+        const tournament = mode === "tournament";
+        this.headToHeadTab.classList.toggle("active", !tournament);
+        this.tournamentTab.classList.toggle("active", tournament);
+        this.playerAField.hidden = tournament;
+        this.playerBField.hidden = tournament;
+        this.tournamentBots.hidden = !tournament;
+      }
+
+      gameCount() {
+        const value = this.gamesPreset.value === "custom" ? Number.parseInt(this.customGames.value, 10) : Number.parseInt(this.gamesPreset.value, 10);
+        return Math.max(1, Math.min(100000, value || 1));
+      }
+
+      selectedBots() {
+        if (this.mode === "headToHead") return [this.playerA.value, this.playerB.value].map(id => BOT_CATALOG.find(bot => bot.id === id)).filter(Boolean);
+        return [...this.tournamentBots.querySelectorAll('input[type="checkbox"]:checked')].map(input => BOT_CATALOG.find(bot => bot.id === input.value)).filter(Boolean);
+      }
+
+      schedule(bots, gamesPerMatchup) {
+        const matchups = [];
+        if (this.mode === "headToHead") matchups.push({ botA: bots[0], botB: bots[1], games: gamesPerMatchup });
+        else for (let a=0; a<bots.length; a++) for (let b=a+1; b<bots.length; b++) matchups.push({ botA: bots[a], botB: bots[b], games: gamesPerMatchup });
+        return matchups;
+      }
+
+      newMatchup(botA, botB) {
+        return { botA, botB, games: 0, wins: { [botA.id]: 0, [botB.id]: 0 }, draws: 0, lightWins: 0, darkWins: 0, totalTurns: 0, totalTurncoats: 0, totalTempoSpent: 0 };
+      }
+
+      addResult(matchup, game) {
+        matchup.games++;
+        if (game.winnerBotId) matchup.wins[game.winnerBotId] = (matchup.wins[game.winnerBotId] || 0) + 1;
+        else matchup.draws++;
+        if (game.winner === "light") matchup.lightWins++;
+        if (game.winner === "dark") matchup.darkWins++;
+        matchup.totalTurns += game.turnCount;
+        matchup.totalTurncoats += game.turncoats;
+        matchup.totalTempoSpent += game.totalTempoSpent;
+      }
+
+      async runExperiment() {
+        if (this.running) return;
+        const bots = this.selectedBots();
+        if (bots.length < 2) { this.status.textContent = "Select at least two bots."; return; }
+        const gamesPerMatchup = this.gameCount();
+        const schedule = this.schedule(bots, gamesPerMatchup);
+        const totalGames = schedule.reduce((sum, matchup) => sum + matchup.games, 0);
+        const seed = this.seed.value.trim() || `turncoat-${Date.now()}`;
+        const recordDataset = this.recordDataset.checked;
+        const started = performance.now();
+        const experimentId = `simulation_${Date.now().toString(36)}`;
+        const run = {
+          schemaVersion: SIMULATION_SCHEMA_VERSION,
+          experimentId,
+          mode: this.mode,
+          seed,
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          stopped: false,
+          gamesPerMatchup,
+          totalGamesPlanned: totalGames,
+          totalGamesCompleted: 0,
+          swapStartingSides: this.swapSides.checked,
+          recordFullDataset: recordDataset,
+          rules: { noGoPerPlayer: this.ui.game.noGoPerPlayer, gulliesEnabled: this.ui.game.gulliesEnabled },
+          batchCompute: JSON.parse(JSON.stringify(SIMULATION_BATCH_OPTIONS)),
+          matchups: schedule.map(item => this.newMatchup(item.botA, item.botB)),
+          elapsedMs: 0
+        };
+        const dataset = {
+          schemaVersion: SIMULATION_SCHEMA_VERSION,
+          datasetType: "turncoat-simulation-decisions",
+          generatedAt: null,
+          experiment: null,
+          games: [],
+          decisions: []
+        };
+        this.running = true;
+        this.stopRequested = false;
+        this.run.disabled = true;
+        this.stop.disabled = false;
+        this.exportCsv.disabled = true;
+        this.exportJson.disabled = true;
+        this.results.hidden = false;
+        this.progressBar.style.setProperty("--progress", "0%");
+
+        let globalGameIndex = 0;
+        try {
+          for (let matchupIndex=0; matchupIndex<schedule.length && !this.stopRequested; matchupIndex++) {
+            const scheduled = schedule[matchupIndex];
+            const aggregate = run.matchups[matchupIndex];
+            for (let gameIndex=0; gameIndex<scheduled.games && !this.stopRequested; gameIndex++) {
+              const swapped = this.swapSides.checked && gameIndex % 2 === 1;
+              const lightBot = swapped ? scheduled.botB : scheduled.botA;
+              const darkBot = swapped ? scheduled.botA : scheduled.botB;
+              const gameId = `${experimentId}_game_${globalGameIndex + 1}`;
+              const result = await simulateHeadlessGame({
+                gameId,
+                lightBot,
+                darkBot,
+                seed: `${seed}|${matchupIndex}|${gameIndex}`,
+                noGoPerPlayer: this.ui.game.noGoPerPlayer,
+                gulliesEnabled: this.ui.game.gulliesEnabled,
+                recordDataset,
+                shouldStop: () => this.stopRequested
+              });
+              if (result.game.stopped && !result.game.actionCount) break;
+              this.addResult(aggregate, result.game);
+              if (recordDataset) {
+                dataset.games.push(result.game);
+                dataset.decisions.push(...result.decisions);
+              }
+              globalGameIndex++;
+              run.totalGamesCompleted = globalGameIndex;
+              run.elapsedMs = performance.now() - started;
+              const progress = totalGames ? globalGameIndex / totalGames * 100 : 0;
+              this.progressBar.style.setProperty("--progress", `${progress}%`);
+              this.status.textContent = `${globalGameIndex.toLocaleString()} / ${totalGames.toLocaleString()} games · ${(run.elapsedMs / 1000).toFixed(1)}s · seed ${seed}`;
+              if (globalGameIndex === 1 || globalGameIndex % 5 === 0 || globalGameIndex === totalGames) this.renderResults(run);
+              await yieldSimulationThread();
+            }
+          }
+        } catch (error) {
+          console.error(error);
+          this.status.textContent = `Simulation stopped with an error: ${error.message}`;
+          this.stopRequested = true;
+        } finally {
+          run.stopped = this.stopRequested;
+          run.finishedAt = new Date().toISOString();
+          run.elapsedMs = performance.now() - started;
+          this.lastRun = run;
+          if (recordDataset) {
+            dataset.generatedAt = run.finishedAt;
+            dataset.experiment = JSON.parse(JSON.stringify(run));
+            this.lastDataset = dataset;
+          } else this.lastDataset = null;
+          this.running = false;
+          this.run.disabled = false;
+          this.stop.disabled = true;
+          this.exportCsv.disabled = run.totalGamesCompleted === 0;
+          this.exportJson.disabled = !this.lastDataset?.decisions.length;
+          this.renderResults(run);
+          this.status.textContent = `${run.stopped ? "Stopped" : "Complete"} · ${run.totalGamesCompleted.toLocaleString()} games · ${(run.elapsedMs / 1000).toFixed(2)}s · seed ${seed}`;
+        }
+      }
+
+      standings(run) {
+        const table = new Map();
+        for (const matchup of run.matchups) {
+          for (const bot of [matchup.botA, matchup.botB]) if (!table.has(bot.id)) table.set(bot.id, { bot, games: 0, wins: 0, losses: 0, draws: 0 });
+          const a = table.get(matchup.botA.id), b = table.get(matchup.botB.id);
+          a.games += matchup.games; b.games += matchup.games;
+          a.wins += matchup.wins[matchup.botA.id] || 0; b.wins += matchup.wins[matchup.botB.id] || 0;
+          a.losses += matchup.wins[matchup.botB.id] || 0; b.losses += matchup.wins[matchup.botA.id] || 0;
+          a.draws += matchup.draws; b.draws += matchup.draws;
+        }
+        return [...table.values()].sort((a,b) => (b.wins / Math.max(1,b.games)) - (a.wins / Math.max(1,a.games)) || b.wins-a.wins);
+      }
+
+      renderResults(run) {
+        const games = run.matchups.reduce((sum, matchup) => sum + matchup.games, 0);
+        const turns = run.matchups.reduce((sum, matchup) => sum + matchup.totalTurns, 0);
+        const turncoats = run.matchups.reduce((sum, matchup) => sum + matchup.totalTurncoats, 0);
+        const tempo = run.matchups.reduce((sum, matchup) => sum + matchup.totalTempoSpent, 0);
+        this.resultsTitle.textContent = run.mode === "tournament" ? "Tournament results" : `${run.matchups[0]?.botA.shortName || "Bot A"} vs ${run.matchups[0]?.botB.shortName || "Bot B"}`;
+        const stats = [[games.toLocaleString(),"Games"],[(turns/Math.max(1,games)).toFixed(1),"Average turns"],[(turncoats/Math.max(1,games)).toFixed(2),"Turncoats / game"],[(tempo/Math.max(1,turns)).toFixed(2),"Tempo / turn"]];
+        this.summary.innerHTML = stats.map(([value,label]) => `<div class="simulation-stat"><b>${value}</b><span>${label}</span></div>`).join("");
+        if (run.mode === "tournament") {
+          const rows = this.standings(run).map(entry => `<tr><td>${entry.bot.shortName}</td><td>${entry.games}</td><td>${entry.wins}</td><td>${entry.losses}</td><td>${entry.draws}</td><td>${(entry.wins/Math.max(1,entry.games)*100).toFixed(1)}%</td></tr>`).join("");
+          this.tableWrap.innerHTML = `<table class="simulation-table"><thead><tr><th>Bot</th><th>Games</th><th>Wins</th><th>Losses</th><th>Draws</th><th>Win %</th></tr></thead><tbody>${rows}</tbody></table>`;
+        } else {
+          const matchup = run.matchups[0];
+          const aWins=matchup.wins[matchup.botA.id]||0, bWins=matchup.wins[matchup.botB.id]||0;
+          this.tableWrap.innerHTML = `<table class="simulation-table"><thead><tr><th>Matchup</th><th>${matchup.botA.shortName} wins</th><th>${matchup.botB.shortName} wins</th><th>Draws</th><th>Light wins</th><th>Dark wins</th></tr></thead><tbody><tr><td>${matchup.botA.shortName} vs ${matchup.botB.shortName}</td><td>${aWins} · ${(aWins/Math.max(1,matchup.games)*100).toFixed(1)}%</td><td>${bWins} · ${(bWins/Math.max(1,matchup.games)*100).toFixed(1)}%</td><td>${matchup.draws}</td><td>${matchup.lightWins}</td><td>${matchup.darkWins}</td></tr></tbody></table>`;
+        }
+      }
+
+      csvRows(run) {
+        const header = ["mode","bot_a","bot_b","games","bot_a_wins","bot_b_wins","draws","bot_a_win_pct","bot_b_win_pct","average_turns","turncoats_per_game","tempo_per_turn","light_wins","dark_wins","seed","stopped"];
+        const rows = run.matchups.filter(matchup => matchup.games).map(matchup => {
+          const aWins=matchup.wins[matchup.botA.id]||0, bWins=matchup.wins[matchup.botB.id]||0;
+          return [run.mode,matchup.botA.shortName,matchup.botB.shortName,matchup.games,aWins,bWins,matchup.draws,(aWins/matchup.games*100).toFixed(3),(bWins/matchup.games*100).toFixed(3),(matchup.totalTurns/matchup.games).toFixed(3),(matchup.totalTurncoats/matchup.games).toFixed(3),(matchup.totalTempoSpent/Math.max(1,matchup.totalTurns)).toFixed(3),matchup.lightWins,matchup.darkWins,run.seed,run.stopped];
+        });
+        const escapeCsv = value => `"${String(value).replaceAll('"','""')}"`;
+        return [header,...rows].map(row => row.map(escapeCsv).join(",")).join("\n");
+      }
+
+      download(content, type, filename) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      exportResultsCsv() {
+        if (!this.lastRun) return;
+        this.download(this.csvRows(this.lastRun), "text/csv", `turncoat-simulation-results-${new Date().toISOString().slice(0,10)}.csv`);
+      }
+
+      exportDatasetJson() {
+        if (!this.lastDataset) return;
+        this.download(JSON.stringify(this.lastDataset, null, 2), "application/json", `turncoat-simulation-data-${new Date().toISOString().slice(0,10)}.json`);
       }
     }
 
@@ -4250,8 +4803,15 @@
       STEVIE_RULES,
       PLAYER_RECORDER_SCHEMA_VERSION,
       PLAYER_RECORDER_STORAGE_KEY,
+      SIMULATION_SCHEMA_VERSION,
+      SIMULATION_BATCH_OPTIONS,
       PlayerRecorder,
       canonicalRecorderAction,
+      canonicalRecorderState,
+      SimulationLab,
+      hashSimulationSeed,
+      seededSimulationRandom,
+      simulateHeadlessGame,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
@@ -4289,12 +4849,14 @@
       chooseAlfieAction,
       chooseMontyAction,
       chooseCarloAction,
-      chooseStevieAction
+      chooseStevieAction,
+      chooseBotAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
       new BotTrophySystem(gameUI);
       new TurncoatTutorial(gameUI);
+      if (new URLSearchParams(window.location.search).get("dev") === "1") new SimulationLab(gameUI);
     });
   </script>
 </body>
