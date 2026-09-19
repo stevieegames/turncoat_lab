@@ -165,6 +165,13 @@
     details p { color: var(--muted); font-size: .77rem; line-height: 1.5; margin-bottom: 0; }
     .log { max-height: 145px; overflow: auto; color: var(--muted); font: .72rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
     .log div:first-child { color: var(--ink); }
+    .recorder-summary { margin: 0 0 12px; color: var(--ink); font: 800 .76rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .035em; text-transform: uppercase; }
+    .recorder-note { margin: 10px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+    .recorder-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .recorder-buttons button:first-child { color: #fff9ed; border-color: #245f9d; background: #2d76bc; }
+    .recorder-buttons button:last-child { color: #8d2c21; border-color: rgba(141,44,33,.35); }
+    .feedback-data-optin { width: 100%; padding: 9px; border: 1px solid rgba(255,255,255,.22); border-radius: 5px; background: rgba(255,255,255,.08); }
+    .feedback-data-optin small { display: block; margin-left: 27px; color: rgba(255,248,237,.78); font-size: .68rem; line-height: 1.4; }
 
     .winner { position: absolute; z-index: 6; inset: 17px; display: none; place-items: center; text-align: center; color: #fff8ed; background: rgba(36,25,17,.88); backdrop-filter: blur(4px); }
     .winner.show { display: grid; }
@@ -558,9 +565,13 @@
                   <label for="feedbackText">Anything you'd like to tell me? (optional)
                     <textarea id="feedbackText" placeholder="What worked? What felt confusing or unbalanced?"></textarea>
                   </label>
+                  <div class="feedback-data-optin">
+                    <label class="check-label"><input id="includeAnonymousGameData" type="checkbox"> Include anonymous game data</label>
+                    <small>Helps improve Turncoat and research better computer players. Only this game's structured Player Recorder data is included.</small>
+                  </div>
                   <details class="privacy-notice">
                     <summary>Privacy notice</summary>
-                    <p>Nothing is sent unless you press <b>Send playtest</b>. The Turncoat developer receives your survey answers, optional written feedback, game settings, result, move log, date, and game version solely to evaluate and improve Turncoat. Your name and email are not requested. Please do not include personal or sensitive information in your feedback.</p>
+                    <p>Nothing is sent unless you press <b>Send playtest</b>. The Turncoat developer receives your survey answers, optional written feedback, game settings, result, move log, date, and game version solely to evaluate and improve Turncoat. If you tick <b>Include anonymous game data</b>, the submission also contains structured decisions from this game only—not your historical local dataset. Your name and email are not requested. Please do not include personal or sensitive information in your feedback.</p>
                     <p>Formspree delivers the submission and may process technical data such as your IP address, browser type, access time, and referring page, including in the United States. See <a href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">Formspree's privacy policy</a>.</p>
                     <p>The developer will retain submitted playtests for no longer than 12 months, then delete or anonymise them. The developer relies on a legitimate interest in improving the game. To ask about, correct, or delete a submission, contact the developer through the same channel that provided this playtest link. You can play without submitting anything.</p>
                   </details>
@@ -632,6 +643,19 @@
             <p id="status">Ivory begins with 2 Tempo. Move a piece, place a No Go area, or turncoat an eligible enemy.</p>
           </div>
           </div>
+        </section>
+
+        <section class="panel accordion collapsed">
+          <button class="accordion-trigger" type="button" aria-expanded="false"><span>Player Recorder</span><span class="accordion-arrow">⌄</span></button>
+          <div class="accordion-shell"><div class="accordion-content">
+            <p class="recorder-summary" id="playerDataSummary">Player data · 0 games · 0 decisions</p>
+            <label class="check-label"><input id="recordingEnabled" type="checkbox"> <span id="recordingLabel">Recording ON</span></label>
+            <div class="recorder-buttons">
+              <button id="exportPlayerData" type="button">Export dataset</button>
+              <button id="clearPlayerData" type="button">Clear dataset</button>
+            </div>
+            <p class="recorder-note" id="playerRecorderStatus">Uses a persistent random player ID—not a name or email. Stored only in this browser until you export it or explicitly include the current game with feedback.</p>
+          </div></div>
         </section>
 
         <section class="panel accordion collapsed">
@@ -855,6 +879,8 @@
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
     const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    const PLAYER_RECORDER_SCHEMA_VERSION = 1;
+    const PLAYER_RECORDER_STORAGE_KEY = "turncoatPlayerRecorderV1";
     // Sally combines every applicable preference multiplicatively. Keeping the
     // values together makes her personality easy to explain and tune.
     const SALLY_WEIGHTS = Object.freeze({
@@ -2821,6 +2847,311 @@
       return { botName: bot.shortName, message: pool[Math.floor(random() * pool.length)] || "", style };
     }
 
+    function recorderId(prefix) {
+      const randomPart = globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID().replaceAll("-", "")
+        : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+      return `${prefix}_${randomPart}`;
+    }
+
+    function canonicalRecorderAction(game, action) {
+      const base = { type: action.type, tempoCost: action.type === "nogo" ? 2 : action.type === "pass" ? 0 : 1 };
+      if (action.type === "move") {
+        const piece = game.board[action.move.from.r]?.[action.move.from.c];
+        return {
+          ...base,
+          pieceId: action.move.pieceId,
+          pieceType: piece?.type || null,
+          pieceOwner: piece?.owner || game.turn,
+          from: {...action.move.from},
+          to: {...action.move.to},
+          notation: describeBotAction(game, action)
+        };
+      }
+      if (action.type === "turncoat") {
+        const piece = game.board[action.target.r]?.[action.target.c];
+        return {
+          ...base,
+          target: {...action.target},
+          targetPieceId: piece?.id ?? action.target.pieceId ?? null,
+          targetPieceType: piece?.type || null,
+          targetOwnerBefore: piece?.owner || null,
+          notation: describeBotAction(game, action)
+        };
+      }
+      if (action.type === "nogo") return {...base, to: {...action.to}, notation: describeBotAction(game, action)};
+      return {...base, notation: "PASS"};
+    }
+
+    class PlayerRecorder {
+      constructor(ui) {
+        this.ui = ui;
+        this.decisionStartedAt = null;
+        this.decisionToken = null;
+        this.currentGameId = null;
+        this.pendingGame = null;
+        this.data = this.load();
+        this.bind();
+        this.prepareGame();
+        this.renderSummary();
+      }
+
+      freshData(existingPlayer = null) {
+        return {
+          schemaVersion: PLAYER_RECORDER_SCHEMA_VERSION,
+          player: existingPlayer || {
+            anonymousPlayerId: recorderId("player"),
+            profileName: null,
+            createdAt: new Date().toISOString()
+          },
+          settings: { recordingEnabled: true },
+          games: [],
+          decisions: []
+        };
+      }
+
+      load() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(PLAYER_RECORDER_STORAGE_KEY));
+          if (parsed && parsed.schemaVersion === PLAYER_RECORDER_SCHEMA_VERSION && parsed.player && Array.isArray(parsed.games) && Array.isArray(parsed.decisions)) {
+            parsed.settings ||= { recordingEnabled: true };
+            return parsed;
+          }
+        } catch (error) {
+          console.warn("Player Recorder data could not be loaded.", error);
+        }
+        return this.freshData();
+      }
+
+      save() {
+        try {
+          localStorage.setItem(PLAYER_RECORDER_STORAGE_KEY, JSON.stringify(this.data));
+          return true;
+        } catch (error) {
+          console.warn("Player Recorder data could not be saved.", error);
+          this.ui.playerRecorderStatus.textContent = "Recorder storage is unavailable or full. Export your dataset before continuing.";
+          return false;
+        }
+      }
+
+      bind() {
+        this.ui.recordingEnabled.checked = this.data.settings.recordingEnabled !== false;
+        this.ui.recordingEnabled.addEventListener("change", () => {
+          this.data.settings.recordingEnabled = this.ui.recordingEnabled.checked;
+          this.decisionStartedAt = null;
+          this.decisionToken = null;
+          this.save();
+          this.renderSummary();
+          if (this.data.settings.recordingEnabled) this.ensureCurrentGame();
+          this.armDecision();
+        });
+        this.ui.exportPlayerData.addEventListener("click", () => this.exportDataset());
+        this.ui.clearPlayerData.addEventListener("click", () => this.clearDataset());
+        window.addEventListener("pagehide", () => this.abandonCurrentGame("page_closed"));
+      }
+
+      describePlayer(value) {
+        if (value === "human") return { kind: "human", id: this.data.player.anonymousPlayerId };
+        const bot = BOT_CATALOG.find(item => item.available && item.playerValue === value);
+        return { kind: "bot", id: bot?.id || value, name: bot?.shortName || cap(value), algorithm: bot?.algorithm || null };
+      }
+
+      prepareGame() {
+        this.abandonCurrentGame("restarted");
+        const players = { light: this.ui.lightPlayer.value, dark: this.ui.darkPlayer.value };
+        const botSide = Object.keys(players).find(side => players[side] !== "human") || null;
+        const bot = botSide ? BOT_CATALOG.find(item => item.available && item.playerValue === players[botSide]) : null;
+        this.pendingGame = {
+          gameId: recorderId("game"),
+          gameVersion: "Prototype 0.9",
+          anonymousPlayerId: this.data.player.anonymousPlayerId,
+          players: { light: this.describePlayer(players.light), dark: this.describePlayer(players.dark) },
+          botOpponent: bot ? { side: botSide, id: bot.id, name: bot.shortName, algorithm: bot.algorithm } : null,
+          settings: {
+            rows: RULES.innerRows,
+            columns: RULES.innerCols,
+            noGoPerPlayer: this.ui.game.noGoPerPlayer,
+            gulliesEnabled: this.ui.game.gulliesEnabled
+          },
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          winner: null,
+          winCondition: null,
+          turnCount: null,
+          completed: false,
+          abandoned: false
+        };
+        this.currentGameId = null;
+        this.decisionStartedAt = null;
+        this.decisionToken = null;
+        if (this.data.settings.recordingEnabled) this.ensureCurrentGame();
+      }
+
+      ensureCurrentGame() {
+        if (!this.currentGameId && this.pendingGame) {
+          this.data.games.push(this.pendingGame);
+          this.currentGameId = this.pendingGame.gameId;
+          this.pendingGame = null;
+          this.save();
+          this.renderSummary();
+        }
+        return this.data.games.find(game => game.gameId === this.currentGameId) || null;
+      }
+
+      currentGame() { return this.data.games.find(game => game.gameId === this.currentGameId) || null; }
+
+      turnNumber(game = this.ui.game) {
+        return 1 + game.log.filter(entry => entry.includes(" turn ·")).length;
+      }
+
+      armDecision() {
+        const ui = this.ui;
+        if (!this.data.settings.recordingEnabled || !ui.isHumanTurn() || ui.game.winner || ui.tutorialOpen || ui.botTrophiesOpen || ui.botIntroOpen) {
+          this.decisionStartedAt = null;
+          this.decisionToken = null;
+          return;
+        }
+        const token = `${this.currentGameId || this.pendingGame?.gameId}|${ui.game.turn}|${ui.game.actionsThisTurn}|${ui.game.tempoSpentThisTurn}|${ui.game.tempo.light},${ui.game.tempo.dark}|${ui.game.log.length}`;
+        if (token !== this.decisionToken) {
+          this.decisionToken = token;
+          this.decisionStartedAt = performance.now();
+        }
+      }
+
+      captureDecision(action) {
+        if (!this.data.settings.recordingEnabled || !this.ui.isHumanTurn() || this.ui.game.winner) return null;
+        const gameRecord = this.ensureCurrentGame();
+        if (!gameRecord) return null;
+        const game = this.ui.game;
+        const legalActions = getLegalBotActions(game).map(candidate => canonicalRecorderAction(game, candidate));
+        const rawState = JSON.parse(game.snapshot());
+        delete rawState.log;
+        delete rawState.turnTraces;
+        delete rawState.completedTurnTraces;
+        return {
+          decisionId: recorderId("decision"),
+          gameId: gameRecord.gameId,
+          anonymousPlayerId: this.data.player.anonymousPlayerId,
+          playerProfileName: this.data.player.profileName,
+          playerSide: game.turn,
+          opponent: gameRecord.botOpponent || gameRecord.players[other(game.turn)],
+          turnNumber: this.turnNumber(game),
+          decisionNumber: this.data.decisions.filter(decision => decision.gameId === gameRecord.gameId).length + 1,
+          recordedAt: new Date().toISOString(),
+          decisionTimeMs: Math.max(0, Math.round(performance.now() - (this.decisionStartedAt ?? performance.now()))),
+          stateBefore: {
+            schema: "turncoat-engine-snapshot-v1",
+            rows: RULES.rows,
+            columns: RULES.cols,
+            ...rawState
+          },
+          turnState: {
+            currentPlayer: game.turn,
+            tempo: {...game.tempo},
+            turnStartingTempo: game.turnStartingTempo,
+            tempoSpentThisTurn: game.tempoSpentThisTurn,
+            actionsThisTurn: game.actionsThisTurn,
+            requiredTempoSpend: game.requiredTempoSpend(),
+            canPass: game.canEndTurn()
+          },
+          legalActions,
+          chosenAction: canonicalRecorderAction(game, action),
+          undone: false
+        };
+      }
+
+      commitDecision(record, result) {
+        if (!record || !result?.ok) return;
+        this.data.decisions.push(record);
+        this.save();
+        this.renderSummary();
+        this.decisionStartedAt = null;
+        this.decisionToken = null;
+      }
+
+      markLastDecisionUndone() {
+        const decision = [...this.data.decisions].reverse().find(item => item.gameId === this.currentGameId && !item.undone);
+        if (!decision) return;
+        decision.undone = true;
+        decision.undoneAt = new Date().toISOString();
+        this.save();
+        this.renderSummary();
+      }
+
+      finalizeCurrentGame() {
+        if (!this.ui.game.winner) return;
+        const record = this.ensureCurrentGame();
+        if (!record || record.completed) return;
+        record.finishedAt = new Date().toISOString();
+        record.winner = this.ui.game.winner;
+        record.winCondition = this.ui.game.winType || this.ui.game.winReason || null;
+        record.turnCount = this.turnNumber(this.ui.game);
+        record.completed = true;
+        record.abandoned = false;
+        this.save();
+        this.renderSummary();
+      }
+
+      abandonCurrentGame(reason = "abandoned") {
+        const record = this.currentGame();
+        if (!record || record.completed || record.abandoned) return;
+        record.finishedAt = new Date().toISOString();
+        record.turnCount = this.turnNumber(this.ui.game);
+        record.completed = false;
+        record.abandoned = true;
+        record.abandonReason = reason;
+        this.save();
+      }
+
+      currentGameBundle() {
+        const game = this.currentGame();
+        if (!game) return null;
+        return {
+          schemaVersion: PLAYER_RECORDER_SCHEMA_VERSION,
+          player: { anonymousPlayerId: this.data.player.anonymousPlayerId, profileName: this.data.player.profileName },
+          game: JSON.parse(JSON.stringify(game)),
+          decisions: this.data.decisions.filter(decision => decision.gameId === game.gameId).map(decision => JSON.parse(JSON.stringify(decision)))
+        };
+      }
+
+      exportDataset() {
+        const payload = { ...this.data, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `turncoat-player-data-${new Date().toISOString().slice(0,10)}.json`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        this.ui.playerRecorderStatus.textContent = "Dataset exported as standard JSON.";
+      }
+
+      clearDataset() {
+        if (!confirm("Clear every locally recorded Turncoat game and decision on this device? This cannot be undone.")) return;
+        const player = this.data.player;
+        const enabled = this.data.settings.recordingEnabled;
+        this.data = this.freshData(player);
+        this.data.settings.recordingEnabled = enabled;
+        this.currentGameId = null;
+        this.pendingGame = null;
+        this.prepareGame();
+        this.save();
+        this.renderSummary();
+        this.ui.playerRecorderStatus.textContent = "Local games and decisions cleared. Your anonymous player ID was retained.";
+        this.armDecision();
+      }
+
+      renderSummary() {
+        const games = this.data.games.length;
+        const decisions = this.data.decisions.length;
+        this.ui.playerDataSummary.textContent = `Player data · ${games} game${games === 1 ? "" : "s"} · ${decisions} decision${decisions === 1 ? "" : "s"}`;
+        this.ui.recordingEnabled.checked = this.data.settings.recordingEnabled !== false;
+        this.ui.recordingLabel.textContent = this.ui.recordingEnabled.checked ? "Recording ON" : "Recording OFF";
+      }
+    }
+
     class TurncoatUI {
       constructor() {
         this.game = new TurncoatEngine();
@@ -2841,6 +3172,7 @@
         this.botThoughtData = null;
         this.botThoughtStyles = {};
         this.cacheElements();
+        this.playerRecorder = new PlayerRecorder(this);
         this.bind();
         this.beginMatchContext();
         this.render();
@@ -2848,7 +3180,7 @@
       }
 
       cacheElements() {
-        const ids = ["board","traces","turnName","turnHelp","botThoughtSlot","botThought","botThoughtName","botThoughtText","tempoScale","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","postGameDock","nextBot","openFeedback","winnerRestart","feedbackText","feedbackPanel","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton"];
+        const ids = ["board","traces","turnName","turnHelp","botThoughtSlot","botThought","botThoughtName","botThoughtText","tempoScale","lightCount","darkCount","lightTempo","darkTempo","endTurn","undo","restart","status","log","winner","winnerSummary","winnerName","winnerReason","showBoard","postGameDock","nextBot","openFeedback","winnerRestart","feedbackText","feedbackPanel","cancelFeedback","sendPlaytest","feedbackStatus","feedbackThanks","winnerRestartAfterFeedback","includeAnonymousGameData","lightPlayer","darkPlayer","turncoat","saveLog","noGoSetting","gulliesSetting","lightNoGo","darkNoGo","lightNoGoCount","darkNoGoCount","lightSideBoard","darkSideBoard","lightNoGoButton","darkNoGoButton","playerDataSummary","recordingEnabled","recordingLabel","exportPlayerData","clearPlayerData","playerRecorderStatus"];
         for (const id of ids) this[id] = document.getElementById(id);
       }
 
@@ -2861,7 +3193,10 @@
           });
         });
         this.endTurn.addEventListener("click", () => {
-          if (this.game.endTurn()) { this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.setStatus(`${ownerName(this.game.turn)} has ${this.game.tempo[this.game.turn]} Tempo.`); this.render(); this.maybeRunAI(); }
+          const decision = this.playerRecorder.captureDecision({ type: "pass" });
+          const result = { ok: this.game.endTurn() };
+          this.playerRecorder.commitDecision(decision, result);
+          if (result.ok) { this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.setStatus(`${ownerName(this.game.turn)} has ${this.game.tempo[this.game.turn]} Tempo.`); this.render(); this.maybeRunAI(); }
         });
         this.lightNoGoButton.addEventListener("click", () => this.toggleNoGo("light"));
         this.darkNoGoButton.addEventListener("click", () => this.toggleNoGo("dark"));
@@ -2873,7 +3208,7 @@
           this.setStatus(this.turncoatMode ? "Choose a glowing enemy piece to turncoat." : "Turncoat cancelled.");
           this.render();
         });
-        this.undo.addEventListener("click", () => { clearTimeout(this.aiTimer); clearTimeout(this.shieldTimer); this.breakingSignature=""; if (this.game.undo()) { this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.showBoardAfterWin = false; this.setStatus("Action undone."); this.render(); } });
+        this.undo.addEventListener("click", () => { clearTimeout(this.aiTimer); clearTimeout(this.shieldTimer); this.breakingSignature=""; if (this.game.undo()) { this.playerRecorder.markLastDecisionUndone(); this.selected = null; this.noGoMode = false; this.turncoatMode = false; this.showBoardAfterWin = false; this.setStatus("Action undone."); this.render(); } });
         this.restart.addEventListener("click", () => this.restartGame());
         this.winnerRestart.addEventListener("click", () => this.restartGame());
         this.winnerRestartAfterFeedback.addEventListener("click", () => this.restartGame());
@@ -2922,6 +3257,9 @@
         const started = this.game.history.length > 0 || this.game.log.length > 0 || this.game.actionsThisTurn > 0;
         if (started) this.matchContext.eligible = false;
         else this.beginMatchContext();
+        this.playerRecorder.abandonCurrentGame("player_configuration_changed");
+        this.playerRecorder.prepareGame();
+        if (started && this.playerRecorder.pendingGame) this.playerRecorder.pendingGame.recordingStartedMidGame = true;
         this.botThoughtData = null;
         const bot = changedSelect ? BOT_CATALOG.find(item => item.available && item.playerValue === changedSelect.value) : null;
         if (bot) this.trophySystem?.showBotIntro(bot.id);
@@ -2948,6 +3286,7 @@
 
       restartGame(botId = null) {
         clearTimeout(this.aiTimer);
+        this.playerRecorder.abandonCurrentGame("restarted");
         const count = Math.max(0, Math.min(12, Number.parseInt(this.noGoSetting.value,10) || 0));
         this.noGoSetting.value = count;
         this.game.noGoPerPlayer = count;
@@ -2963,10 +3302,12 @@
         this.nextBotOfferId = null;
         this.botThoughtData = null;
         this.feedbackText.value = "";
+        this.includeAnonymousGameData.checked = false;
         document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
         this.feedbackStatus.textContent = "";
         this.sendPlaytest.disabled = false;
         this.beginMatchContext(botId);
+        this.playerRecorder.prepareGame();
         this.setStatus(`New game with ${count} No Go area${count === 1 ? "" : "s"} each${this.game.gulliesEnabled ? " and Gullies open" : ""}. Ivory begins.`);
         this.render();
         this.maybeRunAI();
@@ -2976,8 +3317,11 @@
         if (!this.isHumanTurn() || this.game.winner) return;
         const piece = this.game.board[r][c];
         if (this.noGoMode) {
+          const action = { type: "nogo", to: {r,c} };
+          const decision = this.playerRecorder.captureDecision(action);
           const result = this.game.placeNoGo(r,c);
           if (result.ok) {
+            this.playerRecorder.commitDecision(decision, result);
             this.noGoMode = false;
             this.setStatus(this.game.canEndTurn() ? "No Go area placed. You may PASS." : "No Go area placed permanently.");
             this.render();
@@ -2986,8 +3330,11 @@
           return;
         }
         if (this.turncoatMode) {
+          const action = { type: "turncoat", target: {r,c,pieceId:piece?.id ?? null} };
+          const decision = this.playerRecorder.captureDecision(action);
           const result = this.game.turncoat(r,c);
           if (result.ok) {
+            this.playerRecorder.commitDecision(decision, result);
             this.turncoatMode = false;
             this.setStatus(`${cap(result.piece.type)} turncoated and shielded.`);
             this.render();
@@ -2998,7 +3345,10 @@
         if (this.selected) {
           const move = this.game.legalMoves(this.selected.r, this.selected.c).find(m => m.to.r === r && m.to.c === c);
           if (move) {
+            const action = { type: "move", move };
+            const decision = this.playerRecorder.captureDecision(action);
             const result = this.game.makeMove(move);
+            this.playerRecorder.commitDecision(decision, result);
             this.selected = null;
             this.setStatus(this.game.canEndTurn() ? "Move made. Continue or PASS." : `Move made. Spend ${this.game.requiredTempoSpend()-this.game.tempoSpentThisTurn} more Tempo before passing.`);
             this.render();
@@ -3087,9 +3437,11 @@
         this.renderNoGoRack("light");
         this.renderNoGoRack("dark");
         this.scheduleShieldFade();
+        this.playerRecorder.finalizeCurrentGame();
         this.checkTrophyAward();
         this.nextBot.hidden = !this.game.winner || !this.nextBotOfferId;
         this.renderBotThought();
+        this.playerRecorder.armDecision();
       }
 
       renderBotThought() {
@@ -3249,6 +3601,8 @@
         this.sendPlaytest.disabled = true;
         this.feedbackStatus.textContent = "Sending…";
         try {
+          const includeAnonymousGameData = this.includeAnonymousGameData.checked;
+          const anonymousGameData = includeAnonymousGameData ? this.playerRecorder.currentGameBundle() : null;
           const response = await fetch(FEEDBACK_ENDPOINT, {
             method: "POST",
             headers: {"Content-Type": "application/json", "Accept": "application/json"},
@@ -3258,12 +3612,15 @@
               rules_clarity: rules,
               play_again: playAgain,
               feedback: this.feedbackText.value.trim() || "No written feedback.",
-              game_log: this.buildPlaytestReport()
+              game_log: this.buildPlaytestReport(),
+              includes_anonymous_game_data: Boolean(anonymousGameData),
+              ...(anonymousGameData ? { anonymous_game_data: anonymousGameData } : {})
             })
           });
           if (!response.ok) throw new Error(`Formspree returned ${response.status}`);
           this.feedbackMode = "thanks";
           this.feedbackText.value = "";
+          this.includeAnonymousGameData.checked = false;
           document.querySelectorAll('.feedback-panel input[type="radio"]').forEach(input => { input.checked = false; });
           this.feedbackStatus.textContent = "";
           this.render();
@@ -3454,6 +3811,7 @@
       open() {
         this.previousFocus = document.activeElement;
         this.ui.botTrophiesOpen = true;
+        this.ui.playerRecorder.armDecision();
         clearTimeout(this.ui.aiTimer);
         this.overlay.hidden = false;
         document.body.classList.add("bot-trophies-active");
@@ -3464,6 +3822,7 @@
       close(resumeGame = true) {
         this.overlay.hidden = true;
         this.ui.botTrophiesOpen = false;
+        this.ui.playerRecorder.armDecision();
         this.syncBodyLock();
         if (this.previousFocus && document.contains(this.previousFocus)) this.previousFocus.focus();
         if (resumeGame) this.ui.maybeRunAI();
@@ -3489,6 +3848,7 @@
         this.introsSeen[bot.id] = true;
         this.saveIntros();
         this.ui.botIntroOpen = true;
+        this.ui.playerRecorder.armDecision();
         clearTimeout(this.ui.aiTimer);
         this.introAvatar.replaceChildren(createBotAvatar(bot, "large"));
         this.introName.textContent = bot.name;
@@ -3503,6 +3863,7 @@
       closeBotIntro() {
         this.introOverlay.hidden = true;
         this.ui.botIntroOpen = false;
+        this.ui.playerRecorder.armDecision();
         this.syncBodyLock();
         this.ui.maybeRunAI();
       }
@@ -3636,6 +3997,7 @@
       open(showWelcome) {
         this.previousFocus = document.activeElement;
         this.ui.tutorialOpen = true;
+        this.ui.playerRecorder.armDecision();
         clearTimeout(this.ui.aiTimer);
         document.body.classList.add("tutorial-active");
         this.overlay.hidden = false;
@@ -3648,6 +4010,7 @@
         this.overlay.hidden = true;
         document.body.classList.remove("tutorial-active");
         this.ui.tutorialOpen = false;
+        this.ui.playerRecorder.armDecision();
         if (this.previousFocus && document.contains(this.previousFocus)) this.previousFocus.focus();
         this.ui.maybeRunAI();
       }
@@ -3885,6 +4248,10 @@
       CARLO_MCTS,
       TACTICAL_ROLLOUT_POLICY,
       STEVIE_RULES,
+      PLAYER_RECORDER_SCHEMA_VERSION,
+      PLAYER_RECORDER_STORAGE_KEY,
+      PlayerRecorder,
+      canonicalRecorderAction,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
