@@ -380,10 +380,13 @@
     .bot-symbol.duck { width: 92%; font-size: calc(var(--avatar-size) * .15); letter-spacing: -.14em; }
     .bot-symbol.wedge { width: 56%; height: 58%; background: var(--light-edge); clip-path: polygon(50% 0,100% 100%,0 100%); }
     .bot-symbol.wedge::after { content: ""; width: 72%; height: 70%; margin-top: 20%; background: var(--light); clip-path: inherit; }
-    .bot-symbol.cube { grid-template-columns: repeat(2,1fr); gap: 2px; width: 60%; height: 60%; }
-    .bot-symbol.cube i { display: block; border: 1.5px solid var(--dark-edge); border-radius: 1px; background: var(--light); box-shadow: inset -1px -1px 2px rgba(0,0,0,.12); }
     .bot-symbol.split-cube { width: 48%; height: 48%; border: 2px solid var(--dark-edge); border-radius: 2px; background: var(--light); box-shadow: inset -2px -2px 3px rgba(0,0,0,.12); }
     .bot-symbol.split-cube { background: linear-gradient(90deg, var(--light) 0 50%, var(--dark) 50% 100%); }
+    .bot-symbol.shield { width: 48%; height: 58%; background: #2477bd; clip-path: polygon(50% 0,92% 16%,84% 72%,50% 100%,16% 72%,8% 16%); filter: drop-shadow(0 2px 2px rgba(18,55,87,.28)); }
+    .bot-symbol.shield::after { content: ""; width: 62%; height: 66%; background: #bfe4ff; clip-path: inherit; }
+    .bot-symbol.tree { width: 66%; height: 62%; }
+    .bot-symbol.tree::before { content: ""; position: absolute; inset: 12% 8% 14%; background: linear-gradient(30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(-30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(90deg, transparent 47%, #287bd0 48% 52%, transparent 53%); }
+    .bot-symbol.tree::after { content: "●  ●  ●"; position: absolute; inset: 0; color: var(--accent); font-size: calc(var(--avatar-size) * .1); letter-spacing: .04em; display: flex; align-items: flex-end; justify-content: center; }
     .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
     .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
     .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
@@ -576,10 +579,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option><option value="cersei">Cersei - multi-factor evaluation</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="trevor">Trevor - weighted probability (blocks)</option><option value="kevin">Kevin - evaluation function</option><option value="cersei">Cersei - multi-factor evaluation</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -824,20 +827,27 @@
       turncoatWedge: 20,
       saveWedge: 10
     });
-    const TREVOR_WEIGHTS = Object.freeze({
-      base: 1,
-      useCube: 8,
-      turncoatCube: 20,
-      saveCube: 10
-    });
     const KEVIN_EVALUATION = Object.freeze({
       surroundPosition: 100,
       distance: 1
+    });
+    const WALTER_WEIGHTS = Object.freeze({
+      attackSurround: KEVIN_EVALUATION.surroundPosition,
+      approachDistance: KEVIN_EVALUATION.distance,
+      ownMainPieceDanger: 120,
+      mainOccupancyChange: 180,
+      mainMoveOccupancyGain: 120,
+      losingPosition: 1000000
     });
     const CERSEI_WEIGHTS = Object.freeze({
       mainPieceSurround: 100,
       materialAdvantage: 60,
       approachDistance: 1
+    });
+    const MINNIE_SEARCH = Object.freeze({
+      opponentActions: 1,
+      winScore: 1000000,
+      ownMainPieceDanger: 120
     });
     const BOT_CATALOG = Object.freeze([
       {
@@ -891,35 +901,6 @@
         trophyMessage: "You beat Turncoat's Wedge-loving weighted bot."
       },
       {
-        id: "trevor_blockhead",
-        name: "Trevor — Blockhead ◻️",
-        shortName: "Trevor",
-        icon: "cube",
-        iconLabel: "blocks",
-        algorithm: "Weighted Probability",
-        difficulty: 2,
-        available: true,
-        playerValue: "trevor",
-        trophyCondition: "human_win",
-        description: "Trevor bloody loves Cubes.",
-        shortDescription: "He heavily prefers using and protecting his Cubes—and always Turncoats yours when he can.",
-        introSummary: "Trevor heavily favours Cube actions and always Turncoats an available enemy Cube.",
-        educationTitle: "How Trevor thinks",
-        education: [
-          "Trevor uses the same weighted-random idea as Sally, but his obsession is Cubes instead of Wedges.",
-          "Every legal action begins with weight 1. Cube actions receive much larger weights, so Trevor is strongly—but not absolutely—drawn to them.",
-          "Each individual action keeps its own weight. Lots of ordinary actions can still collectively outweigh a smaller number of Cube actions.",
-          "If Trevor can Turncoat one of your Cubes, he always tries to do it. An immediate win still comes first. A Cube move that also saves a threatened Cube has weight 1 × 8 × 10 = 80."
-        ],
-        educationWeights: [
-          ["Uses his Cube", "×8"],
-          ["Turncoats your Cube", "Always"],
-          ["Saves his threatened Cube", "×10"],
-          ["Can win immediately", "Takes the win"]
-        ],
-        trophyMessage: "You beat Turncoat's Cube-loving weighted bot."
-      },
-      {
         id: "kevin_killer",
         name: "Kevin — The Killer",
         shortName: "Kevin",
@@ -950,13 +931,47 @@
         trophyMessage: "You survived Turncoat's relentless Main Piece hunter."
       },
       {
+        id: "walter_wary",
+        name: "Walter — Wary",
+        shortName: "Walter",
+        icon: "shield",
+        iconLabel: "a shield protecting a Main Piece",
+        algorithm: "Risk-Aware Evaluation",
+        difficulty: 4,
+        available: true,
+        playerValue: "walter",
+        trophyCondition: "human_win",
+        description: "Walter wants to win. He just doesn't want to die doing it.",
+        shortDescription: "He attacks your Main Piece while keeping an eye on the danger around his own.",
+        introSummary: "Walter attacks your Main Piece, but subtracts points when his own Main Piece is under pressure.",
+        educationTitle: "How Walter thinks",
+        education: [
+          "Kevin only looks forward. He rewards positions that get him closer to surrounding your Main Piece.",
+          "Walter has learned something Kevin hasn't: bad positions need a score too. He reuses Kevin's attack score, then subtracts danger around his own Main Piece.",
+          "He also strongly prefers to preserve the occupied tiles around his Main Piece. If moving the Main Piece gives it more occupied neighbours, he values that especially highly.",
+          `For example: attack +200 − danger 120 = position score 80. This is a risk-aware evaluation function.`,
+          "Walter still only judges the board immediately after his action. He does not predict your reply."
+        ],
+        educationWeights: [
+          ["Walter piece around enemy Main", `+${WALTER_WEIGHTS.attackSurround}`],
+          ["Each tile of approach distance", `−${WALTER_WEIGHTS.approachDistance}`],
+          ["Enemy piece around Walter's Main", `−${WALTER_WEIGHTS.ownMainPieceDanger}`],
+          ["Each protected occupancy gained", `+${WALTER_WEIGHTS.mainOccupancyChange}`],
+          ["Extra when his Main moves to gain occupancy", `+${WALTER_WEIGHTS.mainMoveOccupancyGain}`],
+          ["Can win immediately", "Takes the win"]
+        ],
+        limitationTitle: "But Walter can't see the future…",
+        limitation: "Walter knows when he is in danger now. He does not imagine your next move, so a position can look safe even when you can win immediately afterwards.",
+        trophyMessage: "You defeated Turncoat's cautious risk-aware attacker."
+      },
+      {
         id: "cersei_turncoat_queen",
         name: "Cersei — Turncoat Queen",
         shortName: "Cersei",
         icon: "split-cube",
         iconLabel: "an Ivory and Chestnut Cube",
         algorithm: "Multi-Factor Evaluation",
-        difficulty: 4,
+        difficulty: 5,
         available: true,
         playerValue: "cersei",
         trophyCondition: "human_win",
@@ -981,20 +996,44 @@
         trophyMessage: "You defeated Turncoat's multi-factor Turncoat Queen."
       },
       {
+        id: "minnie_minimax",
+        name: "Minnie — Minimax",
+        shortName: "Minnie",
+        icon: "tree",
+        iconLabel: "a branching search tree",
+        algorithm: "Minimax Search",
+        difficulty: 6,
+        available: true,
+        playerValue: "minnie",
+        trophyCondition: "human_win",
+        description: "Minnie knows you're going to fight back.",
+        shortDescription: "She considers your best response before choosing her move.",
+        introSummary: "Minnie examines your strongest response and chooses the move with the best worst-case outcome.",
+        educationTitle: "How Minnie thinks",
+        education: [
+          "Cersei asks: ‘How good will the board look after my move?’ Minnie asks another question: ‘And what will you do next?’",
+          "Minnie follows every legal continuation of her current TEMPO turn, then examines every legal first response available to you. Control changes only when a player actually passes or exhausts their actions.",
+          "You are MIN: Minnie assumes you choose the response producing her lowest score. Minnie is MAX: she chooses the action whose worst outcome is highest.",
+          "This is Minimax. It is a straightforward search without Alpha-Beta pruning; equal best moves are resolved randomly."
+        ],
+        educationWeights: [
+          ["MIN", "You minimise Minnie's score"],
+          ["MAX", "Minnie maximises her worst result"],
+          ["Search horizon", "Minnie's turn + your next action"],
+          ["Terminal win", `+${MINNIE_SEARCH.winScore.toLocaleString()}`],
+          ["Terminal loss", `−${MINNIE_SEARCH.winScore.toLocaleString()}`]
+        ],
+        limitationTitle: "But Minnie still can't see forever…",
+        limitation: "Minnie examines her remaining current turn and your first response action, then stops. She can avoid immediate traps, but multi-action responses and deeper plans can still fool her. Search depth matters.",
+        trophyMessage: "You outthought Turncoat's first adversarial search bot."
+      },
+      {
         id: "greedy_heuristic",
         name: "??? — Greedy",
         algorithm: "Heuristic",
         difficulty: null,
         available: false,
         description: "A bot that actually knows what it wants."
-      },
-      {
-        id: "minimax",
-        name: "??? — Minimax",
-        algorithm: "Minimax",
-        difficulty: null,
-        available: false,
-        description: "Looks ahead before choosing its move."
       },
       {
         id: "monte_carlo",
@@ -1034,7 +1073,6 @@
       const symbol = document.createElement("span");
       symbol.className = `bot-symbol ${bot.icon || "unknown"}`;
       if (bot.icon === "duck") symbol.textContent = "🦆🦆";
-      else if (bot.icon === "cube") for (let i=0;i<4;i++) symbol.append(document.createElement("i"));
       else if (bot.icon === "surround") {
         for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
         const aggressive = document.createElement("span");
@@ -1074,6 +1112,8 @@
         this.winner = null;
         this.winReason = "";
         this.winTarget = null;
+        this.winType = null;
+        this.forfeitingSide = null;
         this.lastMove = null;
         this.noGoRemaining = { light: this.noGoPerPlayer, dark: this.noGoPerPlayer };
         let id = 0;
@@ -1131,7 +1171,8 @@
           actionsThisTurn: this.actionsThisTurn, tempoSpentThisTurn: this.tempoSpentThisTurn,
           turnStartingTempo: this.turnStartingTempo, breakingShieldIds: this.breakingShieldIds,
           turnTraces: this.turnTraces, completedTurnTraces: this.completedTurnTraces,
-          winner: this.winner, winReason: this.winReason, winTarget: this.winTarget, lastMove: this.lastMove,
+          winner: this.winner, winReason: this.winReason, winTarget: this.winTarget,
+          winType: this.winType, forfeitingSide: this.forfeitingSide, lastMove: this.lastMove,
           noGoRemaining: this.noGoRemaining, noGoPerPlayer: this.noGoPerPlayer,
           gulliesEnabled: this.gulliesEnabled
         });
@@ -1262,6 +1303,8 @@
         if (this.mainIsFullySurrounded(acting) && this.surroundIncludesPiece(acting, acting)) {
           this.winner = other(acting);
           this.winTarget = this.findMain(acting);
+          this.winType = "forfeit";
+          this.forfeitingSide = acting;
           this.winReason = `${ownerName(acting)} surrounded their own Main Piece and forfeited.`;
           this.log.unshift(`${ownerName(acting)} forfeits — own Main Piece surrounded`);
           return true;
@@ -1272,6 +1315,8 @@
           this.tempo[target]++;
           this.winner = acting;
           this.winTarget = this.findMain(target);
+          this.winType = "surround";
+          this.forfeitingSide = null;
           this.winReason = `${ownerName(acting)} spent 1 Tempo to complete the surround.`;
           this.log.unshift(`${ownerName(acting)} spends 1 Tempo and wins — enemy Main Piece surrounded`);
           return true;
@@ -1333,7 +1378,14 @@
     function simulateBotAction(game, action) {
       const result = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
       result.restore(game.snapshot());
+      // Search simulations never need undo history or presentation logs.
+      result.history = [];
+      result.log = [];
+      result.turnTraces = [];
+      result.completedTurnTraces = [];
       executeBotAction(result, action);
+      result.history = [];
+      result.log = [];
       return result;
     }
 
@@ -1435,77 +1487,6 @@
       return selected?.action || null;
     }
 
-    function threatenedFriendlyCubes(game, owner) {
-      const threatened = [];
-      for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
-        const piece = game.board[r][c];
-        if (piece?.owner === owner && piece.type === "cube" && game.isTurncoatableAt(r,c,other(owner))) threatened.push(piece.id);
-      }
-      return threatened;
-    }
-
-    function calculateTrevorWeight(game, action, threatenedIds = threatenedFriendlyCubes(game, game.turn)) {
-      const owner = game.turn;
-      const result = simulateBotAction(game, action);
-      const movingPiece = action.type === "move" ? game.board[action.move.from.r][action.move.from.c] : null;
-      const usesCube = movingPiece?.owner === owner && movingPiece.type === "cube";
-
-      let turncoatedCubes = 0;
-      for (const piece of game.board.flat()) {
-        if (piece?.type !== "cube" || piece.owner !== other(owner)) continue;
-        const after = findPieceById(result, piece.id);
-        if (after?.piece.owner === owner) turncoatedCubes++;
-      }
-
-      const savedCubes = threatenedIds.filter(pieceId => {
-        const after = findPieceById(result, pieceId);
-        return after?.piece.owner === owner && !result.isTurncoatableAt(after.r, after.c, other(owner));
-      }).length;
-
-      let weight = TREVOR_WEIGHTS.base;
-      const reasons = [`Base ${TREVOR_WEIGHTS.base}`];
-      if (usesCube) { weight *= TREVOR_WEIGHTS.useCube; reasons.push(`uses Cube ×${TREVOR_WEIGHTS.useCube}`); }
-      if (turncoatedCubes) { weight *= TREVOR_WEIGHTS.turncoatCube; reasons.push(`turncoats Cube ×${TREVOR_WEIGHTS.turncoatCube}`); }
-      if (savedCubes) { weight *= TREVOR_WEIGHTS.saveCube; reasons.push(`saves Cube ×${TREVOR_WEIGHTS.saveCube}`); }
-
-      return {
-        action,
-        weight,
-        usesCube,
-        turncoatedCubes,
-        savedCubes,
-        winsImmediately: result.winner === owner,
-        reasons,
-        label: describeBotAction(game, action)
-      };
-    }
-
-    function chooseTrevorAction(game, random = Math.random) {
-      const threatenedIds = threatenedFriendlyCubes(game, game.turn);
-      const choices = getLegalBotActions(game).map(action => calculateTrevorWeight(game, action, threatenedIds));
-      const winning = choices.filter(choice => choice.winsImmediately);
-      const favouriteTurncoats = choices.filter(choice => choice.turncoatedCubes > 0);
-      const pool = winning.length ? winning : favouriteTurncoats.length ? favouriteTurncoats : choices;
-      const selected = winning.length
-        ? pool[Math.floor(random() * pool.length)]
-        : chooseWeighted(pool, choice => choice.weight, random);
-      const total = pool.reduce((sum, choice) => sum + choice.weight, 0);
-      window.turncoatBotDebug = {
-        bot: "Trevor — Blockhead",
-        winningOverride: winning.length > 0,
-        favouriteTurncoatOverride: !winning.length && favouriteTurncoats.length > 0,
-        threatenedCubeIds: threatenedIds,
-        choices: pool.map(choice => ({
-          action: choice.label,
-          weight: choice.weight,
-          probability: winning.length ? 1 / pool.length : choice.weight / total,
-          reasons: choice.reasons
-        })),
-        selected: selected?.label || null
-      };
-      return selected?.action || null;
-    }
-
     function measureMainPieceAttack(game, owner) {
       const enemyMain = game.findMain(other(owner));
       if (!enemyMain) return { surroundPressure: 0, distanceTotal: 0 };
@@ -1536,9 +1517,13 @@
 
     function evaluateKevinPosition(game, owner) {
       const attack = measureMainPieceAttack(game, owner);
+      const pressureScore = attack.surroundPressure * KEVIN_EVALUATION.surroundPosition;
+      const approachPenalty = attack.distanceTotal * KEVIN_EVALUATION.distance;
       return {
         ...attack,
-        score: attack.surroundPressure * KEVIN_EVALUATION.surroundPosition - attack.distanceTotal * KEVIN_EVALUATION.distance
+        pressureScore,
+        approachPenalty,
+        score: pressureScore - approachPenalty
       };
     }
 
@@ -1571,6 +1556,103 @@
           distanceTotal: choice.distanceTotal,
           score: choice.score,
           winsImmediately: choice.winsImmediately
+        })),
+        selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
+    function measureMainPieceDanger(game, owner) {
+      // Reversing Kevin's attack measurement targets Walter's own Main Piece
+      // with exactly the same surrounding geometry used by the game.
+      const enemyPressure = measureMainPieceAttack(game, other(owner));
+      return { dangerPressure: enemyPressure.surroundPressure };
+    }
+
+    function measureMainPieceOccupancy(game, owner) {
+      const main = game.findMain(owner);
+      if (!main) return { mainOccupancy: 0 };
+      const mainOccupancy = DIRECTIONS.reduce((total, [dr,dc]) => {
+        const r = main.r + dr, c = main.c + dc;
+        // The fixed red perimeter is an occupied surround tile under the real
+        // win rules, so Walter counts it here too.
+        return total + (!game.isPlayable(r,c) || Boolean(game.board[r][c]) ? 1 : 0);
+      }, 0);
+      return { mainOccupancy };
+    }
+
+    function evaluateWalterPosition(game, owner) {
+      // Walter literally builds on Kevin: keep Kevin's one-step attack score,
+      // then add a negative heuristic for present danger to Walter's Main.
+      const attack = evaluateKevinPosition(game, owner);
+      const danger = measureMainPieceDanger(game, owner);
+      const dangerScore = danger.dangerPressure * WALTER_WEIGHTS.ownMainPieceDanger;
+      return {
+        ...attack,
+        ...danger,
+        attackScore: attack.score,
+        dangerScore,
+        score: attack.score - dangerScore
+      };
+    }
+
+    function scoreWalterAction(game, action, owner = game.turn) {
+      const before = measureMainPieceOccupancy(game, owner);
+      const movingPiece = action.type === "move" ? game.board[action.move.from.r][action.move.from.c] : null;
+      const result = simulateBotAction(game, action);
+      const evaluation = evaluateWalterPosition(result, owner);
+      const after = measureMainPieceOccupancy(result, owner);
+      const occupancyChange = after.mainOccupancy - before.mainOccupancy;
+      const movedMain = movingPiece?.owner === owner && movingPiece.type === "main";
+      const occupancyScore = occupancyChange * WALTER_WEIGHTS.mainOccupancyChange
+        + (movedMain && occupancyChange > 0 ? occupancyChange * WALTER_WEIGHTS.mainMoveOccupancyGain : 0);
+      const winsImmediately = result.winner === owner;
+      const losesImmediately = result.winner === other(owner);
+      return {
+        action,
+        ...evaluation,
+        mainOccupancyBefore: before.mainOccupancy,
+        mainOccupancyAfter: after.mainOccupancy,
+        occupancyChange,
+        occupancyScore,
+        movedMain,
+        score: losesImmediately ? -WALTER_WEIGHTS.losingPosition : evaluation.score + occupancyScore,
+        winsImmediately,
+        losesImmediately,
+        label: describeBotAction(game, action)
+      };
+    }
+
+    function chooseWalterAction(game, random = Math.random) {
+      const owner = game.turn;
+      const evaluated = getLegalBotActions(game).map(action => scoreWalterAction(game, action, owner));
+      const winning = evaluated.filter(choice => choice.winsImmediately);
+      const bestScore = evaluated.length ? Math.max(...evaluated.map(choice => choice.score)) : -Infinity;
+      const best = evaluated.filter(choice => choice.score === bestScore);
+      const pool = winning.length ? winning : best;
+      const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
+
+      window.turncoatBotDebug = {
+        bot: "Walter — Wary",
+        formula: `Kevin attack − danger + Main occupancy change`,
+        winningOverride: winning.length > 0,
+        choices: evaluated.map(choice => ({
+          action: choice.label,
+          surroundPressure: choice.surroundPressure,
+          pressureScore: choice.pressureScore,
+          distanceTotal: choice.distanceTotal,
+          approachPenalty: choice.approachPenalty,
+          attackScore: choice.attackScore,
+          dangerPressure: choice.dangerPressure,
+          dangerScore: choice.dangerScore,
+          mainOccupancyBefore: choice.mainOccupancyBefore,
+          mainOccupancyAfter: choice.mainOccupancyAfter,
+          occupancyChange: choice.occupancyChange,
+          occupancyScore: choice.occupancyScore,
+          movedMain: choice.movedMain,
+          score: choice.score,
+          winsImmediately: choice.winsImmediately,
+          losesImmediately: choice.losesImmediately
         })),
         selected: selected?.label || null
       };
@@ -1640,6 +1722,123 @@
           winsImmediately: choice.winsImmediately
         })),
         selected: selected?.label || null
+      };
+      return selected?.action || null;
+    }
+
+    function evaluateMinniePosition(game, perspective) {
+      if (game.winner === perspective) return MINNIE_SEARCH.winScore;
+      if (game.winner === other(perspective)) return -MINNIE_SEARCH.winScore;
+      const cersei = evaluateCerseiPosition(game, perspective);
+      const danger = measureMainPieceDanger(game, perspective);
+      return cersei.score - danger.dangerPressure * MINNIE_SEARCH.ownMainPieceDanger;
+    }
+
+    function minnieStateKey(game, perspective) {
+      const board = game.board.map(row => row.map(piece => piece
+        ? `${piece.type[0]}${piece.owner[0]}${piece.shielded ? 1 : 0}`
+        : "-").join("")).join("/");
+      return [perspective, game.turn, game.tempo.light, game.tempo.dark,
+        game.actionsThisTurn, game.tempoSpentThisTurn, game.turnStartingTempo,
+        game.noGoRemaining.light, game.noGoRemaining.dark, game.winner || "-", board].join("|");
+    }
+
+    function minimaxMinnie(game, perspective, context) {
+      context.nodes++;
+      if (game.winner) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [] };
+      }
+
+      const cacheKey = minnieStateKey(game, perspective);
+      if (context.cache.has(cacheKey)) {
+        context.cacheHits++;
+        return { value: context.cache.get(cacheKey), line: [] };
+      }
+
+      const actions = getLegalBotActions(game);
+      if (!actions.length) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [] };
+      }
+
+      const maximizing = game.turn === perspective;
+      let bestValue = maximizing ? -Infinity : Infinity;
+      let bestLine = [];
+      for (const action of actions) {
+        const result = simulateBotAction(game, action);
+        // Minnie explores every legal continuation of her own TEMPO turn. At
+        // the MIN layer, each legal opponent action is a leaf in this first
+        // shallow version; no response is sampled or skipped.
+        const child = maximizing
+          ? minimaxMinnie(result, perspective, context)
+          : { value: evaluateMinniePosition(result, perspective), line: [] };
+        if (!maximizing) context.leaves++;
+        const better = maximizing ? child.value > bestValue : child.value < bestValue;
+        if (better) {
+          bestValue = child.value;
+          bestLine = [describeBotAction(game, action), ...child.line];
+        }
+      }
+      context.cache.set(cacheKey, bestValue);
+      return { value: bestValue, line: bestLine };
+    }
+
+    function chooseMinnieAction(game, random = Math.random) {
+      const perspective = game.turn;
+      const actions = getLegalBotActions(game);
+      const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
+      if (immediateWins.length) {
+        const action = immediateWins[Math.floor(random() * immediateWins.length)];
+        window.turncoatBotDebug = {
+          bot: "Minnie — Minimax",
+          searchDepth: "remaining Minnie turn + one opponent response action",
+          winningOverride: true,
+          selected: describeBotAction(game, action),
+          nodesSearched: immediateWins.length,
+          searchTimeMs: 0
+        };
+        return action;
+      }
+
+      const started = performance.now();
+      const context = { nodes: 0, leaves: 0, cacheHits: 0, cache: new Map() };
+      const choices = actions.map(action => {
+        const result = simulateBotAction(game, action);
+        const beforeNodes = context.nodes;
+        const searched = result.winner
+          ? { value: evaluateMinniePosition(result, perspective), line: [] }
+          : minimaxMinnie(result, perspective, context);
+        return {
+          action,
+          label: describeBotAction(game, action),
+          value: searched.value,
+          principalLine: searched.line,
+          nodes: context.nodes - beforeNodes
+        };
+      });
+      const bestValue = choices.length ? Math.max(...choices.map(choice => choice.value)) : -Infinity;
+      const best = choices.filter(choice => choice.value === bestValue);
+      const selected = best.length ? best[Math.floor(random() * best.length)] : null;
+
+      window.turncoatBotDebug = {
+        bot: "Minnie — Minimax",
+        algorithm: "Straightforward Minimax — no Alpha-Beta pruning",
+        searchDepth: "all continuations of Minnie's remaining turn, then every legal first opponent response",
+        perspective,
+        winningOverride: false,
+        choices: choices.map(choice => ({
+          action: choice.label,
+          minimaxValue: choice.value,
+          worstCasePrincipalLine: choice.principalLine,
+          nodes: choice.nodes
+        })),
+        selected: selected?.label || null,
+        selectedValue: selected?.value ?? null,
+        nodesSearched: context.nodes,
+        leavesEvaluated: context.leaves,
+        repeatedStatesReused: context.cacheHits,
+        searchTimeMs: Math.round((performance.now() - started) * 10) / 10
       };
       return selected?.action || null;
     }
@@ -1951,7 +2150,9 @@
         if (!this.game.winner || !this.matchContext || this.matchContext.resolved || !this.trophySystem) return;
         this.matchContext.resolved = true;
         const playersUnchanged = this.lightPlayer.value === this.matchContext.players.light && this.darkPlayer.value === this.matchContext.players.dark;
-        if (this.matchContext.eligible && playersUnchanged && this.game.winner === this.matchContext.humanSide) {
+        const humanWon = this.game.winner === this.matchContext.humanSide;
+        const botForfeited = this.game.winType === "forfeit" && this.game.forfeitingSide === this.matchContext.botSide;
+        if (this.matchContext.eligible && playersUnchanged && (humanWon || botForfeited)) {
           const awarded = this.trophySystem.award(this.matchContext.botId);
           const next = awarded ? this.trophySystem.nextReleasedBot(this.matchContext.botId) : null;
           if (next && isBotUnlocked(this.trophySystem.trophies, next.id)) this.nextBotOfferId = next.id;
@@ -2072,27 +2273,30 @@
 
       runBotAction() {
         const botType = this.playerType();
-        if (this.game.winner || !["barry", "sally", "trevor", "kevin", "cersei"].includes(botType)) return;
+        const bot = BOT_CATALOG.find(item => item.available && item.playerValue === botType);
+        if (this.game.winner || !bot) return;
         const actions = getLegalBotActions(this.game);
         if (!actions.length) {
           if (!this.game.endTurn(true)) this.game.winner = other(this.game.turn);
-          const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : botType === "cersei" ? "Cersei" : "Barry";
-          this.setStatus(`${name} found no legal action.`);
+          this.setStatus(`${bot.shortName} found no legal action.`);
           this.render(); this.maybeRunAI(); return;
         }
-        // Barry samples uniformly. Sally uses the same legal actions, but each
-        // individual action receives her Wedge-loving probability weight.
-        const action = botType === "sally" ? chooseSallyAction(this.game)
-          : botType === "trevor" ? chooseTrevorAction(this.game)
-            : botType === "kevin" ? chooseKevinAction(this.game)
-              : botType === "cersei" ? chooseCerseiAction(this.game)
-            : actions[Math.floor(Math.random() * actions.length)];
+        // Every bot shares the legal-action source; only its selection idea changes.
+        const selectors = {
+          sally: chooseSallyAction,
+          kevin: chooseKevinAction,
+          walter: chooseWalterAction,
+          cersei: chooseCerseiAction,
+          minnie: chooseMinnieAction
+        };
+        const action = selectors[botType]
+          ? selectors[botType](this.game)
+          : actions[Math.floor(Math.random() * actions.length)];
         executeBotAction(this.game, action);
-        const name = botType === "sally" ? "Sally" : botType === "trevor" ? "Trevor" : botType === "kevin" ? "Kevin" : botType === "cersei" ? "Cersei" : "Barry";
-        const message = action.type === "turncoat" ? `${name} turncoated and shielded a piece.`
-          : action.type === "nogo" ? `${name} placed a No Go area.`
-            : action.type === "pass" ? `${name} passed.`
-              : `${name} moved a ${this.game.log[0]?.match(/Cube|Wedge|Main/)?.[0] || "piece"}.`;
+        const message = action.type === "turncoat" ? `${bot.shortName} turncoated and shielded a piece.`
+          : action.type === "nogo" ? `${bot.shortName} placed a No Go area.`
+            : action.type === "pass" ? `${bot.shortName} passed.`
+              : `${bot.shortName} moved a ${this.game.log[0]?.match(/Cube|Wedge|Main/)?.[0] || "piece"}.`;
         this.setStatus(message);
         this.render();
         this.maybeRunAI();
@@ -2297,7 +2501,7 @@
           head.append(identity, marker);
           card.append(head);
           card.append(this.element("div", "bot-algorithm", `Algorithm · ${bot.algorithm}`));
-          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(5 - bot.difficulty)}` : "?????";
+          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(6 - bot.difficulty)}` : "??????";
           card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
           card.append(this.element("p", "bot-description", bot.description));
           if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
@@ -2637,26 +2841,35 @@
 
     window.TurncoatEngine = TurncoatEngine;
     window.TurncoatBots = Object.freeze({
+      BOT_CATALOG,
       SALLY_WEIGHTS,
-      TREVOR_WEIGHTS,
       KEVIN_EVALUATION,
+      WALTER_WEIGHTS,
       CERSEI_WEIGHTS,
+      MINNIE_SEARCH,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
       calculateSallyWeight,
-      calculateTrevorWeight,
       measureMainPieceAttack,
       evaluateKevinPosition,
       scoreKevinAction,
+      measureMainPieceDanger,
+      measureMainPieceOccupancy,
+      evaluateWalterPosition,
+      scoreWalterAction,
       ordinaryMaterialAdvantage,
       evaluateCerseiPosition,
       scoreCerseiAction,
+      evaluateMinniePosition,
+      minnieStateKey,
+      minimaxMinnie,
       chooseWeighted,
       chooseSallyAction,
-      chooseTrevorAction,
       chooseKevinAction,
-      chooseCerseiAction
+      chooseWalterAction,
+      chooseCerseiAction,
+      chooseMinnieAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
