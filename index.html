@@ -387,6 +387,7 @@
     .bot-symbol.tree { width: 66%; height: 62%; }
     .bot-symbol.tree::before { content: ""; position: absolute; inset: 12% 8% 14%; background: linear-gradient(30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(-30deg, transparent 47%, #287bd0 48% 52%, transparent 53%), linear-gradient(90deg, transparent 47%, #287bd0 48% 52%, transparent 53%); }
     .bot-symbol.tree::after { content: "●  ●  ●"; position: absolute; inset: 0; color: var(--accent); font-size: calc(var(--avatar-size) * .1); letter-spacing: .04em; display: flex; align-items: flex-end; justify-content: center; }
+    .bot-symbol.prune { width: 68%; height: 64%; font-size: calc(var(--avatar-size) * .24); color: #287bd0; transform: rotate(-8deg); }
     .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
     .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
     .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
@@ -579,10 +580,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -849,6 +850,10 @@
       winScore: 1000000,
       ownMainPieceDanger: 120
     });
+    const ALFIE_SEARCH = Object.freeze({
+      opponentActions: 2,
+      winScore: MINNIE_SEARCH.winScore
+    });
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
@@ -1028,6 +1033,38 @@
         trophyMessage: "You outthought Turncoat's first adversarial search bot."
       },
       {
+        id: "alfie_alpha_beta",
+        name: "Alfie — Alpha-Beta",
+        shortName: "Alfie",
+        icon: "prune",
+        iconLabel: "scissors pruning a search tree",
+        algorithm: "Alpha-Beta Pruning",
+        difficulty: 7,
+        available: true,
+        playerValue: "alfie",
+        trophyCondition: "human_win",
+        description: "Alfie doesn't waste his time.",
+        shortDescription: "He ignores branches of the future that can no longer affect his decision.",
+        introSummary: "Alfie uses Minnie's Minimax reasoning, but stops searching branches once he proves they cannot matter.",
+        educationTitle: "How Alfie thinks",
+        education: [
+          "Minnie explores the game tree. Alfie uses the same evaluation and Minimax reasoning, but stops searching a branch once it cannot change his final choice.",
+          "ALPHA is the best result Alfie can already guarantee. BETA is the best result you can already force. When alpha reaches beta, the rest of that branch is pruned.",
+          "Alfie isn't guessing. He is proving which branches do not matter. At the same horizon he returns the same Minimax value with less searching.",
+          "The saved work lets playable Alfie search through his remaining turn and up to two of your response actions—one action deeper than Minnie."
+        ],
+        educationWeights: [
+          ["ALPHA", "Alfie's guaranteed result"],
+          ["BETA", "Your guaranteed response"],
+          ["Prune rule", "alpha ≥ beta → stop"],
+          ["Playable horizon", `Minnie's turn + ${ALFIE_SEARCH.opponentActions} response actions`],
+          ["Static evaluation", "Identical to Minnie"]
+        ],
+        limitationTitle: "The future still grows quickly…",
+        limitation: "Pruning removes branches that cannot affect the answer, but it cannot make an enormous game tree disappear. Sampling possible futures is the next idea.",
+        trophyMessage: "You beat Turncoat's efficient Alpha-Beta searcher."
+      },
+      {
         id: "greedy_heuristic",
         name: "??? — Greedy",
         algorithm: "Heuristic",
@@ -1073,6 +1110,7 @@
       const symbol = document.createElement("span");
       symbol.className = `bot-symbol ${bot.icon || "unknown"}`;
       if (bot.icon === "duck") symbol.textContent = "🦆🦆";
+      else if (bot.icon === "prune") symbol.textContent = "✂";
       else if (bot.icon === "surround") {
         for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
         const aggressive = document.createElement("span");
@@ -1843,6 +1881,174 @@
       return selected?.action || null;
     }
 
+    function orderedSearchChildren(game, perspective) {
+      const maximizing = game.turn === perspective;
+      return getLegalBotActions(game).map(action => {
+        const result = simulateBotAction(game, action);
+        return { action, result, orderScore: evaluateMinniePosition(result, perspective) };
+      }).sort((a,b) => maximizing ? b.orderScore - a.orderScore : a.orderScore - b.orderScore);
+    }
+
+    function alphaBetaMinnieHorizon(game, perspective, alpha, beta, context) {
+      context.nodes++;
+      if (game.winner) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [], complete: true };
+      }
+      const cacheKey = `equal|${minnieStateKey(game, perspective)}`;
+      if (context.cache.has(cacheKey)) {
+        context.cacheHits++;
+        return { value: context.cache.get(cacheKey), line: [], complete: true };
+      }
+      const actions = getLegalBotActions(game);
+      if (!actions.length) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [], complete: true };
+      }
+      const maximizing = game.turn === perspective;
+      let value = maximizing ? -Infinity : Infinity, line = [], complete = true;
+      for (let index=0; index<actions.length; index++) {
+        const action = actions[index];
+        const result = simulateBotAction(game, action);
+        const searched = maximizing
+          ? alphaBetaMinnieHorizon(result, perspective, alpha, beta, context)
+          : { value: evaluateMinniePosition(result, perspective), line: [], complete: true };
+        if (!maximizing) context.leaves++;
+        if ((maximizing && searched.value > value) || (!maximizing && searched.value < value)) {
+          value = searched.value;
+          line = [describeBotAction(game, action), ...searched.line];
+        }
+        if (maximizing) alpha = Math.max(alpha, value);
+        else beta = Math.min(beta, value);
+        if (alpha >= beta) {
+          context.prunedBranches += actions.length - index - 1;
+          complete = false;
+          break;
+        }
+      }
+      if (complete) context.cache.set(cacheKey, value);
+      return { value, line, complete };
+    }
+
+    function compareMinnieAndAlfie(game) {
+      const perspective = game.turn;
+      const actions = getLegalBotActions(game);
+      const minnieContext = { nodes: 0, leaves: 0, cacheHits: 0, cache: new Map() };
+      const alfieContext = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, cache: new Map() };
+      const minnieStarted = performance.now();
+      let minnieBest = -Infinity, minnieAction = null;
+      for (const action of actions) {
+        const result = minimaxMinnie(simulateBotAction(game, action), perspective, minnieContext);
+        if (result.value > minnieBest) { minnieBest = result.value; minnieAction = action; }
+      }
+      const minnieTime = performance.now() - minnieStarted;
+
+      const alfieStarted = performance.now();
+      let alfieBest = -Infinity, alfieAction = null, alpha = -Infinity;
+      for (const action of actions) {
+        const result = alphaBetaMinnieHorizon(simulateBotAction(game, action), perspective, alpha, Infinity, alfieContext);
+        if (result.value > alfieBest) { alfieBest = result.value; alfieAction = action; }
+        alpha = Math.max(alpha, alfieBest);
+      }
+      return {
+        sameValue: minnieBest === alfieBest,
+        sameFirstBestMove: JSON.stringify(minnieAction) === JSON.stringify(alfieAction),
+        minnie: { value: minnieBest, action: minnieAction ? describeBotAction(game, minnieAction) : null, nodes: minnieContext.nodes + minnieContext.leaves, internalNodes: minnieContext.nodes, leaves: minnieContext.leaves, timeMs: Math.round(minnieTime * 10) / 10 },
+        alfie: { value: alfieBest, action: alfieAction ? describeBotAction(game, alfieAction) : null, nodes: alfieContext.nodes + alfieContext.leaves, internalNodes: alfieContext.nodes, leaves: alfieContext.leaves, prunedBranches: alfieContext.prunedBranches, timeMs: Math.round((performance.now() - alfieStarted) * 10) / 10 }
+      };
+    }
+
+    function alphaBetaAlfieHorizon(game, responseActionsRemaining, perspective, alpha, beta, context) {
+      context.nodes++;
+      context.maxDepthReached = Math.max(context.maxDepthReached, ALFIE_SEARCH.opponentActions - responseActionsRemaining);
+      if (game.winner || game.turn !== perspective && responseActionsRemaining <= 0) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [], complete: true };
+      }
+      const cacheKey = `deep|${responseActionsRemaining}|${minnieStateKey(game, perspective)}`;
+      if (context.cache.has(cacheKey)) {
+        context.cacheHits++;
+        return { value: context.cache.get(cacheKey), line: [], complete: true };
+      }
+      const actions = getLegalBotActions(game);
+      if (!actions.length) {
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [], complete: true };
+      }
+      const maximizing = game.turn === perspective;
+      let value = maximizing ? -Infinity : Infinity, line = [], complete = true;
+      for (let index=0; index<actions.length; index++) {
+        const action = actions[index];
+        const result = simulateBotAction(game, action);
+        const nextResponses = maximizing ? responseActionsRemaining : responseActionsRemaining - 1;
+        const searched = !maximizing && (result.turn === perspective || nextResponses <= 0)
+          ? { value: evaluateMinniePosition(result, perspective), line: [], complete: true }
+          : alphaBetaAlfieHorizon(result, nextResponses, perspective, alpha, beta, context);
+        if (!maximizing && (result.turn === perspective || nextResponses <= 0)) context.leaves++;
+        if ((maximizing && searched.value > value) || (!maximizing && searched.value < value)) {
+          value = searched.value;
+          line = [describeBotAction(game, action), ...searched.line];
+        }
+        if (maximizing) alpha = Math.max(alpha, value);
+        else beta = Math.min(beta, value);
+        if (alpha >= beta) {
+          context.prunedBranches += actions.length - index - 1;
+          complete = false;
+          break;
+        }
+      }
+      if (complete) context.cache.set(cacheKey, value);
+      return { value, line, complete };
+    }
+
+    function chooseAlfieAction(game, random = Math.random) {
+      const perspective = game.turn;
+      const actions = getLegalBotActions(game);
+      const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
+      if (immediateWins.length) {
+        const action = immediateWins[Math.floor(random() * immediateWins.length)];
+        window.turncoatBotDebug = { bot: "Alfie — Alpha-Beta", algorithm: "Alpha-Beta pruning", winningOverride: true, selected: describeBotAction(game, action), nodesVisited: immediateWins.length, prunedBranches: 0, searchTimeMs: 0 };
+        return action;
+      }
+
+      const started = performance.now();
+      const context = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0, cache: new Map() };
+      const ordered = orderedSearchChildren(game, perspective);
+      let alpha = -Infinity, bestValue = -Infinity, best = [];
+      const choices = [];
+      for (const child of ordered) {
+        const beforeNodes = context.nodes, beforePruned = context.prunedBranches;
+        const searched = alphaBetaAlfieHorizon(child.result, ALFIE_SEARCH.opponentActions, perspective, alpha, Infinity, context);
+        const choice = { action: child.action, label: describeBotAction(game, child.action), value: searched.value, principalLine: searched.line, nodes: context.nodes-beforeNodes, pruned: context.prunedBranches-beforePruned, complete: searched.complete };
+        choices.push(choice);
+        if (choice.value > bestValue) { bestValue = choice.value; best = [choice]; }
+        else if (choice.value === bestValue && choice.complete) best.push(choice);
+        alpha = Math.max(alpha, bestValue);
+      }
+      const selected = best.length ? best[Math.floor(random() * best.length)] : null;
+      const visitedPositions = context.nodes + context.leaves;
+      const considered = visitedPositions + context.prunedBranches;
+      window.turncoatBotDebug = {
+        bot: "Alfie — Alpha-Beta",
+        algorithm: "Alpha-Beta pruning with simple static ordering at the root",
+        searchDepth: `all remaining Alfie actions, then up to ${ALFIE_SEARCH.opponentActions} opponent actions`,
+        perspective,
+        winningOverride: false,
+        choices: choices.map(choice => ({ action: choice.label, alphaBetaValue: choice.value, principalLine: choice.principalLine, nodes: choice.nodes, pruned: choice.pruned })),
+        selected: selected?.label || null,
+        bestScore: selected?.value ?? null,
+        nodesVisited: visitedPositions,
+        internalNodes: context.nodes,
+        leafEvaluations: context.leaves,
+        prunedBranches: context.prunedBranches,
+        percentBranchesAvoided: considered ? Math.round(context.prunedBranches / considered * 1000) / 10 : 0,
+        repeatedStatesReused: context.cacheHits,
+        maximumTurnDepthReached: context.maxDepthReached,
+        searchTimeMs: Math.round((performance.now() - started) * 10) / 10
+      };
+      return selected?.action || null;
+    }
+
     class TurncoatUI {
       constructor() {
         this.game = new TurncoatEngine();
@@ -2287,7 +2493,8 @@
           kevin: chooseKevinAction,
           walter: chooseWalterAction,
           cersei: chooseCerseiAction,
-          minnie: chooseMinnieAction
+          minnie: chooseMinnieAction,
+          alfie: chooseAlfieAction
         };
         const action = selectors[botType]
           ? selectors[botType](this.game)
@@ -2501,7 +2708,7 @@
           head.append(identity, marker);
           card.append(head);
           card.append(this.element("div", "bot-algorithm", `Algorithm · ${bot.algorithm}`));
-          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(6 - bot.difficulty)}` : "??????";
+          const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(7 - bot.difficulty)}` : "???????";
           card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
           card.append(this.element("p", "bot-description", bot.description));
           if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
@@ -2847,6 +3054,7 @@
       WALTER_WEIGHTS,
       CERSEI_WEIGHTS,
       MINNIE_SEARCH,
+      ALFIE_SEARCH,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
@@ -2864,12 +3072,16 @@
       evaluateMinniePosition,
       minnieStateKey,
       minimaxMinnie,
+      alphaBetaMinnieHorizon,
+      compareMinnieAndAlfie,
+      alphaBetaAlfieHorizon,
       chooseWeighted,
       chooseSallyAction,
       chooseKevinAction,
       chooseWalterAction,
       chooseCerseiAction,
-      chooseMinnieAction
+      chooseMinnieAction,
+      chooseAlfieAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
