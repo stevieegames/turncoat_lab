@@ -400,6 +400,7 @@
     .bot-symbol.tree::after { content: "●  ●  ●"; position: absolute; inset: 0; color: var(--accent); font-size: calc(var(--avatar-size) * .1); letter-spacing: .04em; display: flex; align-items: flex-end; justify-content: center; }
     .bot-symbol.prune { width: 68%; height: 64%; font-size: calc(var(--avatar-size) * .24); color: #287bd0; transform: rotate(-8deg); }
     .bot-symbol.dice { width: 76%; height: 70%; font-size: calc(var(--avatar-size) * .18); letter-spacing: -.08em; transform: rotate(-5deg); }
+    .bot-symbol.mcts { width: 74%; height: 68%; font-size: calc(var(--avatar-size) * .24); filter: drop-shadow(0 1px 1px rgba(34,77,48,.2)); }
     .bot-symbol.surround { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; width: 66%; height: 66%; }
     .bot-symbol.surround i { display: block; border-radius: 1px; background: var(--accent); }
     .bot-symbol.surround i:nth-child(5) { clip-path: polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%); background: var(--dark); }
@@ -603,10 +604,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -874,12 +875,21 @@
       ownMainPieceDanger: 120
     });
     const ALFIE_SEARCH = Object.freeze({
-      opponentActions: 2,
+      opponentActions: 3,
+      thinkingTimeMs: 1200,
       winScore: MINNIE_SEARCH.winScore
     });
     const MONTY_MONTE_CARLO = Object.freeze({
-      thinkingTimeMs: 300,
-      maximumRolloutActions: 96
+      thinkingTimeMs: 500,
+      maximumRolloutActions: 48
+    });
+    const CARLO_MCTS = Object.freeze({
+      thinkingTimeMs: 750,
+      maximumRolloutActions: MONTY_MONTE_CARLO.maximumRolloutActions,
+      explorationConstant: Math.SQRT2
+    });
+    const TACTICAL_ROLLOUT_POLICY = Object.freeze({
+      safetyCandidates: 4
     });
     const BOT_CATALOG = Object.freeze([
       {
@@ -1078,7 +1088,7 @@
           "Minnie explores the game tree. Alfie uses the same evaluation and Minimax reasoning, but stops searching a branch once it cannot change his final choice.",
           "ALPHA is the best result Alfie can already guarantee. BETA is the best result you can already force. When alpha reaches beta, the rest of that branch is pruned.",
           "Alfie isn't guessing. He is proving which branches do not matter. At the same horizon he returns the same Minimax value with less searching.",
-          "The saved work lets playable Alfie search through his remaining turn and up to two of your response actions—one action deeper than Minnie."
+          `The saved work lets playable Alfie search through his remaining turn and up to ${ALFIE_SEARCH.opponentActions} of your response actions. Iterative deepening keeps the last completed result when the ${ALFIE_SEARCH.thinkingTimeMs / 1000}-second browser budget expires.`
         ],
         educationWeights: [
           ["ALPHA", "Alfie's guaranteed result"],
@@ -1104,12 +1114,12 @@
         trophyCondition: "human_win",
         description: "Monty likes to see how things play out.",
         shortDescription: "He plays out hundreds of imaginary games and chooses the action that tends to work best.",
-        introSummary: "Monty samples possible futures by playing many imaginary games with random legal actions.",
+        introSummary: "Monty samples possible futures by playing many imaginary games with a simple tactical rollout policy.",
         educationTitle: "How Monty thinks",
         education: [
           "Minnie systematically searches possible responses. Alfie searches the same kind of tree more efficiently. Monty takes a different approach: he samples complete possible futures.",
-          "For every legal action, Monty repeatedly simulates random legal play for both sides. A Monty win scores +1, a loss scores −1, and a rollout that reaches the limit scores 0.",
-          "After roughly 0.30 seconds, Monty compares each action's average result and chooses the best estimate. Faster devices may fit in more imaginary games during the same thinking time.",
+          "For every legal action, Monty repeatedly simulates simple games for both sides. The rollout policy takes an immediate win, avoids handing over an immediate win where possible, prefers an available Turncoat, and otherwise acts randomly.",
+          "A Monty win scores +1, a loss scores −1, and a rollout that reaches the limit scores 0. After roughly half a second, Monty compares each action's average result and chooses the best estimate.",
           "This is Monte Carlo simulation—not Monte Carlo Tree Search. Monty distributes rollouts across candidate actions rather than learning which branches deserve more attention."
         ],
         educationWeights: [
@@ -1123,20 +1133,44 @@
         trophyMessage: "You beat Turncoat's Monte Carlo simulator."
       },
       {
+        id: "carlo_mcts",
+        name: "Carlo — MCTS",
+        shortName: "Carlo",
+        icon: "mcts",
+        iconLabel: "a branching tree with one promising path",
+        algorithm: "Monte Carlo Tree Search",
+        difficulty: 9,
+        available: true,
+        playerValue: "carlo",
+        trophyCondition: "human_win",
+        description: "Carlo remembers which futures look promising.",
+        shortDescription: "He builds a tree of possible futures and spends more time exploring the branches that look useful.",
+        introSummary: "Carlo balances exploring unfamiliar futures with exploiting branches that have performed well.",
+        educationTitle: "How Carlo thinks",
+        education: [
+          "Monty plays out lots of random futures. Carlo does too—but he remembers what those simulations teach him in a search tree.",
+          "Each simulation has four stages: select a branch, expand one new action, play a lightweight tactical future, then pass the result back through every visited node.",
+          "Promising branches receive more attention, while rarely visited branches receive an exploration bonus. This balance is called exploration versus exploitation.",
+          "After the thinking budget expires, Carlo plays the root action visited most often. Unlike Monty, his simulation effort does not remain evenly distributed."
+        ],
+        educationWeights: [
+          ["EXPLOIT", "Investigate strong results"],
+          ["EXPLORE", "Check neglected branches"],
+          ["UCT exploration constant", CARLO_MCTS.explorationConstant.toFixed(3)],
+          ["Thinking budget", `≈${(CARLO_MCTS.thinkingTimeMs / 1000).toFixed(2)} seconds`],
+          ["Real move", "Most-visited root branch"]
+        ],
+        limitationTitle: "Carlo's imagined play is still simple…",
+        limitation: "His tree learns where to look, but the rollout policy only understands immediate wins, immediate danger and available Turncoats. Carlo has no neural network, learned policy or learned value function.",
+        trophyMessage: "You beat Turncoat's explore-versus-exploit tree searcher."
+      },
+      {
         id: "greedy_heuristic",
         name: "??? — Greedy",
         algorithm: "Heuristic",
         difficulty: null,
         available: false,
         description: "A bot that actually knows what it wants."
-      },
-      {
-        id: "monte_carlo_tree_search",
-        name: "??? — Monte Carlo Tree Search",
-        algorithm: "MCTS",
-        difficulty: null,
-        available: false,
-        description: "Learns which imagined futures deserve more attention."
       },
       {
         id: "self_learning",
@@ -1170,6 +1204,7 @@
       if (bot.icon === "duck") symbol.textContent = "🦆🦆";
       else if (bot.icon === "prune") symbol.textContent = "✂";
       else if (bot.icon === "dice") symbol.textContent = "🎲🎲";
+      else if (bot.icon === "mcts") symbol.textContent = "🌳";
       else if (bot.icon === "surround") {
         for (let i=0;i<9;i++) symbol.append(document.createElement("i"));
         const aggressive = document.createElement("span");
@@ -1476,7 +1511,9 @@
       const result = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
       result.restore(game.snapshot());
       // Search simulations never need undo history or presentation logs.
-      result.history = [];
+      // Suppress the engine's pre-action undo snapshot: it is presentation
+      // history and cloning it for every search edge is needlessly expensive.
+      result.history = { push() {} };
       result.log = [];
       result.turnTraces = [];
       result.completedTurnTraces = [];
@@ -1865,8 +1902,8 @@
         return { value: context.cache.get(cacheKey), line: [] };
       }
 
-      const actions = getLegalBotActions(game);
-      if (!actions.length) {
+      const children = orderedSearchChildren(game, perspective);
+      if (!children.length) {
         context.leaves++;
         return { value: evaluateMinniePosition(game, perspective), line: [] };
       }
@@ -2031,7 +2068,13 @@
 
     function alphaBetaAlfieHorizon(game, responseActionsRemaining, perspective, alpha, beta, context) {
       context.nodes++;
-      context.maxDepthReached = Math.max(context.maxDepthReached, ALFIE_SEARCH.opponentActions - responseActionsRemaining);
+      const requestedDepth = context.requestedDepth ?? responseActionsRemaining;
+      context.maxDepthReached = Math.max(context.maxDepthReached, requestedDepth - responseActionsRemaining);
+      if (context.deadline && performance.now() >= context.deadline) {
+        context.timedOut = true;
+        context.leaves++;
+        return { value: evaluateMinniePosition(game, perspective), line: [], complete: false };
+      }
       if (game.winner || game.turn !== perspective && responseActionsRemaining <= 0) {
         context.leaves++;
         return { value: evaluateMinniePosition(game, perspective), line: [], complete: true };
@@ -2067,6 +2110,7 @@
           complete = false;
           break;
         }
+        if (context.timedOut) { complete = false; break; }
       }
       if (complete) context.cache.set(cacheKey, value);
       return { value, line, complete };
@@ -2083,47 +2127,133 @@
       }
 
       const started = performance.now();
-      const context = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0, cache: new Map() };
+      const deadline = started + ALFIE_SEARCH.thinkingTimeMs;
       const ordered = orderedSearchChildren(game, perspective);
-      let alpha = -Infinity, bestValue = -Infinity, best = [];
-      const choices = [];
-      for (const child of ordered) {
-        const beforeNodes = context.nodes, beforePruned = context.prunedBranches;
-        const searched = alphaBetaAlfieHorizon(child.result, ALFIE_SEARCH.opponentActions, perspective, alpha, Infinity, context);
-        const choice = { action: child.action, label: describeBotAction(game, child.action), value: searched.value, principalLine: searched.line, nodes: context.nodes-beforeNodes, pruned: context.prunedBranches-beforePruned, complete: searched.complete };
-        choices.push(choice);
-        if (choice.value > bestValue) { bestValue = choice.value; best = [choice]; }
-        else if (choice.value === bestValue && choice.complete) best.push(choice);
-        alpha = Math.max(alpha, bestValue);
+      const totals = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0 };
+      let completedDepth = 0;
+      let completedChoices = [];
+      let timedOut = false;
+
+      // Iterative deepening always retains the last fully searched result. On
+      // lower-branching positions Alfie reaches the new deeper horizon; on a
+      // busy opening he returns promptly instead of freezing the browser.
+      for (let depth = 1; depth <= ALFIE_SEARCH.opponentActions; depth++) {
+        const context = { nodes: 0, leaves: 0, prunedBranches: 0, cacheHits: 0, maxDepthReached: 0, cache: new Map(), deadline, timedOut: false, requestedDepth: depth };
+        let alpha = -Infinity, bestValue = -Infinity;
+        const iterationChoices = [];
+        for (const child of ordered) {
+          const beforeNodes = context.nodes, beforePruned = context.prunedBranches;
+          const searched = alphaBetaAlfieHorizon(child.result, depth, perspective, alpha, Infinity, context);
+          const choice = { action: child.action, label: describeBotAction(game, child.action), value: searched.value, principalLine: searched.line, nodes: context.nodes-beforeNodes, pruned: context.prunedBranches-beforePruned };
+          iterationChoices.push(choice);
+          bestValue = Math.max(bestValue, choice.value);
+          alpha = Math.max(alpha, bestValue);
+          if (context.timedOut) break;
+        }
+        totals.nodes += context.nodes;
+        totals.leaves += context.leaves;
+        totals.prunedBranches += context.prunedBranches;
+        totals.cacheHits += context.cacheHits;
+        totals.maxDepthReached = Math.max(totals.maxDepthReached, context.maxDepthReached);
+        if (context.timedOut || iterationChoices.length !== ordered.length) {
+          timedOut = true;
+          break;
+        }
+        completedDepth = depth;
+        completedChoices = iterationChoices;
       }
-      const selected = best.length ? best[Math.floor(random() * best.length)] : null;
-      const visitedPositions = context.nodes + context.leaves;
-      const considered = visitedPositions + context.prunedBranches;
+      const bestValue = completedChoices.length ? Math.max(...completedChoices.map(choice => choice.value)) : -Infinity;
+      const best = completedChoices.filter(choice => choice.value === bestValue);
+      const selected = best.length ? best[Math.floor(random() * best.length)] : { action: ordered[0]?.action, label: ordered[0] ? describeBotAction(game, ordered[0].action) : null, value: ordered[0]?.orderScore, principalLine: [] };
+      const visitedPositions = totals.nodes + totals.leaves;
+      const considered = visitedPositions + totals.prunedBranches;
       window.turncoatBotDebug = {
         bot: "Alfie — Alpha-Beta",
         algorithm: "Alpha-Beta pruning with simple static ordering at the root",
         searchDepth: `all remaining Alfie actions, then up to ${ALFIE_SEARCH.opponentActions} opponent actions`,
         perspective,
         winningOverride: false,
-        choices: choices.map(choice => ({ action: choice.label, alphaBetaValue: choice.value, principalLine: choice.principalLine, nodes: choice.nodes, pruned: choice.pruned })),
+        choices: completedChoices.map(choice => ({ action: choice.label, alphaBetaValue: choice.value, principalLine: choice.principalLine, nodes: choice.nodes, pruned: choice.pruned })),
         selected: selected?.label || null,
         bestScore: selected?.value ?? null,
         nodesVisited: visitedPositions,
-        internalNodes: context.nodes,
-        leafEvaluations: context.leaves,
-        prunedBranches: context.prunedBranches,
-        percentBranchesAvoided: considered ? Math.round(context.prunedBranches / considered * 1000) / 10 : 0,
-        repeatedStatesReused: context.cacheHits,
-        maximumTurnDepthReached: context.maxDepthReached,
+        internalNodes: totals.nodes,
+        leafEvaluations: totals.leaves,
+        prunedBranches: totals.prunedBranches,
+        percentBranchesAvoided: considered ? Math.round(totals.prunedBranches / considered * 1000) / 10 : 0,
+        repeatedStatesReused: totals.cacheHits,
+        maximumTurnDepthReached: totals.maxDepthReached,
+        completedResponseDepth: completedDepth,
+        configuredResponseDepth: ALFIE_SEARCH.opponentActions,
+        timeLimited: timedOut,
         searchTimeMs: Math.round((performance.now() - started) * 10) / 10
       };
       return selected?.action || null;
     }
 
-    // Monty reuses the real legal-action and execution paths, but his rollout
-    // policy is intentionally just random play. This machinery is kept
-    // separate from Minimax so a later MCTS bot can reuse it without turning
-    // Monty into a tree-search bot.
+    function immediateWinningActions(game, owner = game.turn, actions = getLegalBotActions(game), stopAfterFirst = false) {
+      if (game.winner || game.turn !== owner) return [];
+      const targetMain = game.findMain(other(owner));
+      if (!targetMain) return [];
+      let openSurroundTiles = 0;
+      for (const [dr,dc] of DIRECTIONS) {
+        const r = targetMain.r + dr, c = targetMain.c + dc;
+        if (game.isPlayable(r,c) && !game.board[r][c]) openSurroundTiles++;
+      }
+      // One action can occupy at most one new surround tile. Avoid simulating
+      // every legal action when an immediate surround is geometrically impossible.
+      if (openSurroundTiles > 1) return [];
+      const wins = [];
+      const sandbox = new TurncoatEngine(game.noGoPerPlayer, game.gulliesEnabled);
+      const base = game.snapshot();
+      for (const action of actions) {
+        sandbox.restore(base);
+        sandbox.history = { push() {} };
+        sandbox.log = [];
+        executeBotAction(sandbox, action);
+        if (sandbox.winner === owner) {
+          wins.push(action);
+          if (stopAfterFirst) break;
+        }
+      }
+      return wins;
+    }
+
+    function chooseTacticalRolloutAction(game, random = Math.random) {
+      const actor = game.turn;
+      const actions = getLegalBotActions(game);
+      if (!actions.length) return null;
+
+      // The rollout policy only has immediate tactical awareness. It does not
+      // score positions or search beyond the opponent's next winning action.
+      const wins = immediateWinningActions(game, actor, actions);
+      if (wins.length) return wins[Math.floor(random() * wins.length)];
+
+      // Test a small random sample for immediate safety. This preserves a
+      // lightweight rollout policy rather than turning each rollout decision
+      // into a full adversarial search over every action pair.
+      const shuffled = actions.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const turncoatActions = shuffled.filter(action => action.type === "turncoat");
+      const sampledActions = [...new Set([...turncoatActions, ...shuffled.slice(0, TACTICAL_ROLLOUT_POLICY.safetyCandidates)])];
+      const evaluated = sampledActions.map(action => ({ action, result: simulateBotAction(game, action) }));
+      const safe = evaluated.filter(candidate => {
+        if (candidate.result.winner) return candidate.result.winner === actor;
+        if (candidate.result.turn === actor) return true;
+        return immediateWinningActions(candidate.result, candidate.result.turn, getLegalBotActions(candidate.result), true).length === 0;
+      });
+      const pool = safe.length ? safe : evaluated;
+      const turncoats = pool.filter(candidate => candidate.action.type === "turncoat");
+      const preferred = turncoats.length ? turncoats : pool;
+      return preferred[Math.floor(random() * preferred.length)].action;
+    }
+
+    // Monty and Carlo share this exact tactical rollout policy. Their
+    // algorithmic difference is how rollouts are allocated, not how a rollout
+    // behaves after it begins.
     function runRandomRollout(startGame, perspective, random = Math.random, maximumActions = MONTY_MONTE_CARLO.maximumRolloutActions) {
       const game = new TurncoatEngine(startGame.noGoPerPlayer, startGame.gulliesEnabled);
       game.restore(startGame.snapshot());
@@ -2133,9 +2263,9 @@
       game.completedTurnTraces = [];
       let actionsPlayed = 0;
       while (!game.winner && actionsPlayed < maximumActions) {
-        const actions = getLegalBotActions(game);
-        if (!actions.length) break;
-        const action = actions[Math.floor(random() * actions.length)];
+        const action = chooseTacticalRolloutAction(game, random);
+        if (!action) break;
+        game.history = { push() {} };
         executeBotAction(game, action);
         // Engine history and notation are presentation features, not rollout state.
         game.history = [];
@@ -2161,7 +2291,7 @@
         const action = immediateWins[Math.floor(random() * immediateWins.length)];
         window.turncoatBotDebug = {
           bot: "Monty — Monte Carlo",
-          algorithm: "Monte Carlo simulation with random legal rollouts",
+          algorithm: "Monte Carlo simulation with lightweight tactical rollouts",
           winningOverride: true,
           legalActionCount: actions.length,
           selected: describeBotAction(game, action),
@@ -2216,7 +2346,7 @@
       const elapsed = performance.now() - started;
       window.turncoatBotDebug = {
         bot: "Monty — Monte Carlo",
-        algorithm: "Monte Carlo simulation with uniformly distributed random rollouts",
+        algorithm: "Monte Carlo simulation with evenly allocated tactical rollouts",
         perspective,
         winningOverride: false,
         thinkingBudgetMs: budgetMs,
@@ -2244,6 +2374,148 @@
       return selected.action;
     }
 
+    function createMctsNode(state, parent = null, action = null, depth = 0, random = Math.random) {
+      const unexploredActions = state.winner ? [] : getLegalBotActions(state);
+      // Randomising expansion order prevents board iteration order becoming a hidden policy.
+      for (let i = unexploredActions.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [unexploredActions[i], unexploredActions[j]] = [unexploredActions[j], unexploredActions[i]];
+      }
+      return { state, parent, action, depth, visits: 0, valueSum: 0, wins: 0, losses: 0, draws: 0, children: [], unexploredActions };
+    }
+
+    function selectMctsChild(node, perspective, explorationConstant = CARLO_MCTS.explorationConstant, random = Math.random) {
+      if (!node.children.length) return null;
+      const maximizing = node.state.turn === perspective;
+      const logParentVisits = Math.log(Math.max(1, node.visits));
+      let bestScore = -Infinity;
+      let best = [];
+      for (const child of node.children) {
+        const meanFromCarlo = child.visits ? child.valueSum / child.visits : 0;
+        const exploitation = maximizing ? meanFromCarlo : -meanFromCarlo;
+        const exploration = child.visits ? explorationConstant * Math.sqrt(logParentVisits / child.visits) : Infinity;
+        const score = exploitation + exploration;
+        if (score > bestScore) { bestScore = score; best = [child]; }
+        else if (score === bestScore) best.push(child);
+      }
+      return best[Math.floor(random() * best.length)];
+    }
+
+    function chooseCarloAction(game, random = Math.random, options = {}) {
+      const perspective = game.turn;
+      const actions = getLegalBotActions(game);
+      if (!actions.length) return null;
+      const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
+      if (immediateWins.length) {
+        const action = immediateWins[Math.floor(random() * immediateWins.length)];
+        window.turncoatBotDebug = {
+          bot: "Carlo — MCTS",
+          algorithm: "Monte Carlo Tree Search using UCT",
+          winningOverride: true,
+          selected: describeBotAction(game, action),
+          iterations: 0,
+          rolloutCount: 0,
+          nodesCreated: 1,
+          rootChildren: [],
+          selectedVisits: 0,
+          selectedWinRate: 100,
+          maximumTreeDepth: 0,
+          searchTimeMs: 0
+        };
+        return action;
+      }
+
+      const budgetMs = Math.max(1, Number(options.thinkingTimeMs ?? CARLO_MCTS.thinkingTimeMs));
+      const rolloutLimit = Math.max(1, Number(options.maximumRolloutActions ?? CARLO_MCTS.maximumRolloutActions));
+      const explorationConstant = Math.max(0, Number(options.explorationConstant ?? CARLO_MCTS.explorationConstant));
+      const started = performance.now();
+      const deadline = started + budgetMs;
+      const root = createMctsNode(game, null, null, 0, random);
+      let iterations = 0;
+      let nodesCreated = 1;
+      let rolloutCount = 0;
+      let maximumTreeDepth = 0;
+
+      do {
+        let node = root;
+        const path = [root];
+
+        // Selection: follow fully expanded nodes using the UCT balance.
+        while (!node.state.winner && !node.unexploredActions.length && node.children.length) {
+          node = selectMctsChild(node, perspective, explorationConstant, random);
+          path.push(node);
+        }
+
+        // Expansion: add exactly one previously unseen legal action.
+        if (!node.state.winner && node.unexploredActions.length) {
+          const action = node.unexploredActions.pop();
+          const childState = simulateBotAction(node.state, action);
+          const child = createMctsNode(childState, node, action, node.depth + 1, random);
+          node.children.push(child);
+          node = child;
+          path.push(child);
+          nodesCreated++;
+          maximumTreeDepth = Math.max(maximumTreeDepth, child.depth);
+        }
+
+        // Simulation: the same deliberately shallow tactical policy Monty uses.
+        let score;
+        if (node.state.winner) score = node.state.winner === perspective ? 1 : -1;
+        else {
+          const rollout = runRandomRollout(node.state, perspective, random, rolloutLimit);
+          score = rollout.score;
+          rolloutCount++;
+        }
+
+        // Backpropagation: every visited node remembers the same root-perspective result.
+        for (const visited of path) {
+          visited.visits++;
+          visited.valueSum += score;
+          if (score > 0) visited.wins++;
+          else if (score < 0) visited.losses++;
+          else visited.draws++;
+        }
+        iterations++;
+      } while (performance.now() < deadline);
+
+      const mostVisits = Math.max(...root.children.map(child => child.visits));
+      const finalists = root.children.filter(child => child.visits === mostVisits);
+      const selected = finalists[Math.floor(random() * finalists.length)];
+      const elapsed = performance.now() - started;
+      const rootChildren = root.children.map(child => ({
+        action: describeBotAction(game, child.action),
+        visits: child.visits,
+        wins: child.wins,
+        losses: child.losses,
+        draws: child.draws,
+        winRate: child.visits ? Math.round(child.wins / child.visits * 1000) / 10 : 0,
+        averageValue: child.visits ? Math.round(child.valueSum / child.visits * 1000) / 1000 : 0
+      })).sort((a,b) => b.visits - a.visits);
+      window.turncoatBotDebug = {
+        bot: "Carlo — MCTS",
+        algorithm: "Classical Monte Carlo Tree Search with tactical rollouts and UCT selection",
+        perspective,
+        winningOverride: false,
+        thinkingBudgetMs: budgetMs,
+        explorationConstant,
+        maximumRolloutActions: rolloutLimit,
+        iterations,
+        rolloutCount,
+        nodesCreated,
+        branchesExplored: Math.max(0, nodesCreated - 1),
+        rootActionCount: actions.length,
+        rootChildren,
+        maximumTreeDepth,
+        selected: describeBotAction(game, selected.action),
+        selectedVisits: selected.visits,
+        selectedWins: selected.wins,
+        selectedWinRate: selected.visits ? Math.round(selected.wins / selected.visits * 1000) / 10 : 0,
+        selectedAverageValue: selected.visits ? Math.round(selected.valueSum / selected.visits * 1000) / 1000 : 0,
+        searchTimeMs: Math.round(elapsed * 10) / 10
+      };
+      return selected.action;
+    }
+
     const signedThought = value => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value || 0))}`;
     const compactNumber = value => Math.max(0, Math.round(value || 0)).toLocaleString();
     const BOT_THOUGHT_BUILDERS = Object.freeze({
@@ -2256,8 +2528,9 @@
         const positions = (debug.nodesSearched || 0) + (debug.leavesEvaluated || 0);
         return { stats: [`🌳 ${compactNumber(positions)} future positions considered · 1 response deep`, `🌳 Worst-case score: ${Math.round(debug.selectedValue || 0)} · ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s`], flavour: ["🌳 Minnie wondered what you'd do next."] };
       },
-      alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · 2 responses deep`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
-      monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] })
+      alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · depth ${compactNumber(debug.completedResponseDepth)}/${compactNumber(debug.configuredResponseDepth || ALFIE_SEARCH.opponentActions)}`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
+      monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] }),
+      carlo: debug => ({ stats: [`🌳 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.iterations)} simulations · ${compactNumber(debug.nodesCreated)} tree nodes`, `🧠 Best branch explored ${compactNumber(debug.selectedVisits)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🌳 ${compactNumber(debug.rolloutCount)} rollouts · explored ${compactNumber(debug.branchesExplored)} branches`], flavour: ["🌳 Exploring... exploiting...", "🧠 This future looks promising.", "🌳 Maybe one more look down this branch..."] })
     });
 
     function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
@@ -2757,7 +3030,8 @@
           cersei: chooseCerseiAction,
           minnie: chooseMinnieAction,
           alfie: chooseAlfieAction,
-          monty: chooseMontyAction
+          monty: chooseMontyAction,
+          carlo: chooseCarloAction
         };
         const action = selectors[botType]
           ? selectors[botType](this.game)
@@ -3331,6 +3605,8 @@
       MINNIE_SEARCH,
       ALFIE_SEARCH,
       MONTY_MONTE_CARLO,
+      CARLO_MCTS,
+      TACTICAL_ROLLOUT_POLICY,
       createBotAvatar,
       isBotUnlocked,
       getLegalActions: getLegalBotActions,
@@ -3352,6 +3628,10 @@
       compareMinnieAndAlfie,
       alphaBetaAlfieHorizon,
       runRandomRollout,
+      immediateWinningActions,
+      chooseTacticalRolloutAction,
+      createMctsNode,
+      selectMctsChild,
       buildBotThought,
       chooseWeighted,
       chooseSallyAction,
@@ -3360,7 +3640,8 @@
       chooseCerseiAction,
       chooseMinnieAction,
       chooseAlfieAction,
-      chooseMontyAction
+      chooseMontyAction,
+      chooseCarloAction
     });
     window.addEventListener("DOMContentLoaded", () => {
       const gameUI = new TurncoatUI();
