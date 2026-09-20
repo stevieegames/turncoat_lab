@@ -388,7 +388,6 @@
     .bot-algorithm { color: var(--accent); font-size: .65rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
     .bot-difficulty { font-size: .86rem; letter-spacing: .08em; }
     .bot-description { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
-    .bot-short-description { margin: -4px 0 0; color: var(--ink); font-size: .76rem; line-height: 1.45; }
     .bot-trophy-status { font-size: .72rem; font-weight: 800; }
     .bot-trophy-status.earned { color: #866020; }
     .bot-available { width: fit-content; padding: 5px 8px; border-radius: 20px; color: #245f9d; background: rgba(45,118,188,.1); font-size: .62rem; font-weight: 900; letter-spacing: .12em; }
@@ -400,6 +399,11 @@
     .bot-how { width: 100%; margin: 0; padding-top: 9px; }
     .bot-how summary { color: #245f9d; letter-spacing: .08em; }
     .bot-how p { margin: 8px 0 0; }
+    .bot-how-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .bot-how-section:first-of-type { margin-top: 10px; }
+    .bot-how-heading { margin: 0; color: var(--accent); font-size: .68rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+    .bot-how-plain { color: var(--ink); font-size: .82rem; line-height: 1.5; }
+    .bot-resource-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 9px; color: #245f9d; font-size: .72rem; font-weight: 900; letter-spacing: .06em; text-decoration-thickness: 1px; text-underline-offset: 3px; }
     .bot-how-warning { margin-top: 12px; padding: 10px; border-left: 3px solid var(--accent); border-radius: 4px; background: rgba(166,66,46,.07); }
     .bot-how-warning strong { display: block; margin-bottom: 5px; color: var(--accent); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
     .bot-how-warning p { margin: 0; }
@@ -615,7 +619,7 @@
                   </div>
                   <details class="privacy-notice">
                     <summary>Privacy notice</summary>
-                    <p>Nothing is sent unless you press <b>Send playtest</b>. The Turncoat developer receives your survey answers, optional written feedback, game settings, result, move log, date, and game version solely to evaluate and improve Turncoat. If you tick <b>Include anonymous game data</b>, the submission also contains structured decisions from this game only—not your historical local dataset. Your name and email are not requested. Please do not include personal or sensitive information in your feedback.</p>
+                    <p>Nothing is sent unless you press <b>Send playtest</b>. The Turncoat developer receives your survey answers, optional written feedback, game settings, result, move log, date, and game version solely to evaluate and improve Turncoat. If you tick <b>Include anonymous game data</b>, the submission also contains structured decisions from this game only: not your historical local dataset. Your name and email are not requested. Please do not include personal or sensitive information in your feedback.</p>
                     <p>Formspree delivers the submission and may process technical data such as your IP address, browser type, access time, and referring page, including in the United States. See <a href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">Formspree's privacy policy</a>.</p>
                     <p>The developer will retain submitted playtests for no longer than 12 months, then delete or anonymise them. The developer relies on a legitimate interest in improving the game. To ask about, correct, or delete a submission, contact the developer through the same channel that provided this playtest link. You can play without submitting anything.</p>
                   </details>
@@ -670,10 +674,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry — random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -698,7 +702,7 @@
               <button id="exportPlayerData" type="button">Export dataset</button>
               <button id="clearPlayerData" type="button">Clear dataset</button>
             </div>
-            <p class="recorder-note" id="playerRecorderStatus">Uses a persistent random player ID—not a name or email. Stored only in this browser until you export it or explicitly include the current game with feedback.</p>
+            <p class="recorder-note" id="playerRecorderStatus">Uses a persistent random player ID: not a name or email. Stored only in this browser until you export it or explicitly include the current game with feedback.</p>
           </div></div>
         </section>
 
@@ -708,7 +712,7 @@
             <ul class="rules">
               <li><span class="glyph">■</span><span><b>Cube</b><br>Moves 1 tile. Turncoated by four occupied orthogonal or diagonal tiles forming a square, including at least one attacking piece.</span></li>
               <li><span class="glyph">▲</span><span><b>Wedge</b><br>Moves through up to 3 connected tiles in any directions, may change direction and may jump pieces. Turncoating requires one of its four three-tile triangle formations.</span></li>
-              <li><span class="glyph">⬢</span><span><b>Main Piece</b><br>Completely surround the enemy Main Piece—including with occupied tiles and the red perimeter—to win.</span></li>
+              <li><span class="glyph">⬢</span><span><b>Main Piece</b><br>Completely surround the enemy Main Piece: including with occupied tiles and the red perimeter: to win.</span></li>
               <li><span class="glyph">●</span><span><b>Tempo</b><br>Each action passes its Tempo cost to the opponent. If you begin with 3, spend at least 2 Tempo before passing; otherwise spend at least 1.</span></li>
               <li><span class="glyph" style="color:#b42121">×</span><span><b>No Go</b><br>Spend 2 Tempo to place one on any empty tile. It never moves, blocks movement and counts as a surrounding area.</span></li>
               <li><span class="glyph" style="color:#287bd0">⬟</span><span><b>Turncoat</b><br>Spend 1 Tempo to convert an eligible surrounded enemy. Its blue shield prevents the opponent immediately converting it back.</span></li>
@@ -790,7 +794,7 @@
 
       <div id="tutorialLesson" hidden>
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="0">
-          <span class="tutorial-kicker">1 / 6 — Win</span>
+          <span class="tutorial-kicker">1 / 6: Win</span>
           <h2>SURROUND THE MAIN PIECE</h2>
           <p>Surround your opponent's Main Piece to win.</p>
           <div class="tutorial-visual">
@@ -799,7 +803,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="1" hidden>
-          <span class="tutorial-kicker">2 / 6 — Turncoat</span>
+          <span class="tutorial-kicker">2 / 6: Turncoat</span>
           <h2>SURROUND TO TURNCOAT</h2>
           <p>Surround enemy pieces and they change sides.</p>
           <div class="tutorial-visual">
@@ -808,11 +812,11 @@
               <div class="tutorial-board tutorial-turncoat-wedges" data-demo="turncoat-wedge" aria-label="A Chestnut Wedge changing to Ivory after two valid triangular surrounds"></div>
             </div>
           </div>
-          <p><b>You don't capture pieces — you turn them.</b></p>
+          <p><b>You don't capture pieces: you turn them.</b></p>
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="2" hidden>
-          <span class="tutorial-kicker">3 / 6 — Move</span>
+          <span class="tutorial-kicker">3 / 6: Move</span>
           <h2>MOVE YOUR PIECES</h2>
           <p>Choose a piece, then move to a highlighted tile.</p>
           <div class="tutorial-visual">
@@ -826,7 +830,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="3" hidden>
-          <span class="tutorial-kicker">4 / 6 — Tempo</span>
+          <span class="tutorial-kicker">4 / 6: Tempo</span>
           <h2>USE YOUR TEMPO</h2>
           <p>TEMPO lets you take up to 3 actions.</p>
           <div class="tutorial-visual">
@@ -842,7 +846,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="4" hidden>
-          <span class="tutorial-kicker">5 / 6 — No Go</span>
+          <span class="tutorial-kicker">5 / 6: No Go</span>
           <h2>USE NO GO TOKENS</h2>
           <p>Use No Go tokens to deny movement and help surround your opponent.</p>
           <div class="tutorial-visual">
@@ -851,7 +855,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="5" hidden>
-          <span class="tutorial-kicker">6 / 6 — Action costs</span>
+          <span class="tutorial-kicker">6 / 6: Action costs</span>
           <h2>ACTIONS COST TEMPO</h2>
           <p>Every action passes TEMPO to your opponent.</p>
           <div class="tutorial-action-costs">
@@ -889,7 +893,7 @@
       <div class="bot-trophy-heading">
         <span class="tutorial-kicker">Opponent collection</span>
         <h2>BOT TROPHIES</h2>
-        <p>Beat each bot to claim its trophy—and discover how different approaches to game AI think.</p>
+        <p>Beat each bot to claim its trophy: and discover how different approaches to game AI think.</p>
       </div>
       <div class="bot-gallery" id="botGallery"></div>
       <div class="bot-reset-row">
@@ -905,7 +909,7 @@
       <div class="trophy-earned-content">
         <div class="trophy-burst" aria-hidden="true">🏆</div>
         <h2>TROPHY EARNED</h2>
-        <h3 id="trophyEarnedName">BARRY — RANDOM</h3>
+        <h3 id="trophyEarnedName">BARRY: RANDOM</h3>
         <p id="trophyEarnedMessage">You beat Turncoat's random bot.</p>
         <button class="tutorial-primary" id="trophyEarnedContinue" type="button">CONTINUE</button>
       </div>
@@ -967,7 +971,7 @@
       [[1,0], [-1,-1], [-1,1]]
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
-    const FEEDBACK_ENDPOINT = "https://formspree.io/f/mrpbbyke";
+    const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
     const PLAYER_RECORDER_SCHEMA_VERSION = 1;
     const PLAYER_RECORDER_STORAGE_KEY = "turncoatPlayerRecorderV1";
     // Sally combines every applicable preference multiplicatively. Keeping the
@@ -1051,28 +1055,28 @@
     const BOT_CATALOG = Object.freeze([
       {
         id: "barry_random",
-        name: "Barry — Random",
+        name: "Barry: Random",
         shortName: "Barry",
         icon: "duck",
         iconLabel: "ducks",
-        algorithm: "Random",
+        algorithm: "Random Policy",
         difficulty: 1,
         available: true,
         playerValue: "barry",
         trophyCondition: "human_win",
-        description: "Barry doesn't think ahead. He simply chooses a legal action at random.",
-        introSummary: "Barry chooses every legal action with equal probability.",
-        educationTitle: "How Barry works",
+        description: "Barry is completely random.",
+        plainExplanation: "Barry just picks a legal move at random. That's it.",
+        introSummary: "Barry just picks a legal move at random. That's it.",
+        educationTitle: "Barry's entire brain",
         education: [
-          "Barry finds all the actions he is currently allowed to make and randomly selects one.",
-          "He doesn't evaluate whether a move is good or bad, whether he's about to be Turncoated, or whether he could win.",
-          "This makes Barry the simplest possible Turncoat bot — and a useful baseline for comparing future bots."
+          "A policy is just the rule an agent uses to decide what to do. Barry's policy is beautifully bad: list every legal action, give each one the same chance, then pick one.",
+          "He doesn't score the board, look ahead or remember what happened. Barry is the baseline. Every later bot adds one new idea."
         ],
         trophyMessage: "You beat Turncoat's random bot."
       },
       {
         id: "sally_wedge_lover",
-        name: "Sally — Wedge Lover 🔺",
+        name: "Sally: Wedge Lover 🔺",
         shortName: "Sally",
         icon: "wedge",
         iconLabel: "a Wedge",
@@ -1082,9 +1086,9 @@
         playerValue: "sally",
         trophyCondition: "human_win",
         description: "Sally bloody loves Wedges.",
-        shortDescription: "She heavily prefers using and protecting her Wedges—and always Turncoats yours when she can.",
-        introSummary: "Sally heavily favours Wedge actions and always Turncoats an available enemy Wedge.",
-        educationTitle: "How Sally thinks",
+        plainExplanation: "Still random, except Sally bloody loves Wedges. Moves she likes are much more likely to get picked.",
+        introSummary: "Still random, except Sally bloody loves Wedges. Moves she likes are much more likely to get picked.",
+        educationTitle: "Sally's weighted lottery",
         education: [
           "Barry gives every legal action an equal chance. Sally gives every action a weight of 1, then heavily increases it when Wedges are involved.",
           "For example, two Block moves weighted 1 and two Wedge moves weighted 8 total 18. Each Block move has about a 6% chance; each Wedge move has about a 44% chance.",
@@ -1101,7 +1105,7 @@
       },
       {
         id: "kevin_killer",
-        name: "Kevin — The Killer",
+        name: "Kevin: The Killer",
         shortName: "Kevin",
         icon: "surround",
         iconLabel: "an angry attack surrounding a Main Piece",
@@ -1111,11 +1115,12 @@
         playerValue: "kevin",
         trophyCondition: "human_win",
         description: "Kevin wants your Main Piece.",
-        shortDescription: "He relentlessly tries to surround your Main Piece, regardless of what it costs him.",
-        introSummary: "Kevin relentlessly advances on your Main Piece and ignores almost everything else.",
-        educationTitle: "How Kevin thinks",
+        plainExplanation: "Kevin gives every possible position a score, then picks the highest one. Unfortunately, all he cares about is murdering your Main Piece.",
+        introSummary: "Kevin gives every possible position a score. Unfortunately, all he cares about is murdering your Main Piece.",
+        educationTitle: "Turn a board into a number",
         education: [
           "Barry chooses randomly. Sally has preferences. Kevin has a goal.",
+          "An evaluation function turns a board position into a number. Bigger number = Kevin likes it more.",
           "Kevin simulates every legal action and scores the board immediately afterwards. More Kevin pieces around your Main Piece means a much higher score.",
           "If he is not close enough yet, he uses distance as a smaller tie-breaker and pushes his army towards useful surrounding tiles.",
           `His formula is: surround pressure × ${KEVIN_EVALUATION.surroundPosition} − total approach distance × ${KEVIN_EVALUATION.distance}. Kevin chooses the highest score and breaks ties randomly. This is an evaluation function.`
@@ -1131,7 +1136,7 @@
       },
       {
         id: "walter_wary",
-        name: "Walter — Wary",
+        name: "Walter: Wary",
         shortName: "Walter",
         icon: "shield",
         iconLabel: "a shield protecting a Main Piece",
@@ -1141,14 +1146,14 @@
         playerValue: "walter",
         trophyCondition: "human_win",
         description: "Walter wants to win. He just doesn't want to die doing it.",
-        shortDescription: "He attacks your Main Piece while keeping an eye on the danger around his own.",
-        introSummary: "Walter attacks your Main Piece, but subtracts points when his own Main Piece is under pressure.",
-        educationTitle: "How Walter thinks",
+        plainExplanation: "Kevin only thinks about attacking. Walter also asks: ‘Am I about to die?’ Good stuff adds points. Danger takes them away.",
+        introSummary: "Walter attacks your Main Piece, but also asks: ‘Am I about to die?’",
+        educationTitle: "Attack minus risk",
         education: [
           "Kevin only looks forward. He rewards positions that get him closer to surrounding your Main Piece.",
           "Walter has learned something Kevin hasn't: bad positions need a score too. He reuses Kevin's attack score, then subtracts danger around his own Main Piece.",
           "He also strongly prefers to preserve the occupied tiles around his Main Piece. If moving the Main Piece gives it more occupied neighbours, he values that especially highly.",
-          `For example: attack +200 − danger 120 = position score 80. This is a risk-aware evaluation function.`,
+          `VALUE = GOOD STUFF − BAD STUFF. For example: attack +200 − danger 120 = position score 80. This is a risk-aware evaluation function.`,
           "Walter still only judges the board immediately after his action. He does not predict your reply."
         ],
         educationWeights: [
@@ -1165,7 +1170,7 @@
       },
       {
         id: "cersei_turncoat_queen",
-        name: "Cersei — Turncoat Queen",
+        name: "Cersei: Turncoat Queen",
         shortName: "Cersei",
         icon: "split-cube",
         iconLabel: "an Ivory and Chestnut Cube",
@@ -1175,14 +1180,14 @@
         playerValue: "cersei",
         trophyCondition: "human_win",
         description: "Cersei wants everyone on her side.",
-        shortDescription: "She balances attacking your Main Piece with opportunities to Turncoat your army.",
-        introSummary: "Cersei balances attacking your Main Piece with opportunities to Turncoat your army.",
-        educationTitle: "How Cersei thinks",
+        plainExplanation: "Cersei cares about a few things at once. Attacking, Turncoating pieces, getting into position: each gets a different weight.",
+        introSummary: "Cersei scores a few things at once: attacking, Turncoating pieces and getting into position.",
+        educationTitle: "Several ideas, one score",
         education: [
           "Kevin has one obsession: your Main Piece. Cersei understands that a position can be good for more than one reason.",
           "She simulates every legal action, then combines Main Piece pressure, the balance of ordinary pieces under each player's control, and approach distance into one score.",
           "A Turncoat changes the material balance by two: you lose a piece and Cersei gains one. With her current weights, that can tempt her away from Kevin's most direct attack.",
-          "These numbers are called weights. Changing them changes which competing objective matters most—and therefore changes Cersei's personality."
+          "SCORE = THING × WEIGHT + THING × WEIGHT + ... These weights decide which competing objective matters most, so changing them changes Cersei's personality."
         ],
         educationWeights: [
           ["Cersei piece around Main", `+${CERSEI_WEIGHTS.mainPieceSurround}`],
@@ -1191,24 +1196,24 @@
           ["Can win immediately", "Takes the win"]
         ],
         limitationTitle: "Cersei cannot see the future…",
-        limitation: "She only judges the board immediately after her action. She may greedily acquire a piece while allowing you to destroy her plan—or win—on your next turn. Search comes later.",
+        limitation: "She only judges the board immediately after her action. She may greedily acquire a piece while allowing you to destroy her plan, or win, on your next turn. Search comes later.",
         trophyMessage: "You defeated Turncoat's multi-factor Turncoat Queen."
       },
       {
         id: "minnie_minimax",
-        name: "Minnie — Minimax",
+        name: "Minnie: Minimax",
         shortName: "Minnie",
         icon: "tree",
         iconLabel: "a branching search tree",
-        algorithm: "Minimax Search",
+        algorithm: "Minimax",
         difficulty: 6,
         available: true,
         playerValue: "minnie",
         trophyCondition: "human_win",
         description: "Minnie knows you're going to fight back.",
-        shortDescription: "She considers your best response before choosing her move.",
-        introSummary: "Minnie examines your strongest response and chooses the move with the best worst-case outcome.",
-        educationTitle: "How Minnie thinks",
+        plainExplanation: "Minnie finally realises you're playing too. She looks at her moves, looks at what you could do back, and assumes you'll pick the worst response for her.",
+        introSummary: "Minnie looks at her moves, then asks: ‘What will YOU do after I make my move?’",
+        educationTitle: "MAX, meet MIN",
         education: [
           "Cersei asks: ‘How good will the board look after my move?’ Minnie asks another question: ‘And what will you do next?’",
           "Minnie follows every legal continuation of her current TEMPO turn, then examines every legal first response available to you. Control changes only when a player actually passes or exhausts their actions.",
@@ -1222,13 +1227,13 @@
           ["Terminal win", `+${MINNIE_SEARCH.winScore.toLocaleString()}`],
           ["Terminal loss", `−${MINNIE_SEARCH.winScore.toLocaleString()}`]
         ],
-        limitationTitle: "But Minnie still can't see forever…",
+        limitationTitle: "But Minnie cannot see far…",
         limitation: "Minnie examines her remaining current turn and your first response action, then stops. She can avoid immediate traps, but multi-action responses and deeper plans can still fool her. Search depth matters.",
         trophyMessage: "You outthought Turncoat's first adversarial search bot."
       },
       {
         id: "alfie_alpha_beta",
-        name: "Alfie — Alpha-Beta",
+        name: "Alfie: Alpha-Beta",
         shortName: "Alfie",
         icon: "prune",
         iconLabel: "scissors pruning a search tree",
@@ -1238,9 +1243,9 @@
         playerValue: "alfie",
         trophyCondition: "human_win",
         description: "Alfie doesn't waste his time.",
-        shortDescription: "He ignores branches of the future that can no longer affect his decision.",
-        introSummary: "Alfie uses Minnie's Minimax reasoning, but stops searching branches once he proves they cannot matter.",
-        educationTitle: "How Alfie thinks",
+        plainExplanation: "Alfie thinks like Minnie, but knows when he can stop looking. If a branch can't possibly change his decision, bin it. ✂️",
+        introSummary: "Alfie thinks like Minnie, but bins branches that cannot possibly change his decision. ✂️",
+        educationTitle: "Same answer, less work",
         education: [
           "Minnie explores the game tree. Alfie uses the same evaluation and Minimax reasoning, but stops searching a branch once it cannot change his final choice.",
           "ALPHA is the best result Alfie can already guarantee. BETA is the best result you can already force. When alpha reaches beta, the rest of that branch is pruned.",
@@ -1260,7 +1265,7 @@
       },
       {
         id: "monty_monte_carlo",
-        name: "Monty — Monte Carlo",
+        name: "Monty: Monte Carlo",
         shortName: "Monty",
         icon: "dice",
         iconLabel: "dice representing simulated futures",
@@ -1270,14 +1275,14 @@
         playerValue: "monty",
         trophyCondition: "human_win",
         description: "Monty likes to see how things play out.",
-        shortDescription: "He plays out hundreds of imaginary games and chooses the action that tends to work best.",
-        introSummary: "Monty samples possible futures by playing many imaginary games with a simple tactical rollout policy.",
-        educationTitle: "How Monty thinks",
+        plainExplanation: "Monty plays loads of imaginary games and sees what happens. If one move keeps winning more often, he'll probably go with that.",
+        introSummary: "Monty plays loads of imaginary games and sees which move keeps working.",
+        educationTitle: "Loads of imaginary Turncoat",
         education: [
           "Minnie systematically searches possible responses. Alfie searches the same kind of tree more efficiently. Monty takes a different approach: he samples complete possible futures.",
           "For every legal action, Monty repeatedly simulates simple games for both sides. The rollout policy takes an immediate win, avoids handing over an immediate win where possible, prefers an available Turncoat, and otherwise acts randomly.",
           "A Monty win scores +1, a loss scores −1, and a rollout that reaches the limit scores 0. After roughly half a second, Monty compares each action's average result and chooses the best estimate.",
-          "This is Monte Carlo simulation—not Monte Carlo Tree Search. Monty distributes rollouts across candidate actions rather than learning which branches deserve more attention."
+          "This is Monte Carlo simulation, not Monte Carlo Tree Search. Monty distributes rollouts across candidate actions rather than learning which branches deserve more attention."
         ],
         educationWeights: [
           ["Imaginary Monty win", "+1"],
@@ -1291,7 +1296,7 @@
       },
       {
         id: "carlo_mcts",
-        name: "Carlo — MCTS",
+        name: "Carlo: MCTS",
         shortName: "Carlo",
         icon: "mcts",
         iconLabel: "a branching tree with one promising path",
@@ -1301,13 +1306,13 @@
         playerValue: "carlo",
         trophyCondition: "human_win",
         description: "Carlo remembers which futures look promising.",
-        shortDescription: "He builds a tree of possible futures and spends more time exploring the branches that look useful.",
-        introSummary: "Carlo balances exploring unfamiliar futures with exploiting branches that have performed well.",
-        educationTitle: "How Carlo thinks",
+        plainExplanation: "Carlo does what Monty does, but learns where to spend his time. Promising futures get explored more.",
+        introSummary: "Carlo does what Monty does, but learns where to spend his time.",
+        educationTitle: "Explore or exploit?",
         education: [
-          "Monty plays out lots of random futures. Carlo does too—but he remembers what those simulations teach him in a search tree.",
-          "Each simulation has four stages: select a branch, expand one new action, play a lightweight tactical future, then pass the result back through every visited node.",
-          "Promising branches receive more attention, while rarely visited branches receive an exploration bonus. This balance is called exploration versus exploitation.",
+          "Monty plays out lots of random futures. Carlo does too, but he remembers what those simulations teach him in a search tree.",
+          "Each simulation has four stages: 1. Selection: choose a branch. 2. Expansion: add one new action. 3. Simulation: play a lightweight tactical future. 4. Backpropagation: pass the result back through every visited node.",
+          "Exploration versus exploitation means asking: ‘Do I keep investigating the move that's looking good, or check moves I haven't explored much yet?’ Rarely visited branches get an exploration bonus, so they are not forgotten.",
           "After the thinking budget expires, Carlo plays the root action visited most often. Unlike Monty, his simulation effort does not remain evenly distributed."
         ],
         educationWeights: [
@@ -1323,7 +1328,7 @@
       },
       {
         id: "stevie_designer",
-        name: "Stevie — The Designer",
+        name: "Stevie: The Designer",
         shortName: "Stevie",
         icon: "stevie",
         iconLabel: "Turncoat's bald, moustached designer with formidable eyebrows",
@@ -1332,15 +1337,15 @@
         available: true,
         playerValue: "stevie",
         trophyCondition: "human_win",
-        description: "Stevie plays Turncoat the way its designer thinks it should be played.",
-        shortDescription: "A hand-crafted hierarchy of strategies, habits, preferences and weird little tricks from Turncoat's designer.",
-        introSummary: "Stevie follows the designer's own strategic rules: preserve his Main Piece's options, restrict yours, and look for cheeky combinations.",
-        educationTitle: "How Stevie thinks",
+        description: "This one's basically me trying to explain how I play Turncoat to a computer.",
+        plainExplanation: "This one's basically me trying to explain how I play Turncoat to a computer. A big pile of rules, priorities and weird little tricks.",
+        introSummary: "This one's basically me trying to explain how I play Turncoat to a computer.",
+        educationTitle: "The rules I gave him",
         education: [
-          "Stevie is an expert system: a collection of strategies and rules written by Turncoat's designer. He does not search thousands of futures or learn from data.",
-          "His hierarchy is explicit: take a win, prevent an immediate loss, strongly prefer a double Turncoat, then compare strategic rules.",
-          "His main measure is occupancy: preserve the playable space around his own Main Piece while reducing the space around yours. A central, completely open Main Piece has occupancy 9—including its own tile.",
-          "His personality rules include the Stevie Classic Cube opening, disruptive No Gos, deep Cube advances and refusing to spend TEMPO on an action he considers pointless."
+          "Stevie is my expert system. He does not search thousands of futures or learn from data. I explicitly told him the things I think are strategically useful.",
+          "The hierarchy I gave him is simple: take a win, prevent an immediate loss, strongly prefer a double Turncoat, then compare my other strategic rules.",
+          "My main measure is occupancy: preserve the playable space around Stevie's Main Piece while reducing the space around yours. A central, completely open Main Piece has occupancy 9, including its own tile.",
+          "I also gave him the Stevie Classic Cube opening, disruptive No Gos, deep Cube advances and permission to PASS when another action looks pointless."
         ],
         educationWeights: [
           ["Immediate win", "Always"],
@@ -1351,21 +1356,21 @@
           ["Edge / corner Main Piece", `${STEVIE_RULES.mainOnEdge} / ${STEVIE_RULES.mainInCorner}`],
           ["Unhelpful TEMPO", "Prefers PASS"]
         ],
-        limitationTitle: "Stevie plays how Stevie says he plays…",
-        limitation: "These rules are hand-authored beliefs, not behavioural evidence. A future Stevie — The Impostor could instead learn from how the real Stevie actually plays.",
+        limitationTitle: "This is how I say I play…",
+        limitation: "These are my hand-written beliefs, not evidence of what I actually do. A future Stevie: The Impostor could learn from how I really play instead.",
         trophyMessage: "You beat Turncoat's designer at his own game."
       },
       {
         id: "stevie_impostor",
-        name: "Stevie — The Impostor",
+        name: "Stevie: The Impostor",
         algorithm: "Behavioural Cloning",
         difficulty: null,
         available: false,
-        description: "Learns how Stevie actually plays—not merely how he says he plays."
+        description: "Learns how Stevie actually plays, not merely how he says he plays."
       },
       {
         id: "self_learning",
-        name: "??? — Self-Learning",
+        name: "???: Self-Learning",
         algorithm: "Self-play / Reinforcement Learning",
         difficulty: null,
         available: false,
@@ -1638,7 +1643,7 @@
           this.winType = "forfeit";
           this.forfeitingSide = acting;
           this.winReason = `${ownerName(acting)} surrounded their own Main Piece and forfeited.`;
-          this.log.unshift(`${ownerName(acting)} forfeits — own Main Piece surrounded`);
+          this.log.unshift(`${ownerName(acting)} forfeits: own Main Piece surrounded`);
           return true;
         }
         const target = other(acting);
@@ -1650,7 +1655,7 @@
           this.winType = "surround";
           this.forfeitingSide = null;
           this.winReason = `${ownerName(acting)} spent 1 Tempo to complete the surround.`;
-          this.log.unshift(`${ownerName(acting)} spends 1 Tempo and wins — enemy Main Piece surrounded`);
+          this.log.unshift(`${ownerName(acting)} spends 1 Tempo and wins: enemy Main Piece surrounded`);
           return true;
         }
         return false;
@@ -1806,7 +1811,7 @@
         : chooseWeighted(pool, choice => choice.weight, random);
       const total = pool.reduce((sum, choice) => sum + choice.weight, 0);
       window.turncoatBotDebug = {
-        bot: "Sally — Wedge Lover",
+        bot: "Sally: Wedge Lover",
         legalActionCount: choices.length,
         winningOverride: winning.length > 0,
         favouriteTurncoatOverride: !winning.length && favouriteTurncoats.length > 0,
@@ -1884,7 +1889,7 @@
       const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
 
       window.turncoatBotDebug = {
-        bot: "Kevin — The Killer",
+        bot: "Kevin: The Killer",
         formula: `surround pressure × ${KEVIN_EVALUATION.surroundPosition} − distance × ${KEVIN_EVALUATION.distance}`,
         winningOverride: winning.length > 0,
         choices: evaluated.map(choice => ({
@@ -1972,7 +1977,7 @@
       const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
 
       window.turncoatBotDebug = {
-        bot: "Walter — Wary",
+        bot: "Walter: Wary",
         formula: `Kevin attack − danger + Main occupancy change`,
         winningOverride: winning.length > 0,
         choices: evaluated.map(choice => ({
@@ -2048,7 +2053,7 @@
       const selected = pool.length ? pool[Math.floor(random() * pool.length)] : null;
 
       window.turncoatBotDebug = {
-        bot: "Cersei — Turncoat Queen",
+        bot: "Cersei: Turncoat Queen",
         formula: `pressure × ${CERSEI_WEIGHTS.mainPieceSurround} + material advantage × ${CERSEI_WEIGHTS.materialAdvantage} − distance × ${CERSEI_WEIGHTS.approachDistance}`,
         winningOverride: winning.length > 0,
         choices: evaluated.map(choice => ({
@@ -2144,7 +2149,7 @@
       if (immediateWins.length) {
         const action = immediateWins[Math.floor(random() * immediateWins.length)];
         window.turncoatBotDebug = {
-          bot: "Minnie — Minimax",
+          bot: "Minnie: Minimax",
           searchDepth: "remaining Minnie turn + one opponent response action",
           winningOverride: true,
           selected: describeBotAction(game, action),
@@ -2184,8 +2189,8 @@
       const selected = best.length ? best[Math.floor(random() * best.length)] : null;
 
       window.turncoatBotDebug = {
-        bot: "Minnie — Minimax",
-        algorithm: "Straightforward Minimax — no Alpha-Beta pruning",
+        bot: "Minnie: Minimax",
+        algorithm: "Straightforward Minimax: no Alpha-Beta pruning",
         searchDepth: "all continuations of Minnie's remaining turn, then every legal first opponent response",
         perspective,
         winningOverride: false,
@@ -2339,7 +2344,7 @@
       const immediateWins = actions.filter(action => simulateBotAction(game, action).winner === perspective);
       if (immediateWins.length) {
         const action = immediateWins[Math.floor(random() * immediateWins.length)];
-        window.turncoatBotDebug = { bot: "Alfie — Alpha-Beta", algorithm: "Alpha-Beta pruning", winningOverride: true, selected: describeBotAction(game, action), nodesVisited: immediateWins.length, prunedBranches: 0, searchTimeMs: 0 };
+        window.turncoatBotDebug = { bot: "Alfie: Alpha-Beta", algorithm: "Alpha-Beta pruning", winningOverride: true, selected: describeBotAction(game, action), nodesVisited: immediateWins.length, prunedBranches: 0, searchTimeMs: 0 };
         return action;
       }
 
@@ -2387,7 +2392,7 @@
       const visitedPositions = totals.nodes + totals.leaves;
       const considered = visitedPositions + totals.prunedBranches;
       window.turncoatBotDebug = {
-        bot: "Alfie — Alpha-Beta",
+        bot: "Alfie: Alpha-Beta",
         algorithm: "Alpha-Beta pruning with simple static ordering at the root",
         searchDepth: `all remaining Alfie actions, then up to ${ALFIE_SEARCH.opponentActions} opponent actions`,
         perspective,
@@ -2511,7 +2516,7 @@
       if (immediateWins.length) {
         const action = immediateWins[Math.floor(random() * immediateWins.length)];
         window.turncoatBotDebug = {
-          bot: "Monty — Monte Carlo",
+          bot: "Monty: Monte Carlo",
           algorithm: "Monte Carlo simulation with lightweight tactical rollouts",
           winningOverride: true,
           legalActionCount: actions.length,
@@ -2567,7 +2572,7 @@
       const selected = best[Math.floor(random() * best.length)];
       const elapsed = performance.now() - started;
       window.turncoatBotDebug = {
-        bot: "Monty — Monte Carlo",
+        bot: "Monty: Monte Carlo",
         algorithm: "Monte Carlo simulation with evenly allocated tactical rollouts",
         perspective,
         winningOverride: false,
@@ -2632,7 +2637,7 @@
       if (immediateWins.length) {
         const action = immediateWins[Math.floor(random() * immediateWins.length)];
         window.turncoatBotDebug = {
-          bot: "Carlo — MCTS",
+          bot: "Carlo: MCTS",
           algorithm: "Monte Carlo Tree Search using UCT",
           winningOverride: true,
           selected: describeBotAction(game, action),
@@ -2716,7 +2721,7 @@
         averageValue: child.visits ? Math.round(child.valueSum / child.visits * 1000) / 1000 : 0
       })).sort((a,b) => b.visits - a.visits);
       window.turncoatBotDebug = {
-        bot: "Carlo — MCTS",
+        bot: "Carlo: MCTS",
         algorithm: "Classical Monte Carlo Tree Search with tactical rollouts and UCT selection",
         perspective,
         winningOverride: false,
@@ -2911,7 +2916,7 @@
       if (selected?.doubleTurncoat) flavourMessage = "Ooo, cheeky double.";
       else if (selected?.stevieClassic) flavourMessage = "It's a Stevie classic.";
       else if (selected?.noGoBait) flavourMessage = "Would you fall for it?";
-      else if (selected?.action.type === "turncoat") flavourMessage = "Turncoat this — bam.";
+      else if (selected?.action.type === "turncoat") flavourMessage = "Turncoat this: bam.";
       else if (selected?.action.type === "pass") flavourMessage = "Not worth another TEMPO.";
       else if (selected?.reasons.includes("deep Cube")) flavourMessage = "Let's break this!";
       const randomFact = random() < 0.08
@@ -2919,7 +2924,7 @@
         : null;
 
       window.turncoatBotDebug = {
-        bot: "Stevie — The Designer",
+        bot: "Stevie: The Designer",
         algorithm: "Rule-based expert system",
         ruleHierarchy: ["immediate win", "prevent immediate loss", "double Turncoat", "strategic rules"],
         winningOverride: winning.length > 0,
@@ -2960,7 +2965,7 @@
       const action = selector ? selector(game, random, options[botType] || {}) : actions[Math.floor(random() * actions.length)];
       if (botType === "barry") {
         window.turncoatBotDebug = {
-          bot: "Barry — Random",
+          bot: "Barry: Random",
           legalActionCount: actions.length,
           selected: action ? describeBotAction(game, action) : null
         };
@@ -2983,7 +2988,7 @@
       alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · depth ${compactNumber(debug.completedResponseDepth)}/${compactNumber(debug.configuredResponseDepth || ALFIE_SEARCH.opponentActions)}`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
       monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] }),
       carlo: debug => ({ stats: [`🌳 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.iterations)} simulations · ${compactNumber(debug.nodesCreated)} tree nodes`, `🧠 Best branch explored ${compactNumber(debug.selectedVisits)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🌳 ${compactNumber(debug.rolloutCount)} rollouts · explored ${compactNumber(debug.branchesExplored)} branches`], flavour: ["🌳 Exploring... exploiting...", "🧠 This future looks promising.", "🌳 Maybe one more look down this branch..."] }),
-      stevie: debug => ({ stats: [`🧠 Your occupancy ${compactNumber(debug.enemyOccupancyBefore)} → ${compactNumber(debug.enemyOccupancyAfter)} · Mine ${compactNumber(debug.ownOccupancyBefore)} → ${compactNumber(debug.ownOccupancyAfter)}`, `🧠 ${debug.doubleTurncoatOverride ? "Double Turncoat available" : (debug.selectedReasons || []).join(" · ") || "Rule score " + Math.round(debug.selectedScore || 0)}`, `🧠 ${debug.selectedActionType === "pass" ? "Not worth another TEMPO" : `Expert-rule score: ${Math.round(debug.selectedScore || 0)}`}`], flavour: [debug.flavourMessage, "Turncoat this — bam.", "Let's break this!", "Your move, geez.", "Ooo, cheeky double.", "It's a Stevie classic.", debug.randomFact].filter(Boolean) })
+      stevie: debug => ({ stats: [`🧠 Your occupancy ${compactNumber(debug.enemyOccupancyBefore)} → ${compactNumber(debug.enemyOccupancyAfter)} · Mine ${compactNumber(debug.ownOccupancyBefore)} → ${compactNumber(debug.ownOccupancyAfter)}`, `🧠 ${debug.doubleTurncoatOverride ? "Double Turncoat available" : (debug.selectedReasons || []).join(" · ") || "Rule score " + Math.round(debug.selectedScore || 0)}`, `🧠 ${debug.selectedActionType === "pass" ? "Not worth another TEMPO" : `Expert-rule score: ${Math.round(debug.selectedScore || 0)}`}`], flavour: [debug.flavourMessage, "Turncoat this: bam.", "Let's break this!", "Your move, geez.", "Ooo, cheeky double.", "It's a Stevie classic.", debug.randomFact].filter(Boolean) })
     });
 
     function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
@@ -3724,7 +3729,7 @@
         const lines = [
           "TURNCOAT PLAYTEST", "Prototype: 0.9", "", `Date: ${new Date().toLocaleString()}`,
           "Board: 6 rows × 5 columns", `Gullies: ${this.game.gulliesEnabled ? "ON" : "OFF"}`, `No Go areas per player: ${this.game.noGoPerPlayer}`,
-          `Players: Ivory — ${this.lightPlayer.options[this.lightPlayer.selectedIndex].text}; Chestnut — ${this.darkPlayer.options[this.darkPlayer.selectedIndex].text}`,
+          `Players: Ivory: ${this.lightPlayer.options[this.lightPlayer.selectedIndex].text}; Chestnut: ${this.darkPlayer.options[this.darkPlayer.selectedIndex].text}`,
           `Result: ${this.game.winner ? ownerName(this.game.winner) + " wins" : "Unfinished"}`, "", "MOVE LOG",
           ...(this.game.log.length ? [...this.game.log].reverse() : ["No moves recorded."])
         ];
@@ -3991,7 +3996,7 @@
         this.introAvatar.replaceChildren(createBotAvatar(bot, "large"));
         this.introName.textContent = bot.name;
         this.introAlgorithm.textContent = bot.algorithm;
-        this.introSummary.textContent = bot.introSummary || bot.shortDescription || bot.description;
+        this.introSummary.textContent = bot.introSummary || bot.plainExplanation || bot.description;
         this.introOverlay.hidden = false;
         document.body.classList.add("bot-trophies-active");
         requestAnimationFrame(() => this.introContinue.focus());
@@ -4036,8 +4041,6 @@
           const difficulty = bot.difficulty ? `${"●".repeat(bot.difficulty)}${"○".repeat(Math.max(0, difficultyScale - bot.difficulty))}` : "?".repeat(difficultyScale);
           card.append(this.element("div", "bot-difficulty", `Difficulty · ${difficulty}`));
           card.append(this.element("p", "bot-description", bot.description));
-          if (bot.shortDescription) card.append(this.element("p", "bot-short-description", bot.shortDescription));
-
           if (unlocked) {
             card.append(this.element("div", "bot-available", "AVAILABLE"));
             card.append(this.element("div", `bot-trophy-status${earned ? " earned" : ""}`, earned ? "🏆 Trophy earned" : "○ Trophy not earned"));
@@ -4057,12 +4060,22 @@
 
           if (bot.education?.length) {
             const details = this.element("details", "bot-how");
-            details.append(this.element("summary", "", "HOW IT WORKS"));
+            details.append(this.element("summary", "", "OPEN BOT BRAIN"));
+
+            const plainSection = this.element("section", "bot-how-section");
+            plainSection.append(
+              this.element("h4", "bot-how-heading", "WHAT'S GOING ON?"),
+              this.element("p", "bot-how-plain", bot.plainExplanation || bot.description)
+            );
+            details.append(plainSection);
+
+            const technicalSection = this.element("section", "bot-how-section");
+            technicalSection.append(this.element("h4", "bot-how-heading", "HOW DOES IT ACTUALLY WORK?"));
             const title = this.element("p");
             const strong = this.element("strong", "", bot.educationTitle);
             title.append(strong);
-            details.append(title);
-            bot.education.forEach(paragraph => details.append(this.element("p", "", paragraph)));
+            technicalSection.append(title);
+            bot.education.forEach(paragraph => technicalSection.append(this.element("p", "", paragraph)));
             if (bot.educationWeights?.length) {
               const weights = this.element("ul", "bot-weight-list");
               for (const [label, value] of bot.educationWeights) {
@@ -4070,12 +4083,24 @@
                 item.append(this.element("span", "", label), this.element("strong", "", value));
                 weights.append(item);
               }
-              details.append(weights);
+              technicalSection.append(weights);
             }
             if (bot.limitationTitle && bot.limitation) {
               const warning = this.element("div", "bot-how-warning");
               warning.append(this.element("strong", "", bot.limitationTitle), this.element("p", "", bot.limitation));
-              details.append(warning);
+              technicalSection.append(warning);
+            }
+            details.append(technicalSection);
+
+            if (bot.resource?.url && bot.resource?.title) {
+              const resourceSection = this.element("section", "bot-how-section");
+              resourceSection.append(this.element("h4", "bot-how-heading", "WANNA LEARN MORE?"));
+              const resource = this.element("a", "bot-resource-link", `${bot.resource.type === "video" ? "🎥 WATCH" : "↗ OPEN"}: ${bot.resource.title}`);
+              resource.href = bot.resource.url;
+              resource.target = "_blank";
+              resource.rel = "noopener noreferrer";
+              resourceSection.append(resource);
+              details.append(resourceSection);
             }
             card.append(details);
           }
@@ -4243,7 +4268,7 @@
 
       populateBots() {
         const bots = releasedBots();
-        const options = bots.map(bot => `<option value="${bot.id}">${bot.shortName} — ${bot.algorithm}</option>`).join("");
+        const options = bots.map(bot => `<option value="${bot.id}">${bot.shortName}: ${bot.algorithm}</option>`).join("");
         this.playerA.innerHTML = options;
         this.playerB.innerHTML = options;
         if (bots[1]) this.playerB.value = bots[1].id;
