@@ -720,7 +720,7 @@
             </ul>
             <details>
               <summary>Prototype assumptions</summary>
-              <p>Pieces move horizontally, vertically or diagonally without jumping. The red perimeter and No Go areas are neutral blockers. To win, a complete surround must include one of your pieces and you must have 1 Tempo left to spend. Completing the surround around your own Main Piece forfeits the game.</p>
+              <p>Pieces move horizontally, vertically or diagonally without jumping. The red perimeter and No Go areas are neutral blockers. To capture a surrounded enemy Main Piece, the surround must include one of your pieces and you must have 1 Tempo left to spend. Without that final Tempo, your opponent gets a turn to escape. You cannot PASS while your Main Piece remains surrounded; if no legal sequence can free it, you forfeit.</p>
             </details>
           </div></div>
         </section>
@@ -1002,7 +1002,8 @@
     const MINNIE_SEARCH = Object.freeze({
       opponentActions: 1,
       winScore: 1000000,
-      ownMainPieceDanger: 120
+      ownMainPieceDanger: 120,
+      rootCandidateFraction: 0.5
     });
     const ALFIE_SEARCH = Object.freeze({
       opponentActions: 3,
@@ -1216,7 +1217,7 @@
         educationTitle: "MAX, meet MIN",
         education: [
           "Cersei asks: ‘How good will the board look after my move?’ Minnie asks another question: ‘And what will you do next?’",
-          "Minnie follows every legal continuation of her current TEMPO turn, then examines every legal first response available to you. Control changes only when a player actually passes or exhausts their actions.",
+          "To keep her turns snappy, Minnie samples roughly half of her legal starting actions. For each one, she follows every legal continuation of her current TEMPO turn, then examines every legal first response available to you. Control changes only when a player actually passes or exhausts their actions.",
           "You are MIN: Minnie assumes you choose the response producing her lowest score. Minnie is MAX: she chooses the action whose worst outcome is highest.",
           "This is Minimax. It is a straightforward search without Alpha-Beta pruning; equal best moves are resolved randomly."
         ],
@@ -1539,7 +1540,7 @@
         const notation = `${ownerName(acting)} ${cap(piece.type)} ${this.square(move.from)}–${this.square(move.to)}`;
         this.log.unshift(notation);
         this.checkMainVictory(acting);
-        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        if (!this.winner && this.tempo[acting] === 0) this.endTurn(true);
         return { ok: true, conversions: [] };
       }
 
@@ -1560,7 +1561,7 @@
         this.lastMove = { from: null, to: {r,c} };
         this.log.unshift(`${ownerName(acting)} No Go → ${this.square({r,c})}`);
         this.checkMainVictory(acting);
-        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        if (!this.winner && this.tempo[acting] === 0) this.endTurn(true);
         return { ok: true, conversions: [] };
       }
 
@@ -1609,7 +1610,7 @@
         this.lastMove={from:null,to:{r,c}};
         this.log.unshift(`${ownerName(acting)} turncoats ${ownerName(former)} ${cap(piece.type)} at ${this.square({r,c})}`);
         this.checkMainVictory(acting);
-        if (!this.winner && this.tempo[acting] === 0 && this.canEndTurn()) this.endTurn(true);
+        if (!this.winner && this.tempo[acting] === 0) this.endTurn(true);
         return {ok:true,piece};
       }
 
@@ -1637,15 +1638,6 @@
       }
 
       checkMainVictory(acting) {
-        if (this.mainIsFullySurrounded(acting) && this.surroundIncludesPiece(acting, acting)) {
-          this.winner = other(acting);
-          this.winTarget = this.findMain(acting);
-          this.winType = "forfeit";
-          this.forfeitingSide = acting;
-          this.winReason = `${ownerName(acting)} surrounded their own Main Piece and forfeited.`;
-          this.log.unshift(`${ownerName(acting)} forfeits: own Main Piece surrounded`);
-          return true;
-        }
         const target = other(acting);
         if (this.mainIsFullySurrounded(target) && this.surroundIncludesPiece(target, acting) && this.tempo[acting] >= 1) {
           this.tempo[acting]--;
@@ -1663,11 +1655,78 @@
 
       requiredTempoSpend() { return this.turnStartingTempo === 3 ? 2 : 1; }
 
-      canEndTurn() { return !this.winner && this.tempoSpentThisTurn >= this.requiredTempoSpend(); }
+      hasMetMinimumTempoSpend() { return this.tempoSpentThisTurn >= this.requiredTempoSpend(); }
+
+      canEndTurn() {
+        return !this.winner && this.hasMetMinimumTempoSpend() && !this.mainIsFullySurrounded(this.turn);
+      }
+
+      legalEscapeActions() {
+        const actions = this.allLegalMoves().map(move => ({ type: "move", move }));
+        for (const target of this.turncoatablePieces()) actions.push({ type: "turncoat", target });
+        if (this.canPlaceNoGo()) {
+          for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
+            if (this.isPlayable(r,c) && !this.board[r][c]) actions.push({ type: "nogo", to: {r,c} });
+          }
+        }
+        return actions;
+      }
+
+      escapeStateKey(owner) {
+        const board = this.board.map(row => row.map(piece => piece
+          ? `${piece.type[0]}${piece.owner?.[0] || "n"}${piece.shielded ? 1 : 0}`
+          : "-").join("")).join("/");
+        return [owner, this.turn, this.tempo.light, this.tempo.dark, this.tempoSpentThisTurn,
+          this.turnStartingTempo, this.noGoRemaining.light, this.noGoRemaining.dark, board].join("|");
+      }
+
+      hasLegalEscapeSequence(owner = this.turn, seen = new Set()) {
+        if (!this.mainIsFullySurrounded(owner)) return true;
+        if (this.winner) return this.winner === owner;
+        if (owner !== this.turn || this.tempo[owner] <= 0) return false;
+        const stateKey = this.escapeStateKey(owner);
+        if (seen.has(stateKey)) return false;
+        const nextSeen = new Set(seen);
+        nextSeen.add(stateKey);
+        for (const action of this.legalEscapeActions()) {
+          const result = new TurncoatEngine(this.noGoPerPlayer, this.gulliesEnabled);
+          result.restore(this.snapshot());
+          result.history = { push() {} };
+          result.log = [];
+          result.turnTraces = [];
+          result.completedTurnTraces = [];
+          result._escapeProbe = true;
+          executeBotAction(result, action);
+          if (result.winner === owner || !result.mainIsFullySurrounded(owner)) return true;
+          if (!result.winner && result.turn === owner && result.hasLegalEscapeSequence(owner, nextSeen)) return true;
+        }
+        return false;
+      }
+
+      forceForfeit(owner = this.turn) {
+        this.winner = other(owner);
+        this.winTarget = this.findMain(owner);
+        this.winType = "forfeit";
+        this.forfeitingSide = owner;
+        this.winReason = `${ownerName(owner)} could not escape the surround and forfeited.`;
+        this.log.unshift(`${ownerName(owner)} forfeits: Main Piece cannot escape its surround`);
+        return true;
+      }
+
+      resolveForcedForfeitIfTrapped(owner = this.turn) {
+        if (this.winner || owner !== this.turn || !this.mainIsFullySurrounded(owner)) return false;
+        if (this.hasLegalEscapeSequence(owner)) return false;
+        return this.forceForfeit(owner);
+      }
 
       endTurn(automatic = false) {
-        if (!this.canEndTurn()) return false;
         if (this.winner) return false;
+        if (!this.hasMetMinimumTempoSpend()) return false;
+        if (this.mainIsFullySurrounded(this.turn)) {
+          if (this._escapeProbe) return false;
+          if (this.hasLegalEscapeSequence(this.turn)) return false;
+          return this.forceForfeit(this.turn);
+        }
         this.completedTurnTraces = this.turnTraces;
         this.turnTraces = [];
         this.turn = other(this.turn);
@@ -1682,6 +1741,7 @@
           }
         }
         this.log.unshift(`${ownerName(this.turn)} turn · ${this.tempo[this.turn]} Tempo`);
+        if (!this._escapeProbe) this.resolveForcedForfeitIfTrapped(this.turn);
         return true;
       }
 
@@ -1692,7 +1752,7 @@
       }
     }
 
-    function getLegalBotActions(game) {
+    function getLegalActions(game) {
       const actions = game.allLegalMoves().map(move => ({ type: "move", move }));
       for (const target of game.turncoatablePieces()) actions.push({ type: "turncoat", target });
       if (game.canPlaceNoGo()) {
@@ -1702,6 +1762,25 @@
       }
       if (game.canEndTurn()) actions.push({ type: "pass" });
       return actions;
+    }
+
+    function getLegalBotActions(game) {
+      const acting = game.turn;
+      const actions = getLegalActions(game);
+      if (!game.mainIsFullySurrounded(acting)) return actions;
+
+      // A bot may take intermediate actions while surrounded, but it must keep
+      // an escape route alive whenever one exists. Passing is already excluded
+      // by canEndTurn(); this also prevents a bot choosing an action that makes
+      // an otherwise possible escape impossible later in the same turn.
+      return actions.filter(action => {
+        if (action.type === "pass") return false;
+        const result = simulateBotAction(game, action);
+        if (result.winner === acting) return true;
+        if (result.winner) return false;
+        if (!result.mainIsFullySurrounded(acting)) return true;
+        return result.turn === acting && result.hasLegalEscapeSequence(acting);
+      });
     }
 
     function executeBotAction(game, action) {
@@ -2168,6 +2247,16 @@
           [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
         }
         candidates.length = Math.min(branchLimit, candidates.length);
+      } else {
+        // Minnie keeps the same shallow Minimax reasoning, but samples half of
+        // her root moves so normal browser play returns in roughly half the
+        // time. Once a root move is selected, its continuation tree remains
+        // exhaustive at Minnie's configured horizon.
+        for (let i=candidates.length-1; i>0; i--) {
+          const j = Math.floor(random() * (i + 1));
+          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        candidates.length = Math.max(1, Math.ceil(candidates.length * MINNIE_SEARCH.rootCandidateFraction));
       }
       const context = { nodes: 0, leaves: 0, cacheHits: 0, cache: new Map(), branchLimit, random };
       const choices = candidates.map(action => {
@@ -2191,9 +2280,11 @@
       window.turncoatBotDebug = {
         bot: "Minnie: Minimax",
         algorithm: "Straightforward Minimax: no Alpha-Beta pruning",
-        searchDepth: "all continuations of Minnie's remaining turn, then every legal first opponent response",
+        searchDepth: "sampled root moves; all remaining-turn continuations; every legal first opponent response",
         perspective,
         winningOverride: false,
+        legalRootActions: actions.length,
+        rootActionsConsidered: candidates.length,
         choices: choices.map(choice => ({
           action: choice.label,
           minimaxValue: choice.value,
@@ -3193,7 +3284,7 @@
         const gameRecord = this.ensureCurrentGame();
         if (!gameRecord) return null;
         const game = this.ui.game;
-        const legalActions = getLegalBotActions(game).map(candidate => canonicalRecorderAction(game, candidate));
+        const legalActions = getLegalActions(game).map(candidate => canonicalRecorderAction(game, candidate));
         return {
           decisionId: recorderId("decision"),
           gameId: gameRecord.gameId,
@@ -3332,6 +3423,7 @@
         this.trophySystem = null;
         this.matchContext = null;
         this.nextBotOfferId = null;
+        this.pendingBotIntroId = null;
         this.botThoughtData = null;
         this.botThoughtStyles = {};
         this.cacheElements();
@@ -3376,7 +3468,7 @@
         this.winnerRestart.addEventListener("click", () => this.restartGame());
         this.winnerRestartAfterFeedback.addEventListener("click", () => this.restartGame());
         this.nextBot.addEventListener("click", () => {
-          if (this.nextBotOfferId) this.startBotGame(this.nextBotOfferId, true);
+          if (this.nextBotOfferId) this.startBotGame(this.nextBotOfferId);
         });
         this.showBoard.addEventListener("click", () => { this.showBoardAfterWin = true; this.render(); });
         this.openFeedback.addEventListener("click", () => {
@@ -3398,7 +3490,27 @@
       playerType(owner = this.game.turn) { return owner === "light" ? this.lightPlayer.value : this.darkPlayer.value; }
       isHumanTurn() { return this.playerType() === "human"; }
 
+      activeBotId() {
+        const values = [this.lightPlayer.value, this.darkPlayer.value].filter(value => value !== "human");
+        if (values.length !== 1) return null;
+        return BOT_CATALOG.find(bot => bot.available && bot.playerValue === values[0])?.id || null;
+      }
+
       attachTrophySystem(system) { this.trophySystem = system; }
+
+      queueBotIntro(botId) {
+        if (!botId) return false;
+        this.pendingBotIntroId = botId;
+        if (this.tutorialOpen || !this.trophySystem) return true;
+        return this.flushPendingBotIntro();
+      }
+
+      flushPendingBotIntro() {
+        if (this.tutorialOpen || !this.trophySystem || !this.pendingBotIntroId) return false;
+        const botId = this.pendingBotIntroId;
+        this.pendingBotIntroId = null;
+        return this.trophySystem.showBotIntro(botId);
+      }
 
       beginMatchContext(requestedBotId = null) {
         const players = { light: this.lightPlayer.value, dark: this.darkPlayer.value };
@@ -3425,17 +3537,17 @@
         if (started && this.playerRecorder.pendingGame) this.playerRecorder.pendingGame.recordingStartedMidGame = true;
         this.botThoughtData = null;
         const bot = changedSelect ? BOT_CATALOG.find(item => item.available && item.playerValue === changedSelect.value) : null;
-        if (bot) this.trophySystem?.showBotIntro(bot.id);
+        if (bot) this.queueBotIntro(bot.id);
         this.maybeRunAI();
       }
 
-      startBotGame(botId, forceIntro = false) {
+      startBotGame(botId) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
         if (!bot || this.trophySystem && !isBotUnlocked(this.trophySystem.trophies, bot.id)) return;
         this.lightPlayer.value = "human";
         this.darkPlayer.value = bot.playerValue;
         this.restartGame(bot.id);
-        this.trophySystem?.showBotIntro(bot.id, forceIntro);
+        this.queueBotIntro(bot.id);
       }
 
       toggleNoGo(owner) {
@@ -3570,7 +3682,8 @@
           this.renderSideLabel(this.turnName, this.game.turn, `${ownerName(this.game.turn)}'s turn`);
         }
         const remaining = Math.max(0, this.game.requiredTempoSpend() - this.game.tempoSpentThisTurn);
-        this.turnHelp.textContent = this.game.winner ? this.game.winReason : this.noGoMode ? "Choose an empty tile." : this.turncoatMode ? "Choose a glowing enemy." : this.isHumanTurn() ? (remaining ? `Spend ${remaining} more Tempo before PASS.` : "You may continue or PASS.") : `${cap(this.playerType())} is thinking…`;
+        const mustEscape = this.game.mainIsFullySurrounded(this.game.turn);
+        this.turnHelp.textContent = this.game.winner ? this.game.winReason : this.noGoMode ? "Choose an empty tile." : this.turncoatMode ? "Choose a glowing enemy." : this.isHumanTurn() ? (mustEscape ? "Main Piece surrounded: escape before ending your turn." : remaining ? `Spend ${remaining} more Tempo before PASS.` : "You may continue or PASS.") : `${cap(this.playerType())} is thinking…`;
         this.lightCount.textContent = this.game.tempo.light;
         this.darkCount.textContent = this.game.tempo.dark;
         this.renderTempoScale();
@@ -3809,6 +3922,11 @@
         const botType = this.playerType();
         const bot = BOT_CATALOG.find(item => item.available && item.playerValue === botType);
         if (this.game.winner || !bot) return;
+        if (this.game.resolveForcedForfeitIfTrapped()) {
+          this.botThoughtData = null;
+          this.render();
+          return;
+        }
         const actions = getLegalBotActions(this.game);
         if (!actions.length) {
           const acting = this.game.turn;
@@ -3839,9 +3957,7 @@
       constructor(gameUI) {
         this.ui = gameUI;
         this.storageKey = "turncoatTrophies";
-        this.introStorageKey = "turncoatBotIntrosSeen";
         this.trophies = this.load();
-        this.introsSeen = this.load(this.introStorageKey);
         this.previousFocus = null;
         this.overlay = document.getElementById("botTrophiesOverlay");
         this.gallery = document.getElementById("botGallery");
@@ -3897,11 +4013,6 @@
       save() {
         try { localStorage.setItem(this.storageKey, JSON.stringify(this.trophies)); }
         catch { /* Trophies remain available for this session if storage is blocked. */ }
-      }
-
-      saveIntros() {
-        try { localStorage.setItem(this.introStorageKey, JSON.stringify(this.introsSeen)); }
-        catch { /* Intro tracking remains available for this session if storage is blocked. */ }
       }
 
       isEarned(botId) { return this.trophies[botId]?.earned === true; }
@@ -3985,11 +4096,9 @@
         document.getElementById("winnerRestart")?.focus();
       }
 
-      showBotIntro(botId, force = false) {
+      showBotIntro(botId) {
         const bot = BOT_CATALOG.find(item => item.id === botId && item.available);
-        if (!bot || !isBotUnlocked(this.trophies, bot.id) || (!force && this.introsSeen[bot.id])) return false;
-        this.introsSeen[bot.id] = true;
-        this.saveIntros();
+        if (!bot || !isBotUnlocked(this.trophies, bot.id)) return false;
         this.ui.botIntroOpen = true;
         this.ui.playerRecorder.armDecision();
         clearTimeout(this.ui.aiTimer);
@@ -4160,6 +4269,7 @@
       while (!game.winner && actionCount < maximumGameActions && !shouldStop()) {
         const acting = game.turn;
         const bot = players[acting];
+        if (game.resolveForcedForfeitIfTrapped()) break;
         const legalActions = getLegalBotActions(game);
         if (!legalActions.length) {
           if (!game.endTurn(true)) {
@@ -4547,7 +4657,10 @@
         this.buildDemos();
         this.buildProgress();
         this.bind();
-        if (seenVersion < this.version) this.open(true);
+        if (seenVersion < this.version) {
+          this.open(true);
+          this.ui.queueBotIntro(this.ui.activeBotId());
+        }
       }
 
       bind() {
@@ -4590,14 +4703,12 @@
         this.ui.tutorialOpen = false;
         this.ui.playerRecorder.armDecision();
         if (this.previousFocus && document.contains(this.previousFocus)) this.previousFocus.focus();
-        this.ui.maybeRunAI();
+        if (!this.ui.flushPendingBotIntro()) this.ui.maybeRunAI();
       }
 
       finishTutorial() {
-        const introduceBarry = this.firstEverTutorial;
         this.firstEverTutorial = false;
         this.close(true);
-        if (introduceBarry) this.ui.trophySystem?.showBotIntro("barry_random", true);
       }
 
       showWelcome() {
@@ -4839,7 +4950,8 @@
       simulateHeadlessGame,
       createBotAvatar,
       isBotUnlocked,
-      getLegalActions: getLegalBotActions,
+      getLegalActions,
+      getLegalBotActions,
       calculateSallyWeight,
       measureMainPieceAttack,
       evaluateKevinPosition,
