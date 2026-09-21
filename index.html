@@ -162,6 +162,16 @@
     .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; color: var(--muted); font-size: .8rem; line-height: 1.4; }
     .rules li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
     .glyph { color: var(--ink); text-align: center; font-size: 1.2rem; line-height: 1; }
+    .rule-body { min-width: 0; }
+    .rule-title { display: block; color: var(--ink); font-size: .78rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+    .sub-rules { display: grid; gap: 6px; margin-top: 7px; padding-left: 10px; }
+    .sub-rule { display: grid; grid-template-columns: minmax(78px,auto) 1fr; gap: 7px; align-items: baseline; }
+    .sub-rule-key { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-size: .65rem; font-weight: 900; letter-spacing: .07em; line-height: 1.25; white-space: nowrap; }
+    .sub-rule-icon { width: 1.1em; color: var(--ink); text-align: center; font-size: .9rem; line-height: 1; }
+    .sub-rule-copy { min-width: 0; }
+    .general-rules { color: var(--muted); font-size: .8rem; line-height: 1.4; }
+    .general-rules > summary { color: var(--ink); font-size: .78rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+    .general-rules .sub-rules { margin-top: 10px; padding-left: 50px; }
     details { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
     summary { cursor: pointer; font-size: .75rem; font-weight: 800; }
     details p { color: var(--muted); font-size: .77rem; line-height: 1.5; margin-bottom: 0; }
@@ -710,17 +720,74 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Rules in this build</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <ul class="rules">
-              <li><span class="glyph">■</span><span><b>Cube</b><br>Moves 1 tile. Turncoated by four occupied orthogonal or diagonal tiles forming a square, including at least one attacking piece.</span></li>
-              <li><span class="glyph">▲</span><span><b>Wedge</b><br>Moves through up to 3 connected tiles in any directions, may change direction and may jump pieces. Turncoating requires one of its four three-tile triangle formations.</span></li>
-              <li><span class="glyph">⬢</span><span><b>Main Piece</b><br>Completely surround the enemy Main Piece: including with occupied tiles and the red perimeter: to win.</span></li>
-              <li><span class="glyph">●</span><span><b>Tempo</b><br>Each action passes its Tempo cost to the opponent. If you begin with 3, spend at least 2 Tempo before passing; otherwise spend at least 1.</span></li>
-              <li><span class="glyph" style="color:#b42121">×</span><span><b>No Go</b><br>Spend 2 Tempo to place one on any empty tile. It never moves, blocks movement and counts as a surrounding area.</span></li>
-              <li><span class="glyph" style="color:#287bd0">⬟</span><span><b>Turncoat</b><br>Spend 1 Tempo to convert an eligible surrounded enemy. Its blue shield prevents the opponent immediately converting it back.</span></li>
-              <li><span class="glyph" style="color:#a3312b">▦</span><span><b>Gullies</b><br>Optionally open ten spaces in the red boundary. They behave exactly like ordinary playable tiles.</span></li>
+              <li>
+                <span class="glyph">■</span>
+                <div class="rule-body"><span class="rule-title">Cube</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↔</span>MOVE</span><span class="sub-rule-copy">1 tile.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⬟</span>TURNCOAT</span><span class="sub-rule-copy">Surround with 4 tiles forming a square, including at least 1 attacking piece.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph">▲</span>
+                <div class="rule-body"><span class="rule-title">Wedge</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↔</span>MOVE</span><span class="sub-rule-copy">Up to 3 connected tiles; can change direction and jump pieces.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⬟</span>TURNCOAT</span><span class="sub-rule-copy">Complete one of its 4 three-tile triangle formations, including at least 1 attacking piece.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph">⬢</span>
+                <div class="rule-body"><span class="rule-title">Main Piece</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↔</span>MOVE</span><span class="sub-rule-copy">1 tile.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">◎</span>SURROUND</span><span class="sub-rule-copy">Completely surround the enemy Main Piece with occupied areas.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⬟</span>CAPTURE</span><span class="sub-rule-copy">Once surrounded, spend 1 remaining TEMPO to capture it and win.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⚑</span>FORFEIT</span><span class="sub-rule-copy">If your Main Piece is surrounded and no legal sequence can escape, you lose.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph">●</span>
+                <div class="rule-body"><span class="rule-title">Tempo</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">●</span>ACTIONS</span><span class="sub-rule-copy">Each action passes its TEMPO cost to your opponent.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">→</span>PASS</span><span class="sub-rule-copy">If you start with 3 TEMPO, spend at least 2 before passing; otherwise spend at least 1.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph" style="color:#b42121">×</span>
+                <div class="rule-body"><span class="rule-title">No Go</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">●</span>COST</span><span class="sub-rule-copy">Spend 2 TEMPO to place one on any empty tile.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">×</span>BLOCK</span><span class="sub-rule-copy">It never moves and blocks movement.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">◎</span>SURROUND</span><span class="sub-rule-copy">Counts as an occupied area when surrounding pieces.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph" style="color:#287bd0">⬟</span>
+                <div class="rule-body"><span class="rule-title">Turncoat</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">●</span>COST</span><span class="sub-rule-copy">Spend 1 TEMPO to Turncoat an eligible surrounded enemy.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⬟</span>CONVERT</span><span class="sub-rule-copy">The enemy piece immediately changes to your side.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">🛡</span>SHIELD</span><span class="sub-rule-copy">Its shield prevents the opponent immediately Turncoating it back.</span></div>
+                </div></div>
+              </li>
+              <li>
+                <span class="glyph" style="color:#a3312b">▦</span>
+                <div class="rule-body"><span class="rule-title">Gullies</span><div class="sub-rules">
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">▦</span>OPEN</span><span class="sub-rule-copy">Optionally open the 10 Gully spaces in the red boundary.</span></div>
+                  <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↔</span>PLAY</span><span class="sub-rule-copy">Once open, they behave exactly like ordinary playable tiles.</span></div>
+                </div></div>
+              </li>
             </ul>
-            <details>
-              <summary>Prototype assumptions</summary>
-              <p>Pieces move horizontally, vertically or diagonally without jumping. The red perimeter and No Go areas are neutral blockers. To capture a surrounded enemy Main Piece, the surround must include one of your pieces and you must have 1 Tempo left to spend. Without that final Tempo, your opponent gets a turn to escape. You cannot PASS while your Main Piece remains surrounded; if no legal sequence can free it, you forfeit.</p>
+            <details class="general-rules">
+              <summary>GENERAL RULES</summary>
+              <div class="sub-rules">
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↔</span>DIRECTIONS</span><span class="sub-rule-copy">Pieces can move horizontally, vertically or diagonally.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⛔</span>BLOCKING</span><span class="sub-rule-copy">Pieces cannot move through or jump occupied areas. Wedges may jump pieces.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">□</span>OCCUPIED AREAS</span><span class="sub-rule-copy">Pieces, No Gos and closed perimeter spaces count towards surrounds.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">🟥</span>PERIMETER</span><span class="sub-rule-copy">Closed red perimeter spaces are blocked.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">×</span>NO GOS</span><span class="sub-rule-copy">No Gos are neutral blockers.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">◎</span>SURROUND</span><span class="sub-rule-copy">A surround must include at least 1 of your own pieces.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⬟</span>CAPTURE</span><span class="sub-rule-copy">Surround the enemy Main Piece with 1 TEMPO remaining, then spend it to capture and win.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">↗</span>ESCAPE</span><span class="sub-rule-copy">If surrounded without being captured, you get a turn to escape.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">→</span>PASS</span><span class="sub-rule-copy">You cannot PASS while your Main Piece remains surrounded if a legal escape exists.</span></div>
+                <div class="sub-rule"><span class="sub-rule-key"><span class="sub-rule-icon">⚑</span>FORFEIT</span><span class="sub-rule-copy">If no legal sequence can free your surrounded Main Piece, you lose.</span></div>
+              </div>
             </details>
           </div></div>
         </section>
@@ -971,7 +1038,7 @@
       [[1,0], [-1,-1], [-1,1]]
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
-    const FEEDBACK_ENDPOINT = "https://formspree.io/f/mrpbbyke";
+    const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
     const PLAYER_RECORDER_SCHEMA_VERSION = 1;
     const PLAYER_RECORDER_STORAGE_KEY = "turncoatPlayerRecorderV1";
     // Sally combines every applicable preference multiplicatively. Keeping the
