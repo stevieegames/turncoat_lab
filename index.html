@@ -69,6 +69,7 @@
     .cell.legal { cursor: pointer; }
     .cell.legal::after { content: ""; width: 18%; aspect-ratio: 1; border-radius: 50%; background: rgba(42,32,22,.25); box-shadow: 0 0 0 6px rgba(245,231,207,.12); }
     .cell.turncoat-option { cursor: pointer; background: radial-gradient(circle, rgba(62,145,227,.28), rgba(42,112,186,.08)); box-shadow: inset 0 0 0 4px rgba(45,131,221,.72); animation: targetPulse 1.15s ease-in-out infinite alternate; }
+    .cell.turncoat-surrounder { background: radial-gradient(circle, rgba(211,68,58,.18), rgba(154,33,28,.08)); box-shadow: inset 0 0 0 4px rgba(190,42,36,.78); }
     @keyframes targetPulse { from { box-shadow: inset 0 0 0 3px rgba(45,131,221,.55); } to { box-shadow: inset 0 0 0 6px rgba(45,131,221,.9); } }
     .cell.last::before { content: ""; position: absolute; inset: 7%; border: 2px solid rgba(166,66,46,.5); border-radius: 7px; }
     .traces { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
@@ -102,6 +103,7 @@
     .side-count { margin-top: auto; color: var(--muted); font-size: .67rem; }
     .side-use { width: 100%; padding: 7px 4px; font-size: .65rem; }
     .piece.turncoatable { filter: drop-shadow(0 0 7px #2d83dd) drop-shadow(0 5px 3px rgba(32,20,12,.28)); }
+    .piece.turncoat-surrounder { filter: drop-shadow(0 0 4px #c92f2f) drop-shadow(0 0 9px rgba(201,47,47,.9)) drop-shadow(0 5px 3px rgba(32,20,12,.28)); }
     .shield-icon { position: absolute; z-index: 5; top: 5%; right: 5%; width: 24%; aspect-ratio: .82; display: grid; place-items: center; clip-path: polygon(50% 0,94% 18%,86% 70%,50% 100%,14% 70%,6% 18%); background: #287bd0; box-shadow: 0 2px 3px rgba(10,37,73,.42); pointer-events: none; }
     .shield-icon::before { content: ""; width: 55%; height: 65%; clip-path: inherit; background: rgba(180,225,255,.54); }
     .shield-icon.cracking::after { content: "ϟ"; position: absolute; color: #102c56; font-size: clamp(.65rem, 2vw, 1.25rem); font-weight: 900; transform: rotate(8deg); }
@@ -684,10 +686,10 @@
           <button class="accordion-trigger" type="button" aria-expanded="false"><span>Settings</span><span class="accordion-arrow">⌄</span></button>
           <div class="accordion-shell"><div class="accordion-content">
             <label>Ivory player
-              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
+              <select id="lightPlayer"><option value="human">Human</option><option value="barry">Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based &quot;expert&quot; system</option></select>
             </label>
             <label>Chestnut player
-              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based expert system</option></select>
+              <select id="darkPlayer"><option value="human">Human</option><option value="barry" selected>Barry: random</option><option value="sally">Sally - weighted probability (wedges)</option><option value="kevin">Kevin - evaluation function</option><option value="walter">Walter - risk-aware evaluation</option><option value="cersei">Cersei - multi-factor evaluation</option><option value="minnie">Minnie - minimax search</option><option value="alfie">Alfie - alpha-beta pruning</option><option value="monty">Monty - Monte Carlo simulation</option><option value="carlo">Carlo - Monte Carlo Tree Search</option><option value="stevie">Stevie - rule-based &quot;expert&quot; system</option></select>
             </label>
             <label>No Go areas per player
               <input id="noGoSetting" type="number" min="0" max="12" step="1" value="4">
@@ -1400,7 +1402,7 @@
         shortName: "Stevie",
         icon: "stevie",
         iconLabel: "Turncoat's bald, moustached designer with formidable eyebrows",
-        algorithm: "Rule-Based Expert System",
+        algorithm: "Rule-Based \"Expert\" System",
         difficulty: 10,
         available: true,
         playerValue: "stevie",
@@ -1410,7 +1412,7 @@
         introSummary: "This one's basically me trying to explain how I play Turncoat to a computer.",
         educationTitle: "The rules I gave him",
         education: [
-          "Stevie is my expert system. He does not search thousands of futures or learn from data. I explicitly told him the things I think are strategically useful.",
+          "Stevie is my \"expert\" system. He does not search thousands of futures or learn from data. I explicitly told him the things I think are strategically useful.",
           "The hierarchy I gave him is simple: take a win, prevent an immediate loss, strongly prefer a double Turncoat, then compare my other strategic rules.",
           "My main measure is occupancy: preserve the playable space around Stevie's Main Piece while reducing the space around yours. A central, completely open Main Piece has occupancy 9, including its own tile.",
           "I also gave him the Stevie Classic Cube opening, disruptive No Gos, deep Cube advances and permission to PASS when another action looks pointless."
@@ -1634,9 +1636,9 @@
 
       square(pos) { return `${String.fromCharCode(65 + pos.c)}${RULES.rows - pos.r}`; }
 
-      isTurncoatableAt(r, c, byOwner = this.turn) {
+      validTurncoatPatternsAt(r, c, byOwner = this.turn) {
         const piece = this.board[r]?.[c];
-        if (!piece || piece.type === "nogo" || piece.type === "main" || piece.owner === byOwner || piece.shielded) return false;
+        if (!piece || piece.type === "nogo" || piece.type === "main" || piece.owner === byOwner || piece.shielded) return [];
         const patternIsValid = pattern => {
           let includesActingPiece = false;
           for (const [dr,dc] of pattern) {
@@ -1650,9 +1652,34 @@
           }
           return includesActingPiece;
         };
-        if (piece.type === "cube") return [ORTHOGONAL,DIAGONAL].some(patternIsValid);
-        if (piece.type === "wedge") return WEDGE_TRIANGLES.some(patternIsValid);
-        return false;
+        const patterns = piece.type === "cube" ? [ORTHOGONAL,DIAGONAL] : piece.type === "wedge" ? WEDGE_TRIANGLES : [];
+        return patterns.filter(patternIsValid);
+      }
+
+      isTurncoatableAt(r, c, byOwner = this.turn) {
+        return this.validTurncoatPatternsAt(r,c,byOwner).length > 0;
+      }
+
+      turncoatSurrounders(owner = this.turn) {
+        const surrounders = new Set();
+        for (const target of this.turncoatablePieces(owner)) {
+          const patterns = this.validTurncoatPatternsAt(target.r,target.c,owner);
+          if (!patterns.length) continue;
+          // Show one complete qualifying formation per target. Prefer the
+          // formation containing the most visible pieces when several work.
+          const pattern = patterns.slice().sort((a,b) => {
+            const visiblePieces = candidate => candidate.reduce((count,[dr,dc]) => {
+              const piece = this.board[target.r+dr]?.[target.c+dc];
+              return count + (piece && piece.type !== "nogo" ? 1 : 0);
+            },0);
+            return visiblePieces(b) - visiblePieces(a);
+          })[0];
+          for (const [dr,dc] of pattern) {
+            const r = target.r + dr, c = target.c + dc;
+            if (r >= 0 && r < RULES.rows && c >= 0 && c < RULES.cols) surrounders.add(key(r,c));
+          }
+        }
+        return surrounders;
       }
 
       turncoatablePieces(owner = this.turn) {
@@ -3083,7 +3110,7 @@
 
       window.turncoatBotDebug = {
         bot: "Stevie: The Designer",
-        algorithm: "Rule-based expert system",
+        algorithm: "Rule-based \"expert\" system",
         ruleHierarchy: ["immediate win", "prevent immediate loss", "double Turncoat", "strategic rules"],
         winningOverride: winning.length > 0,
         underImmediateThreat,
@@ -3146,7 +3173,7 @@
       alfie: debug => ({ stats: [`✂️ ${compactNumber(debug.nodesVisited)} searched · ${compactNumber(debug.prunedBranches)} pruned · depth ${compactNumber(debug.completedResponseDepth)}/${compactNumber(debug.configuredResponseDepth || ALFIE_SEARCH.opponentActions)}`, `✂️ Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${Number(debug.percentBranchesAvoided || 0).toFixed(1)}% avoided`], flavour: ["✂️ Alfie didn't waste his time."] }),
       monty: debug => ({ stats: [`🎲 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.totalRollouts)} futures simulated`, `🎲 Move tested ${compactNumber(debug.selectedRollouts)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🎲 ${compactNumber(debug.totalRollouts)} imaginary games played`], flavour: ["🎲 Monty likes to see how things play out.", "🎲 Monty imagined a lot of futures."] }),
       carlo: debug => ({ stats: [`🌳 Thought for ${(Number(debug.searchTimeMs || 0) / 1000).toFixed(2)}s · ${compactNumber(debug.iterations)} simulations · ${compactNumber(debug.nodesCreated)} tree nodes`, `🧠 Best branch explored ${compactNumber(debug.selectedVisits)} times · ${Number(debug.selectedWinRate || 0).toFixed(1)}% wins`, `🌳 ${compactNumber(debug.rolloutCount)} rollouts · explored ${compactNumber(debug.branchesExplored)} branches`], flavour: ["🌳 Exploring... exploiting...", "🧠 This future looks promising.", "🌳 Maybe one more look down this branch..."] }),
-      stevie: debug => ({ stats: [`🧠 Your occupancy ${compactNumber(debug.enemyOccupancyBefore)} → ${compactNumber(debug.enemyOccupancyAfter)} · Mine ${compactNumber(debug.ownOccupancyBefore)} → ${compactNumber(debug.ownOccupancyAfter)}`, `🧠 ${debug.doubleTurncoatOverride ? "Double Turncoat available" : (debug.selectedReasons || []).join(" · ") || "Rule score " + Math.round(debug.selectedScore || 0)}`, `🧠 ${debug.selectedActionType === "pass" ? "Not worth another TEMPO" : `Expert-rule score: ${Math.round(debug.selectedScore || 0)}`}`], flavour: [debug.flavourMessage, "Turncoat this: bam.", "Let's break this!", "Your move, geez.", "Ooo, cheeky double.", "It's a Stevie classic.", debug.randomFact].filter(Boolean) })
+      stevie: debug => ({ stats: [`🧠 Your occupancy ${compactNumber(debug.enemyOccupancyBefore)} → ${compactNumber(debug.enemyOccupancyAfter)} · Mine ${compactNumber(debug.ownOccupancyBefore)} → ${compactNumber(debug.ownOccupancyAfter)}`, `🧠 ${debug.doubleTurncoatOverride ? "Double Turncoat available" : (debug.selectedReasons || []).join(" · ") || "Rule score " + Math.round(debug.selectedScore || 0)}`, `🧠 ${debug.selectedActionType === "pass" ? "Not worth another TEMPO" : `\"Expert\" rule score: ${Math.round(debug.selectedScore || 0)}`}`], flavour: [debug.flavourMessage, "Turncoat this: bam.", "Let's break this!", "Your move, geez.", "Ooo, cheeky double.", "It's a Stevie classic.", debug.randomFact].filter(Boolean) })
     });
 
     function buildBotThought(botType, debug = {}, previousMessage = "", random = Math.random, preferredStyle = "stats") {
@@ -3710,6 +3737,7 @@
       render() {
         const legal = new Set((this.selected ? this.game.legalMoves(this.selected.r,this.selected.c) : []).map(m => key(m.to.r,m.to.c)));
         const turncoatTargets = new Set(this.game.turncoatablePieces().map(p => key(p.r,p.c)));
+        const turncoatSurrounders = this.turncoatMode ? this.game.turncoatSurrounders() : new Set();
         this.board.replaceChildren();
         for (let r = 0; r < RULES.rows; r++) for (let c = 0; c < RULES.cols; c++) {
           const cell = document.createElement("div");
@@ -3718,6 +3746,7 @@
           if (this.game.isGully(r,c)) cell.classList.add("gully");
           cell.setAttribute("role", "gridcell");
           if (legal.has(key(r,c)) || (this.noGoMode && this.game.isPlayable(r,c) && !this.game.board[r][c])) cell.classList.add("legal");
+          if (turncoatSurrounders.has(key(r,c))) cell.classList.add("turncoat-surrounder");
           if (this.turncoatMode && turncoatTargets.has(key(r,c))) cell.classList.add("turncoat-option");
           const piece = this.game.board[r][c];
           if (piece) {
@@ -3727,7 +3756,7 @@
               el.textContent = "×";
               el.title = "No Go token";
             } else {
-              el.className = `piece ${piece.type} ${piece.owner}` + (this.selected?.r === r && this.selected?.c === c ? " selected" : "") + (this.turncoatMode && turncoatTargets.has(key(r,c)) ? " turncoatable" : "");
+              el.className = `piece ${piece.type} ${piece.owner}` + (this.selected?.r === r && this.selected?.c === c ? " selected" : "") + (this.turncoatMode && turncoatTargets.has(key(r,c)) ? " turncoatable" : "") + (turncoatSurrounders.has(key(r,c)) ? " turncoat-surrounder" : "");
               el.title = `${ownerName(piece.owner)} ${cap(piece.type)}`;
             }
             el.setAttribute("aria-label", el.title);
