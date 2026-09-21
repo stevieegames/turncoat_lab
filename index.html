@@ -1040,7 +1040,7 @@
       [[1,0], [-1,-1], [-1,1]]
     ];
     // Replace this placeholder with the endpoint shown by your Formspree form.
-    const FEEDBACK_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+    const FEEDBACK_ENDPOINT = "https://formspree.io/f/mrpbbyke";
     const PLAYER_RECORDER_SCHEMA_VERSION = 1;
     const PLAYER_RECORDER_STORAGE_KEY = "turncoatPlayerRecorderV1";
     // Sally combines every applicable preference multiplicatively. Keeping the
@@ -3986,7 +3986,7 @@
               feedback: this.feedbackText.value.trim() || "No written feedback.",
               game_log: this.buildPlaytestReport(),
               includes_anonymous_game_data: Boolean(anonymousGameData),
-              ...(anonymousGameData ? { anonymous_game_data: anonymousGameData } : {})
+              ...(anonymousGameData ? { anonymous_game_data: JSON.stringify(anonymousGameData) } : {})
             })
           });
           if (!response.ok) throw new Error(`Formspree returned ${response.status}`);
