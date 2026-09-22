@@ -40,6 +40,10 @@
     .developer-mode-button:hover:not(:disabled) { background: #174d61; }
 
     main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; align-items: start; }
+    .lab-disclaimer { max-width: 760px; margin: 34px auto 0; padding: 22px 24px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; line-height: 1.6; text-align: center; }
+    .lab-disclaimer h2 { margin: 0 0 10px; color: var(--accent); font-size: .72rem; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+    .lab-disclaimer p { margin: 0; }
+    .lab-disclaimer p + p { margin-top: 9px; }
     .game-area { min-width: 0; }
     .turn-strip { min-height: 72px; display: grid; grid-template-columns: minmax(130px,1fr) minmax(240px,1.4fr) minmax(180px,1fr); align-items: center; gap: 14px; margin-bottom: 12px; }
     .turn-identity { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
@@ -830,6 +834,14 @@
         </section>
       </aside>
     </main>
+
+    <footer class="lab-disclaimer" aria-labelledby="aboutLabTitle">
+      <h2 id="aboutLabTitle">🧪 About the Lab</h2>
+      <p>Turncoat Laboratory is an experimental prototype. AI tools have been used throughout development to write code and rapidly test ideas.</p>
+      <p>The physical game, game design, rules and direction are shaped through human judgement &amp; playtesting.</p>
+      <p>If Turncoat moves towards a finished commercial game, I'd want to work with designers, artists and other humans to turn the prototype into the real thing 🤌</p>
+      <p>Thank you, Stevie (Turncoat Designer)</p>
+    </footer>
   </div>
 
   <div class="simulation-overlay" id="simulationOverlay" role="dialog" aria-modal="true" aria-labelledby="simulationTitle" hidden>
