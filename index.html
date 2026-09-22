@@ -279,6 +279,9 @@
     .tutorial-primary { min-width: 190px; padding: 13px 20px; color: #fff9ed; border-color: #752c1e; background: var(--accent); letter-spacing: .08em; }
     .tutorial-primary:hover:not(:disabled) { background: #8e3524; }
     .tutorial-secondary { border: 0; background: transparent; color: var(--muted); letter-spacing: .1em; }
+    .tutorial-nav { width: 100%; display: grid; grid-template-columns: 1fr minmax(0,190px) 1fr; align-items: center; gap: 10px; }
+    .tutorial-nav .tutorial-secondary { grid-column: 1; justify-self: end; min-width: 80px; padding: 13px 10px; }
+    .tutorial-nav .tutorial-primary { grid-column: 2; width: 100%; min-width: 0; }
     .tutorial-visual { width: min(350px, 88vw); display: grid; gap: 10px; }
     .tutorial-board { --cols: 5; --rows: 5; position: relative; width: 100%; aspect-ratio: var(--cols) / var(--rows); display: grid; overflow: hidden; border: 3px solid rgba(63,40,23,.74); background: #dfbd8b; box-shadow: 0 14px 25px rgba(55,36,19,.2); pointer-events: none; }
     .tutorial-cell { border-right: 1px solid rgba(61,39,23,.3); border-bottom: 1px solid rgba(61,39,23,.3); background: linear-gradient(145deg, rgba(255,255,255,.08), rgba(63,36,16,.035)); }
@@ -335,35 +338,58 @@
     .tutorial-tempo-cube { animation: tutorialMoveCube 6.8s ease-in-out infinite; }
     .tutorial-tempo-wedge { --to-left: 60%; animation: tutorialMoveWedge 6.8s ease-in-out infinite; }
     .tutorial-tempo-main { animation: tutorialMoveMain 6.8s ease-in-out infinite; }
-    .tutorial-tempo-flow { position: relative; height: 58px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.34); }
-    .tutorial-tempo-bank { display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 20px; font-size: .62rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
-    .tutorial-tempo-bank:last-child { justify-content: end; }
-    .tutorial-tempo-bank .token { width: 17px; flex: 0 0 auto; }
-    .tutorial-count-light::after { content: "3"; animation: tempoCountLight 6.8s step-end infinite; }
-    .tutorial-count-dark::after { content: "0"; animation: tempoCountDark 6.8s step-end infinite; }
-    .tutorial-tempo-track { position: absolute; inset: 0 72px; }
-    .tutorial-tempo-dot { position: absolute; top: 22px; left: 5%; width: 15px; aspect-ratio: 1; border: 1px solid var(--light-edge); border-radius: 50%; background: var(--light); box-shadow: 0 2px 4px rgba(43,28,16,.25); }
-    .tutorial-tempo-dot:nth-child(1) { translate: 0 -18px; animation: tempoPassOne 6.8s ease-in-out infinite; }
-    .tutorial-tempo-dot:nth-child(2) { animation: tempoPassTwo 6.8s ease-in-out infinite; }
-    .tutorial-tempo-dot:nth-child(3) { translate: 0 18px; animation: tempoPassThree 6.8s ease-in-out infinite; }
-    @keyframes tempoPassOne { 0%,15%,100% { left: 5%; border-color: var(--light-edge); background: var(--light); } 24%,88% { left: calc(95% - 15px); border-color: var(--dark-edge); background: var(--dark); } }
-    @keyframes tempoPassTwo { 0%,41%,100% { left: 5%; border-color: var(--light-edge); background: var(--light); } 51%,88% { left: calc(95% - 15px); border-color: var(--dark-edge); background: var(--dark); } }
-    @keyframes tempoPassThree { 0%,68%,100% { left: 5%; border-color: var(--light-edge); background: var(--light); } 78%,88% { left: calc(95% - 15px); border-color: var(--dark-edge); background: var(--dark); } }
-    @keyframes tempoCountLight { 0%,15%,100% { content: "3"; } 24%,41% { content: "2"; } 51%,68% { content: "1"; } 78%,88% { content: "0"; } }
-    @keyframes tempoCountDark { 0%,15%,100% { content: "0"; } 24%,41% { content: "1"; } 51%,68% { content: "2"; } 78%,88% { content: "3"; } }
+    .tutorial-tempo-scale { width: 100%; }
+    .tutorial-tempo-scale .tempo-scale-token { transition: none; }
+    .tutorial-tempo-scale .tempo-scale-token:nth-child(1) { animation: tutorialTempoPassOne 6.8s ease-in-out infinite; }
+    .tutorial-tempo-scale .tempo-scale-token:nth-child(2) { animation: tutorialTempoPassTwo 6.8s ease-in-out infinite; }
+    .tutorial-tempo-scale .tempo-scale-token:nth-child(3) { animation: tutorialTempoPassThree 6.8s ease-in-out infinite; }
+    @keyframes tutorialTempoPassOne {
+      0%,8%,100% { left: 16.5%; border-color: var(--light-edge); background: var(--light); }
+      20%,34% { left: 19.33%; border-color: var(--light-edge); background: var(--light); }
+      48%,61% { left: 25%; border-color: var(--light-edge); background: var(--light); }
+      74%,88% { left: 66.5%; border-color: var(--dark-edge); background: var(--dark); }
+    }
+    @keyframes tutorialTempoPassTwo {
+      0%,8%,100% { left: 25%; border-color: var(--light-edge); background: var(--light); }
+      20%,34% { left: 30.67%; border-color: var(--light-edge); background: var(--light); }
+      48%,61% { left: 69.33%; border-color: var(--dark-edge); background: var(--dark); }
+      74%,88% { left: 75%; border-color: var(--dark-edge); background: var(--dark); }
+    }
+    @keyframes tutorialTempoPassThree {
+      0%,8%,100% { left: 33.5%; border-color: var(--light-edge); background: var(--light); }
+      20%,34% { left: 75%; border-color: var(--dark-edge); background: var(--dark); }
+      48%,61% { left: 80.67%; border-color: var(--dark-edge); background: var(--dark); }
+      74%,88% { left: 83.5%; border-color: var(--dark-edge); background: var(--dark); }
+    }
     .tutorial-tempo-caption { min-height: 2.4em; color: var(--accent); font-size: .78rem; font-weight: 800; }
-    .tutorial-action-costs { width: min(390px, 88vw); display: grid; grid-template-columns: minmax(0,1fr) 124px; gap: 18px; align-items: stretch; }
+    .tutorial-action-costs { width: min(390px, 88vw); display: grid; grid-template-columns: 188px minmax(0,1fr); gap: 10px; align-items: stretch; }
     .action-cost-list { display: grid; gap: 8px; }
-    .action-cost-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.32); color: var(--ink); font-size: .78rem; font-weight: 800; text-align: left; }
+    .action-cost-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.32); color: var(--ink); font-size: .78rem; font-weight: 800; text-align: left; }
     .action-cost-item strong { color: var(--accent); white-space: nowrap; }
     .action-cost-demo { display: grid; align-content: center; gap: 11px; padding: 12px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.34); }
     .action-cost-demo-row { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 7px; color: var(--accent); font-size: 1.05rem; font-weight: 900; }
-    .cost-tempo-track { position: relative; height: 18px; border-radius: 12px; background: linear-gradient(90deg, rgba(246,238,220,.9), rgba(92,58,33,.22)); box-shadow: inset 0 0 0 1px rgba(73,51,29,.2); }
-    .cost-tempo-dot { position: absolute; top: 3px; left: 9px; width: 12px; aspect-ratio: 1; border: 1px solid var(--light-edge); border-radius: 50%; background: var(--light); animation: tutorialCostPass 4.8s ease-in-out infinite; }
-    .action-cost-demo-row:nth-child(2) .cost-tempo-dot { animation-delay: .9s; }
-    .action-cost-demo-row:nth-child(3) .cost-tempo-dot { animation-delay: 1.8s; }
-    .action-cost-demo-row:nth-child(3) .cost-tempo-dot:nth-child(2) { left: 25px; animation-delay: 2.05s; }
-    @keyframes tutorialCostPass { 0%,18%,100% { left: 9px; border-color: var(--light-edge); background: var(--light); } 42%,82% { left: calc(100% - 21px); border-color: var(--dark-edge); background: var(--dark); } }
+    .cost-tempo-scale { display: grid; grid-template-columns: 14px minmax(0,1fr) 14px; align-items: center; gap: 4px; min-width: 0; }
+    .cost-tempo-scale .tempo-scale-end { width: 13px; }
+    .cost-tempo-track { position: relative; height: 18px; border-radius: 12px; background: linear-gradient(90deg, rgba(246,238,220,.9) 0 48%, rgba(92,58,33,.22) 52% 100%); box-shadow: inset 0 0 0 1px var(--line); }
+    .cost-tempo-track::before { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 1px; background: rgba(75,57,40,.3); }
+    .cost-tempo-token { position: absolute; top: 3px; left: 25%; width: 12px; aspect-ratio: 1; translate: -50% 0; border: 1px solid var(--light-edge); border-radius: 50%; background: var(--light); box-shadow: 0 2px 4px rgba(43,28,16,.22); }
+    .action-cost-demo-row:nth-child(1) .cost-tempo-token { animation: tutorialCostTempoPass 4.8s ease-in-out infinite; }
+    .action-cost-demo-row:nth-child(2) .cost-tempo-token { animation: tutorialCostTempoPass 4.8s ease-in-out .9s infinite backwards; }
+    .action-cost-demo-row:nth-child(3) .cost-tempo-token:first-child { animation: tutorialCostTempoPass 4.8s ease-in-out 1.8s infinite backwards; }
+    .action-cost-demo-row:nth-child(3) .cost-tempo-token:last-child { opacity: 0; animation: tutorialCostTempoTrail 4.8s ease-in-out 2.05s infinite backwards; }
+    @keyframes tutorialCostTempoPass {
+      0%,18%,100% { left: 25%; border-color: var(--light-edge); background: var(--light); }
+      42%,82% { left: 75%; border-color: var(--dark-edge); background: var(--dark); }
+    }
+    @keyframes tutorialCostTempoTrail {
+      0%,18% { left: 32%; opacity: 0; border-color: var(--light-edge); background: var(--light); }
+      18.01% { left: 32%; opacity: 1; border-color: var(--light-edge); background: var(--light); }
+      41.99% { left: 68%; opacity: 1; border-color: var(--dark-edge); background: var(--dark); }
+      42%,82% { left: 68%; opacity: 0; border-color: var(--dark-edge); background: var(--dark); }
+      82.01% { left: 68%; opacity: 1; border-color: var(--dark-edge); background: var(--dark); }
+      99.99% { left: 32%; opacity: 1; border-color: var(--light-edge); background: var(--light); }
+      100% { left: 32%; opacity: 0; border-color: var(--light-edge); background: var(--light); }
+    }
     .tutorial-cell.demo-boundary { background: radial-gradient(circle at center, rgba(255,218,190,.5), rgba(180,37,32,.25)); }
     .tutorial-nogo-drop { animation: tutorialNoGoDrop 5.8s ease-in-out infinite; }
     .tutorial-blocked-cube { animation: tutorialBlockedMove 5.8s ease-in-out infinite; }
@@ -480,7 +506,7 @@
     @keyframes trophyPop { from { opacity: 0; transform: scale(.25) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 
     @media (prefers-reduced-motion: reduce) {
-      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-turn-orth, .tutorial-turn-diagonal, .tutorial-turn-square, .tutorial-turn-formation-label, .tutorial-turncoat-cubes, .tutorial-turncoat-wedges, .tutorial-tempo-dot, .tutorial-blocked-word, .tutorial-nogo-word, .cost-tempo-dot, button.turncoat-button.available { animation: none !important; }
+      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-turn-orth, .tutorial-turn-diagonal, .tutorial-turn-square, .tutorial-turn-formation-label, .tutorial-turncoat-cubes, .tutorial-turncoat-wedges, .tutorial-tempo-scale .tempo-scale-token, .tutorial-blocked-word, .tutorial-nogo-word, .cost-tempo-token, button.turncoat-button.available { animation: none !important; }
       .tutorial-arrive, .tutorial-turn-orth-arrive, .tutorial-turn-diagonal-arrive, .tutorial-move-cube, .tutorial-move-wedge, .tutorial-move-main, .tutorial-tempo-cube, .tutorial-tempo-wedge, .tutorial-tempo-main, .tutorial-nogo-drop { left: var(--to-left); top: var(--to-top, var(--top)); }
       .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-after, .tutorial-nogo-surround, .tutorial-nogo-word { opacity: 1; }
       .tutorial-turn-before { opacity: 0; }
@@ -490,10 +516,12 @@
       .tutorial-turn-square.diagonal { opacity: 0; }
       .tutorial-turncoat-cubes { opacity: 0; }
       .tutorial-turncoat-wedges { opacity: 1; }
-      .tutorial-tempo-dot { left: calc(95% - 15px); }
-      .cost-tempo-dot { left: calc(100% - 21px); border-color: var(--dark-edge); background: var(--dark); }
-      .tutorial-count-light::after { content: "0"; animation: none; }
-      .tutorial-count-dark::after { content: "3"; animation: none; }
+      .tutorial-tempo-scale .tempo-scale-token { border-color: var(--dark-edge); background: var(--dark); }
+      .tutorial-tempo-scale .tempo-scale-token:nth-child(1) { left: 66.5%; }
+      .tutorial-tempo-scale .tempo-scale-token:nth-child(2) { left: 75%; }
+      .tutorial-tempo-scale .tempo-scale-token:nth-child(3) { left: 83.5%; }
+      .cost-tempo-token { left: 75%; border-color: var(--dark-edge); background: var(--dark); }
+      .action-cost-demo-row:nth-child(3) .cost-tempo-token:last-child { left: 68%; opacity: 0; }
       .trophy-burst { animation: none; }
     }
 
@@ -533,7 +561,7 @@
       .tutorial-card { max-height: calc(100vh - 16px); padding: 22px 16px; }
       .tutorial-skip { margin: -8px -4px 0 0; }
       .tutorial-visual { width: min(310px, 82vw); }
-      .tutorial-action-costs { width: min(330px, 82vw); grid-template-columns: minmax(0,1fr) 104px; gap: 10px; }
+      .tutorial-action-costs { width: min(330px, 82vw); grid-template-columns: 168px minmax(0,1fr); gap: 8px; }
       .tutorial-move-labels { font-size: .64rem; }
       .bot-trophies-button { padding: 7px 8px; font-size: .6rem; }
       .tutorial-replay { padding: 7px 8px; font-size: .6rem; }
@@ -877,8 +905,8 @@
           <p>Surround enemy pieces and they change sides.</p>
           <div class="tutorial-visual">
             <div class="tutorial-turncoat-stage">
-              <div class="tutorial-board tutorial-turncoat-cubes" data-demo="turncoat" aria-label="A Chestnut Cube changing to Ivory after orthogonal and diagonal square surrounds"></div>
-              <div class="tutorial-board tutorial-turncoat-wedges" data-demo="turncoat-wedge" aria-label="A Chestnut Wedge changing to Ivory after two valid triangular surrounds"></div>
+              <div class="tutorial-board tutorial-turncoat-cubes" data-demo="turncoat" aria-label="A Chestnut Cube changing to Ivory after mixed Ivory and Chestnut square surrounds"></div>
+              <div class="tutorial-board tutorial-turncoat-wedges" data-demo="turncoat-wedge" aria-label="A Chestnut Wedge changing to Ivory after mixed Ivory, Chestnut and closed-edge surrounds"></div>
             </div>
           </div>
           <p><b>You don't capture pieces: you turn them.</b></p>
@@ -904,11 +932,14 @@
           <p>TEMPO lets you take up to 3 actions.</p>
           <div class="tutorial-visual">
             <div class="tutorial-board tutorial-tempo-board" data-demo="tempo" aria-label="Three actions spending and passing three Tempo"></div>
-            <div class="tutorial-tempo-flow" aria-hidden="true">
-              <div class="tutorial-tempo-bank tempo-side" aria-label="Ivory Tempo"><span class="token light"></span><span class="tempo-count tutorial-count-light"></span></div>
-              <div class="tutorial-tempo-track"><i class="tutorial-tempo-dot"></i><i class="tutorial-tempo-dot"></i><i class="tutorial-tempo-dot"></i></div>
-              <div>→</div>
-              <div class="tutorial-tempo-bank tempo-side" aria-label="Chestnut Tempo"><span class="token dark"></span><span class="tempo-count tutorial-count-dark"></span></div>
+            <div class="tempo-scale tutorial-tempo-scale" aria-label="Three Tempo moving from Ivory to Chestnut">
+              <span class="tempo-scale-end light" aria-hidden="true"></span>
+              <span class="tempo-live-track" aria-hidden="true">
+                <i class="tempo-scale-token light"></i>
+                <i class="tempo-scale-token light"></i>
+                <i class="tempo-scale-token light"></i>
+              </span>
+              <span class="tempo-scale-end dark" aria-hidden="true"></span>
             </div>
             <div class="tutorial-tempo-caption">The more TEMPO you use, the more you pass to your opponent.</div>
           </div>
@@ -934,16 +965,19 @@
               <div class="action-cost-item"><span>No Go token</span><strong>2 TEMPO</strong></div>
             </div>
             <div class="action-cost-demo" aria-hidden="true">
-              <div class="action-cost-demo-row"><span>↔</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i></span></div>
-              <div class="action-cost-demo-row"><span>↻</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i></span></div>
-              <div class="action-cost-demo-row"><span>×</span><span class="cost-tempo-track"><i class="cost-tempo-dot"></i><i class="cost-tempo-dot"></i></span></div>
+              <div class="action-cost-demo-row"><span>↔</span><span class="cost-tempo-scale"><i class="tempo-scale-end light"></i><i class="cost-tempo-track"><b class="cost-tempo-token"></b></i><i class="tempo-scale-end dark"></i></span></div>
+              <div class="action-cost-demo-row"><span>↻</span><span class="cost-tempo-scale"><i class="tempo-scale-end light"></i><i class="cost-tempo-track"><b class="cost-tempo-token"></b></i><i class="tempo-scale-end dark"></i></span></div>
+              <div class="action-cost-demo-row"><span>×</span><span class="cost-tempo-scale"><i class="tempo-scale-end light"></i><i class="cost-tempo-track"><b class="cost-tempo-token"></b><b class="cost-tempo-token"></b></i><i class="tempo-scale-end dark"></i></span></div>
             </div>
           </div>
         </section>
 
         <footer class="tutorial-screen">
           <div class="tutorial-progress"><span id="tutorialProgress">1 / 6</span><span class="tutorial-dots" id="tutorialDots" aria-hidden="true"></span></div>
-          <button class="tutorial-primary" id="tutorialNext" type="button">NEXT</button>
+          <div class="tutorial-nav">
+            <button class="tutorial-secondary" id="tutorialBack" type="button" hidden>BACK</button>
+            <button class="tutorial-primary" id="tutorialNext" type="button">NEXT</button>
+          </div>
         </footer>
       </div>
 
@@ -4744,6 +4778,7 @@
         this.complete = document.getElementById("tutorialComplete");
         this.slides = [...document.querySelectorAll(".tutorial-slide")];
         this.skip = document.getElementById("tutorialSkip");
+        this.back = document.getElementById("tutorialBack");
         this.next = document.getElementById("tutorialNext");
         this.progress = document.getElementById("tutorialProgress");
         this.dots = document.getElementById("tutorialDots");
@@ -4764,6 +4799,7 @@
         document.getElementById("tutorialWelcomeSkip").addEventListener("click", () => this.close(true));
         document.getElementById("tutorialPlay").addEventListener("click", () => this.finishTutorial());
         this.skip.addEventListener("click", () => this.close(true));
+        this.back.addEventListener("click", () => this.showStep(Math.max(0, this.step - 1)));
         this.next.addEventListener("click", () => this.step < this.slides.length - 1 ? this.showStep(this.step + 1) : this.showComplete());
         this.replay.addEventListener("click", () => this.open(false));
         document.addEventListener("keydown", event => {
@@ -4824,6 +4860,7 @@
         this.slides.forEach((slide, i) => { slide.hidden = i !== index; });
         this.progress.textContent = `${index + 1} / ${this.slides.length}`;
         [...this.dots.children].forEach((dot, i) => dot.classList.toggle("active", i === index));
+        this.back.hidden = index === 0;
         this.next.textContent = index === this.slides.length - 1 ? "FINISH" : "NEXT";
         this.lesson.querySelector(".tutorial-screen:not([hidden])")?.scrollIntoView({block:"nearest"});
         requestAnimationFrame(() => this.next.focus({preventScroll:true}));
@@ -4950,11 +4987,13 @@
         win.append(surround, winWord);
 
         const turncoat = this.prepareBoard("turncoat");
-        [[1,2],[2,1],[3,2]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "light", r, c, "tutorial-turn-orth"));
-        [[1,1],[1,3],[3,1]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "light", r, c, "tutorial-turn-diagonal"));
+        [[1,2],[3,2]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "dark", r, c, "tutorial-turn-orth"));
+        this.addPiece(turncoat, "cube", "light", 2, 1, "tutorial-turn-orth");
+        [[1,1],[3,1]].forEach(([r,c]) => this.addPiece(turncoat, "cube", "dark", r, c, "tutorial-turn-diagonal"));
+        this.addPiece(turncoat, "cube", "light", 1, 3, "tutorial-turn-diagonal");
         this.addPiece(turncoat, "cube", "dark", 2, 2, "tutorial-turn-before");
         this.addPiece(turncoat, "cube", "light", 2, 2, "tutorial-turn-after");
-        this.addPiece(turncoat, "cube", "light", 3, 4, "tutorial-turn-orth-arrive", {r:2,c:3});
+        this.addPiece(turncoat, "cube", "light", 2, 4, "tutorial-turn-orth-arrive", {r:2,c:3});
         this.addPiece(turncoat, "cube", "light", 4, 4, "tutorial-turn-diagonal-arrive", {r:3,c:3});
         this.addTurncoatOutline(
           turncoat,
@@ -4965,16 +5004,16 @@
         );
 
         const wedgeTurncoat = this.prepareBoard("turncoat-wedge");
-        [[3,1],[3,3]].forEach(([r,c]) => this.addPiece(wedgeTurncoat, "cube", "light", r, c, "tutorial-turn-orth"));
-        [[1,1],[1,3]].forEach(([r,c]) => this.addPiece(wedgeTurncoat, "cube", "light", r, c, "tutorial-turn-diagonal"));
-        this.addPiece(wedgeTurncoat, "wedge", "dark", 2, 2, "tutorial-turn-before");
-        this.addPiece(wedgeTurncoat, "wedge", "light", 2, 2, "tutorial-turn-after");
-        this.addPiece(wedgeTurncoat, "cube", "light", 0, 3, "tutorial-turn-orth-arrive", {r:1,c:2});
-        this.addPiece(wedgeTurncoat, "cube", "light", 4, 3, "tutorial-turn-diagonal-arrive", {r:3,c:2});
+        wedgeTurncoat.querySelectorAll('.tutorial-cell[data-r="0"]').forEach(cell => cell.classList.add("demo-boundary"));
+        this.addPiece(wedgeTurncoat, "cube", "dark", 2, 3, "tutorial-turn-orth");
+        this.addPiece(wedgeTurncoat, "wedge", "dark", 1, 2, "tutorial-turn-before");
+        this.addPiece(wedgeTurncoat, "wedge", "light", 1, 2, "tutorial-turn-after");
+        this.addPiece(wedgeTurncoat, "cube", "light", 3, 0, "tutorial-turn-orth-arrive", {r:2,c:1});
+        this.addPiece(wedgeTurncoat, "cube", "light", 3, 2, "tutorial-turn-diagonal-arrive", {r:2,c:2});
         this.addTurncoatOutline(
           wedgeTurncoat,
-          "2.5,1.5 3.5,3.5 1.5,3.5",
-          "1.5,1.5 3.5,1.5 2.5,3.5",
+          "2.5,0.5 3.5,2.5 1.5,2.5",
+          "1.5,0.5 3.5,0.5 2.5,2.5",
           "WEDGE · N · SE · SW",
           "WEDGE · NW · NE · S"
         );
