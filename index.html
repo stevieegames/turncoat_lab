@@ -328,6 +328,39 @@
     @keyframes tutorialCubeBoardPhase { 0%,47% { opacity: 1; } 50%,100% { opacity: 0; } }
     @keyframes tutorialWedgeBoardPhase { 0%,50%,100% { opacity: 0; } 53%,97% { opacity: 1; } }
 
+    .tutorial-shield-stage { --rows: 3; --cols: 5; width: min(350px, 82vw); aspect-ratio: 5 / 3; animation: tutorialShieldStageLoop 8s ease-in-out infinite; }
+    .tutorial-shield-target { position: absolute; z-index: 2; left: 50%; top: 50%; width: 20%; aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; }
+    .tutorial-shield-target .piece { position: absolute; width: 62%; cursor: default; }
+    .tutorial-shield-target .piece:hover, .tutorial-shield-attacker .piece:hover { transform: none; }
+    .tutorial-shield-before { animation: tutorialShieldBefore 8s ease-in-out infinite; }
+    .tutorial-shield-after { opacity: 0; animation: tutorialShieldAfter 8s ease-in-out infinite; }
+    .tutorial-shield-target .shield-icon { top: 1%; right: 1%; width: 30%; opacity: 0; animation: tutorialShieldBadge 8s ease-in-out infinite; }
+    .tutorial-shield-surrounder { position: absolute; z-index: 2; width: 20%; aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; }
+    .tutorial-shield-surrounder .piece { width: 62%; cursor: default; }
+    .tutorial-shield-surrounder .piece:hover { transform: none; }
+    .tutorial-shield-attacker { left: 30%; top: 50%; animation: tutorialShieldAttack 8s ease-in-out infinite; }
+    .tutorial-shield-ne { left: 70%; top: 16.666%; }
+    .tutorial-shield-se { left: 70%; top: 83.333%; }
+    .tutorial-shield-triangle { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .tutorial-shield-triangle polygon { fill: rgba(45,118,188,.09); stroke: #2d76bc; stroke-width: .09; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 2px rgba(45,118,188,.7)); animation: tutorialShieldTriangle 8s ease-in-out infinite; }
+    .tutorial-shield-arrow { position: absolute; z-index: 3; left: 37%; top: 39%; color: var(--dark-edge); font-size: clamp(1.4rem, 6vw, 2.5rem); font-weight: 900; opacity: 0; animation: tutorialShieldAttempt 8s ease-in-out infinite; }
+    .tutorial-shield-block { position: absolute; z-index: 5; left: 58%; top: 27%; color: #b42121; font: 900 clamp(2.2rem, 10vw, 4.2rem)/1 Arial,sans-serif; text-shadow: 0 2px 0 rgba(255,255,255,.5); opacity: 0; animation: tutorialShieldBlock 8s ease-in-out infinite; }
+    .tutorial-shield-caption { position: absolute; z-index: 6; left: 50%; bottom: 7%; translate: -50% 0; padding: 6px 11px; border-radius: 20px; color: #fff; font-size: .62rem; font-weight: 900; letter-spacing: .1em; white-space: nowrap; opacity: 0; }
+    .tutorial-shield-caption.gained { background: #287bd0; animation: tutorialShieldGained 8s ease-in-out infinite; }
+    .tutorial-shield-caption.blocked { background: #b42121; animation: tutorialShieldBlocked 8s ease-in-out infinite; }
+    .tutorial-shield-caption.expired { background: rgba(80,65,48,.9); animation: tutorialShieldExpired 8s ease-in-out infinite; }
+    @keyframes tutorialShieldBefore { 0%,13%,100% { opacity: 1; transform: rotateY(0); } 20%,92% { opacity: 0; transform: rotateY(90deg); } }
+    @keyframes tutorialShieldAfter { 0%,13%,100% { opacity: 0; transform: rotateY(-90deg); } 20%,92% { opacity: 1; transform: rotateY(0); } }
+    @keyframes tutorialShieldBadge { 0%,18%,82%,100% { opacity: 0; transform: scale(.65); } 25%,74% { opacity: 1; transform: scale(1); } }
+    @keyframes tutorialShieldAttack { 0%,38%,70%,100% { transform: translateX(0) scale(1); } 47%,62% { transform: translateX(7px) scale(1.08); } }
+    @keyframes tutorialShieldTriangle { 0%,5%,39%,100% { opacity: 0; stroke-dashoffset: 1; } 12%,34% { opacity: 1; stroke-dashoffset: 0; } }
+    @keyframes tutorialShieldAttempt { 0%,39%,68%,100% { opacity: 0; transform: translateX(-8px); } 47%,62% { opacity: 1; transform: translateX(0); } }
+    @keyframes tutorialShieldBlock { 0%,45%,68%,100% { opacity: 0; transform: scale(.65) rotate(-10deg); } 51%,63% { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes tutorialShieldGained { 0%,20%,38%,100% { opacity: 0; } 25%,34% { opacity: 1; } }
+    @keyframes tutorialShieldBlocked { 0%,44%,69%,100% { opacity: 0; } 50%,64% { opacity: 1; } }
+    @keyframes tutorialShieldExpired { 0%,75%,96%,100% { opacity: 0; } 82%,92% { opacity: 1; } }
+    @keyframes tutorialShieldStageLoop { 0% { opacity: 0; } 5%,91% { opacity: 1; } 98%,100% { opacity: 0; } }
+
     .tutorial-move-board { --rows: 3; aspect-ratio: 5 / 3; }
     .tutorial-move-labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; color: var(--muted); font-size: .72rem; }
     .tutorial-move-labels b { display: block; color: var(--ink); }
@@ -510,7 +543,7 @@
     @keyframes trophyPop { from { opacity: 0; transform: scale(.25) rotate(-18deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 
     @media (prefers-reduced-motion: reduce) {
-      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-turn-orth, .tutorial-turn-diagonal, .tutorial-turn-square, .tutorial-turn-formation-label, .tutorial-turncoat-cubes, .tutorial-turncoat-wedges, .tutorial-tempo-scale .tempo-scale-token, .tutorial-blocked-word, .tutorial-nogo-word, .cost-tempo-token, button.turncoat-button.available { animation: none !important; }
+      .tutorial-slot, .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-before, .tutorial-turn-after, .tutorial-turn-orth, .tutorial-turn-diagonal, .tutorial-turn-square, .tutorial-turn-formation-label, .tutorial-turncoat-cubes, .tutorial-turncoat-wedges, .tutorial-shield-stage, .tutorial-shield-before, .tutorial-shield-after, .tutorial-shield-target .shield-icon, .tutorial-shield-attacker, .tutorial-shield-triangle polygon, .tutorial-shield-arrow, .tutorial-shield-block, .tutorial-shield-caption, .tutorial-tempo-scale .tempo-scale-token, .tutorial-blocked-word, .tutorial-nogo-word, .cost-tempo-token, button.turncoat-button.available { animation: none !important; }
       .tutorial-arrive, .tutorial-turn-orth-arrive, .tutorial-turn-diagonal-arrive, .tutorial-move-cube, .tutorial-move-wedge, .tutorial-move-main, .tutorial-tempo-cube, .tutorial-tempo-wedge, .tutorial-tempo-main, .tutorial-nogo-drop { left: var(--to-left); top: var(--to-top, var(--top)); }
       .tutorial-surround, .tutorial-win-word, .tutorial-turn-word, .tutorial-turn-after, .tutorial-nogo-surround, .tutorial-nogo-word { opacity: 1; }
       .tutorial-turn-before { opacity: 0; }
@@ -520,6 +553,9 @@
       .tutorial-turn-square.diagonal { opacity: 0; }
       .tutorial-turncoat-cubes { opacity: 0; }
       .tutorial-turncoat-wedges { opacity: 1; }
+      .tutorial-shield-before, .tutorial-shield-arrow, .tutorial-shield-block, .tutorial-shield-caption.gained, .tutorial-shield-caption.blocked, .tutorial-shield-triangle { opacity: 0; }
+      .tutorial-shield-after, .tutorial-shield-caption.expired { opacity: 1; }
+      .tutorial-shield-target .shield-icon { opacity: 0; }
       .tutorial-tempo-scale .tempo-scale-token { border-color: var(--dark-edge); background: var(--dark); }
       .tutorial-tempo-scale .tempo-scale-token:nth-child(1) { left: 66.5%; }
       .tutorial-tempo-scale .tempo-scale-token:nth-child(2) { left: 75%; }
@@ -903,7 +939,7 @@
 
       <div id="tutorialLesson" hidden>
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="0">
-          <span class="tutorial-kicker">1 / 6: Win</span>
+          <span class="tutorial-kicker">1 / 7: Win</span>
           <h2>SURROUND THE MAIN PIECE</h2>
           <p>Surround your opponent's Main Piece to win.</p>
           <div class="tutorial-visual">
@@ -912,7 +948,7 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="1" hidden>
-          <span class="tutorial-kicker">2 / 6: Turncoat</span>
+          <span class="tutorial-kicker">2 / 7: Turncoat</span>
           <h2>SURROUND TO TURNCOAT</h2>
           <p>Surround enemy pieces and they change sides.</p>
           <div class="tutorial-visual">
@@ -925,7 +961,29 @@
         </section>
 
         <section class="tutorial-screen tutorial-slide" data-tutorial-step="2" hidden>
-          <span class="tutorial-kicker">3 / 6: Move</span>
+          <span class="tutorial-kicker">3 / 7: Temporary shield</span>
+          <h2>TEMPORARY SHIELD</h2>
+          <p>When a piece gets Turncoated, it gets a shield. Your opponent cannot Turncoat it back on their next turn.</p>
+          <div class="tutorial-board tutorial-shield-stage" data-demo="shield" role="img" aria-label="A Chestnut Wedge is surrounded west, northeast and southeast, turns Ivory and gains a shield. The Chestnut piece to its west tries to Turncoat it back but is blocked. The shield then disappears.">
+            <svg class="tutorial-shield-triangle" viewBox="0 0 5 3" preserveAspectRatio="none" aria-hidden="true"><polygon points="1.5,1.5 3.5,.5 3.5,2.5"></polygon></svg>
+            <div class="tutorial-shield-surrounder tutorial-shield-attacker" aria-hidden="true"><div class="piece cube dark"></div></div>
+            <div class="tutorial-shield-surrounder tutorial-shield-ne" aria-hidden="true"><div class="piece cube light"></div></div>
+            <div class="tutorial-shield-surrounder tutorial-shield-se" aria-hidden="true"><div class="piece cube light"></div></div>
+            <span class="tutorial-shield-arrow" aria-hidden="true">→</span>
+            <div class="tutorial-shield-target" aria-hidden="true">
+              <div class="piece wedge dark tutorial-shield-before"></div>
+              <div class="piece wedge light tutorial-shield-after"></div>
+              <span class="shield-icon"></span>
+            </div>
+            <span class="tutorial-shield-block" aria-hidden="true">×</span>
+            <span class="tutorial-shield-caption gained" aria-hidden="true">TURNCOATED + SHIELDED</span>
+            <span class="tutorial-shield-caption blocked" aria-hidden="true">CAN'T TURNCOAT THIS TURN</span>
+            <span class="tutorial-shield-caption expired" aria-hidden="true">SHIELD EXPIRES</span>
+          </div>
+        </section>
+
+        <section class="tutorial-screen tutorial-slide" data-tutorial-step="3" hidden>
+          <span class="tutorial-kicker">4 / 7: Move</span>
           <h2>MOVE YOUR PIECES</h2>
           <p>Choose a piece, then move to a highlighted tile.</p>
           <div class="tutorial-visual">
@@ -938,8 +996,8 @@
           </div>
         </section>
 
-        <section class="tutorial-screen tutorial-slide" data-tutorial-step="3" hidden>
-          <span class="tutorial-kicker">4 / 6: Tempo</span>
+        <section class="tutorial-screen tutorial-slide" data-tutorial-step="4" hidden>
+          <span class="tutorial-kicker">5 / 7: Tempo</span>
           <h2>USE YOUR TEMPO</h2>
           <p>TEMPO lets you take up to 3 actions.</p>
           <div class="tutorial-visual">
@@ -957,8 +1015,8 @@
           </div>
         </section>
 
-        <section class="tutorial-screen tutorial-slide" data-tutorial-step="4" hidden>
-          <span class="tutorial-kicker">5 / 6: No Go</span>
+        <section class="tutorial-screen tutorial-slide" data-tutorial-step="5" hidden>
+          <span class="tutorial-kicker">6 / 7: No Go</span>
           <h2>USE NO GO TOKENS</h2>
           <p>Use No Go tokens to deny movement and help surround your opponent.</p>
           <div class="tutorial-visual">
@@ -966,8 +1024,8 @@
           </div>
         </section>
 
-        <section class="tutorial-screen tutorial-slide" data-tutorial-step="5" hidden>
-          <span class="tutorial-kicker">6 / 6: Action costs</span>
+        <section class="tutorial-screen tutorial-slide" data-tutorial-step="6" hidden>
+          <span class="tutorial-kicker">7 / 7: Action costs</span>
           <h2>ACTIONS COST TEMPO</h2>
           <p>Every action passes TEMPO to your opponent.</p>
           <div class="tutorial-action-costs">
@@ -985,7 +1043,7 @@
         </section>
 
         <footer class="tutorial-screen">
-          <div class="tutorial-progress"><span id="tutorialProgress">1 / 6</span><span class="tutorial-dots" id="tutorialDots" aria-hidden="true"></span></div>
+          <div class="tutorial-progress"><span id="tutorialProgress">1 / 7</span><span class="tutorial-dots" id="tutorialDots" aria-hidden="true"></span></div>
           <div class="tutorial-nav">
             <button class="tutorial-secondary" id="tutorialBack" type="button" hidden>BACK</button>
             <button class="tutorial-primary" id="tutorialNext" type="button">NEXT</button>
@@ -1494,10 +1552,8 @@
       }
     ]);
     const releasedBots = () => BOT_CATALOG.filter(bot => bot.available);
-    function isBotUnlocked(trophies, botId) {
-      const bots = releasedBots();
-      const index = bots.findIndex(bot => bot.id === botId);
-      return index === 0 || index > 0 && trophies[bots[index - 1].id]?.earned === true;
+    function isBotUnlocked(_trophies, botId) {
+      return releasedBots().some(bot => bot.id === botId);
     }
     function createBotAvatar(bot, extraClass = "") {
       const avatar = document.createElement("div");
@@ -4188,7 +4244,7 @@
         this.trophies = {};
         this.save();
         this.ui.nextBotOfferId = null;
-        this.resetStatus.textContent = "Trophies reset. Beat Barry to unlock Sally.";
+        this.resetStatus.textContent = "Trophies reset. Every bot is still available.";
         this.render();
         this.ui.render();
       }
@@ -5029,6 +5085,8 @@
           "WEDGE · N · SE · SW",
           "WEDGE · NW · NE · S"
         );
+
+        this.prepareBoard("shield", 3, 5);
 
         const move = this.prepareBoard("move", 3, 5);
         const moveSpecs = [
